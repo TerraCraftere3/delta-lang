@@ -15,10 +15,23 @@ int main(int argc, char **argv)
     for (int i = 1; i < argc; i++)
     {
         std::string arg = argv[i];
-        if (arg == "-i" || arg == "--input")
+        if (arg == "-h" || arg == "--help")
+        {
+            std::cout << "Delta Language Compiler\n";
+            std::cout << "Usage: delta.exe [options]\n";
+            std::cout << "Options:\n";
+            std::cout << "  -i, --input <file>       Specify input source file (required)\n";
+            std::cout << "  -o, --output <file>      Specify output executable file (default: a.exe)\n";
+            std::cout << "  -v, --verbose            Enable verbose logging (default)\n";
+            std::cout << "  -l, --link               Compile and link the program\n";
+            std::cout << "  -r, --run                Compile, link, and run the program\n";
+            std::cout << "  -h, --help               Show this help message\n";
+            return 0;
+        }
+        else if (arg == "-i" || arg == "--input")
         {
             if (i + 1 < argc)
-            { // check next argument exists
+            {
                 inputFile = argv[++i];
             }
             else
@@ -30,7 +43,7 @@ int main(int argc, char **argv)
         else if (arg == "-o" || arg == "--output")
         {
             if (i + 1 < argc)
-            { // check next argument exists
+            {
                 outputFile = argv[++i];
             }
             else
@@ -39,15 +52,15 @@ int main(int argc, char **argv)
                 return 1;
             }
         }
-        else if (arg == "--verbose" || arg == "-v")
+        else if (arg == "-v" || arg == "--verbose")
         {
             verbose = true;
         }
-        else if (arg == "--run" || arg == "-r")
+        else if (arg == "-r" || arg == "--run")
         {
             run = true;
         }
-        else if (arg == "--link" || arg == "-l")
+        else if (arg == "-l" || arg == "--link")
         {
             link = true;
         }

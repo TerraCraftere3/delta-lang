@@ -47,68 +47,74 @@ namespace Delta
                 return 1;
             }
         }
+        auto writeAsmFile = [&](const std::string &asmFile) -> bool
+        {
+            if (!Files::writeFile(asmFile, assembly))
+            {
+                LOG_ERROR("Failed to write intermediate file: {}", asmFile);
+                return false;
+            }
+            return true;
+        };
+
+        auto runCommand = [&](const std::string &cmd) -> bool
+        {
+            LOG_TRACE("Running command: {}", cmd);
+            if (std::system(cmd.c_str()) != 0)
+            {
+                LOG_ERROR("Failed to execute command: {}", cmd);
+                return false;
+            }
+            return true;
+        };
+
+        // Generate file paths
+        std::string baseName = Files::getFileNameWithoutExtension(props.inputFile);
+        std::string asmFile = Files::joinPaths(intDir, baseName + ".asm");
+        std::string objFile = Files::joinPaths(intDir, baseName + ".obj");
+
+        std::string nasmArguments = "-f win64";
+        std::string linkArguments = "/subsystem:console /entry:_start /defaultlib:kernel32.lib /defaultlib:msvcrt.lib";
+
         switch (props.compileType)
         {
         case COMPILE_ONLY:
         {
-            if (!Files::writeFile(props.outputFile, assembly))
-            {
-                LOG_ERROR("Failed to write output file: {}", props.outputFile);
+            if (!writeAsmFile(asmFile))
                 return 1;
-            }
+            std::string command = "\"" + nasmPath + "\" " + nasmArguments + " " + asmFile + " -o " + props.outputFile;
+            if (!runCommand(command))
+                return 1;
             break;
         }
         case COMPILE_AND_LINK:
         {
-            std::string asmFile = Files::joinPaths(intDir, Files::getFileName(props.inputFile) + ".s");
-            if (!Files::writeFile(asmFile, assembly))
-            {
-                LOG_ERROR("Failed to write intermediate file: {}", asmFile);
+            if (!writeAsmFile(asmFile))
                 return 1;
-            }
-            std::string objFile = Files::joinPaths(intDir, Files::getFileName(props.inputFile) + ".o");
-            std::string command = "\"" + nasmPath + "\" -f win64 " + asmFile + " -o " + objFile + "";
-            LOG_TRACE("Running command: {}", command);
-            if (std::system(command.c_str()) != 0)
-            {
-                LOG_ERROR("Failed to execute command: {}", command);
+            std::string assembleCommand = "\"" + nasmPath + "\" " + nasmArguments + " " + asmFile + " -o " + objFile;
+            if (!runCommand(assembleCommand))
                 return 1;
-            }
-            std::string linkCommand = "\"" + linkPath + "\" " + objFile + " /subsystem:console /entry:_start /out:" + props.outputFile + " /defaultlib:kernel32.lib /defaultlib:msvcrt.lib";
-            LOG_TRACE("Running command: {}", linkCommand);
-            if (std::system(linkCommand.c_str()) != 0)
-            {
-                LOG_ERROR("Failed to execute command: {}", linkCommand);
+
+            std::string linkCommand = "\"" + linkPath + "\" " + objFile + " /out:" + props.outputFile + " " + linkArguments;
+            if (!runCommand(linkCommand))
                 return 1;
-            }
             break;
         }
         case COMPILE_LINK_AND_RUN:
         {
-            std::string asmFile = Files::joinPaths(intDir, Files::getFileName(props.inputFile) + ".s");
-            if (!Files::writeFile(asmFile, assembly))
-            {
-                LOG_ERROR("Failed to write intermediate file: {}", asmFile);
+            if (!writeAsmFile(asmFile))
                 return 1;
-            }
-            std::string objFile = Files::joinPaths(intDir, Files::getFileName(props.inputFile) + ".o");
-            std::string command = "\"" + nasmPath + "\" -f win64 " + asmFile + " -o " + objFile + "";
-            LOG_TRACE("Running command: {}", command);
-            if (std::system(command.c_str()) != 0)
-            {
-                LOG_ERROR("Failed to execute command: {}", command);
+            std::string assembleCommand = "\"" + nasmPath + "\" -f win64 " + asmFile + " -o " + objFile;
+            if (!runCommand(assembleCommand))
                 return 1;
-            }
-            std::string linkCommand = "\"" + linkPath + "\" /entry:_start /subsystem:console " + objFile + " kernel32.lib /out:" + props.outputFile + "";
-            LOG_TRACE("Running command: {}", linkCommand);
-            if (std::system(linkCommand.c_str()) != 0)
-            {
-                LOG_ERROR("Failed to execute command: {}", linkCommand);
+
+            std::string linkCommand = "\"" + linkPath + "\" " + objFile + " /out:" + props.outputFile + " " + linkArguments;
+            if (!runCommand(linkCommand))
                 return 1;
-            }
-            std::string runCommand = "\"" + std::string(props.outputFile) + "\"";
-            LOG_INFO("Running command: {}", runCommand);
-            int exitCode = std::system(runCommand.c_str());
+
+            std::string runCommandStr = "\"" + std::string(props.outputFile) + "\"";
+            LOG_INFO("Running command: {}", runCommandStr);
+            int exitCode = std::system(runCommandStr.c_str());
             LOG_INFO("Program exited with code: {}", exitCode);
             break;
         }

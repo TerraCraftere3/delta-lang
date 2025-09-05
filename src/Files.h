@@ -13,6 +13,7 @@ namespace Delta
         static bool writeFile(const std::string &path, const std::string &content);
         static std::string getFileExtension(const std::string &filename);
         static std::string getFileName(const std::string &path);
+        static std::string getFileNameWithoutExtension(const std::string &path);
         static std::string getDirectory(const std::string &path);
         static bool createDirectory(const std::string &path);
         static std::string getProgramPath();

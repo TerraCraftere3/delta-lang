@@ -78,6 +78,12 @@ std::string Delta::Files::getFileName(const std::string &path)
     return p.filename().string();
 }
 
+std::string Delta::Files::getFileNameWithoutExtension(const std::string &path)
+{
+    std::filesystem::path p(path);
+    return p.stem().string();
+}
+
 std::string Delta::Files::getDirectory(const std::string &path)
 {
     std::filesystem::path p(path);
