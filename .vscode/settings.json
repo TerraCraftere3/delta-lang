@@ -6,7 +6,7 @@
             "-o",
             "example.exe",
             "--verbose",
-            "--run"
+            "--run",
         ]
     }
 }

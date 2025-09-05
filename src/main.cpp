@@ -1,13 +1,17 @@
 #include <iostream>
 #include <string>
 #include "Log.h"
+#include "Properties.h"
+#include "Compiler.h"
 
 int main(int argc, char **argv)
 {
+    Delta::Log::init();
     std::string inputFile;
     std::string outputFile = "a.exe";
     bool verbose = true;
-    bool run = true;
+    bool link = false;
+    bool run = false;
     for (int i = 1; i < argc; i++)
     {
         std::string arg = argv[i];
@@ -43,15 +47,25 @@ int main(int argc, char **argv)
         {
             run = true;
         }
+        else if (arg == "--link" || arg == "-l")
+        {
+            link = true;
+        }
         else
         {
             LOG_ERROR("Unknown argument: {}", arg);
             return 1;
         }
     }
-    LOG_INFO("Input File: {}", inputFile);
-    LOG_INFO("Output File: {}", outputFile);
-    LOG_INFO("Verbose: {}", verbose ? "true" : "false");
-    LOG_INFO("Run after Build: {}", run ? "true" : "false");
-    return 0;
+    if (inputFile.empty())
+    {
+        LOG_ERROR("Error: No input file specified. Use -i or --input to specify an input file.");
+        return 1;
+    }
+    Delta::CompilerProperties props;
+    props.inputFile = inputFile.c_str();
+    props.outputFile = outputFile.c_str();
+    props.verbose = verbose;
+    props.compileType = run ? Delta::COMPILE_LINK_AND_RUN : (link ? Delta::COMPILE_AND_LINK : Delta::COMPILE_ONLY);
+    return Delta::Compiler::compile(props);
 }
