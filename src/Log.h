@@ -8,6 +8,7 @@ namespace Delta
     {
     public:
         static void init();
+        static void setVerbose(bool verbose);
     };
 }
 

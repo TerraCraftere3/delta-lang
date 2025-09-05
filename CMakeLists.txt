@@ -26,21 +26,3 @@ target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_17)
 # spdlog
 add_subdirectory(vendor/spdlog)
 target_link_libraries(${PROJECT_NAME} PRIVATE spdlog::spdlog)
-
-# DIA SDK
-set(DIA_SDK_DIR "C:/Program Files/Microsoft Visual Studio/2022/Community/DIA SDK")
-link_directories("${DIA_SDK_DIR}/lib/amd64")
-include_directories("${DIA_SDK_DIR}/include")
-
-# LLVM
-set(LLVM_DIR "${CMAKE_CURRENT_SOURCE_DIR}/vendor/llvm")
-set(CMAKE_PREFIX_PATH ${LLVM_DIR})
-find_package(LLVM REQUIRED CONFIG)
-
-message(STATUS "LLVM_DIR: ${LLVM_DIR}")
-message(STATUS "LLVM_VERSION: ${LLVM_PACKAGE_VERSION}")
-message(STATUS "LLVM_INCLUDE_DIRS: ${LLVM_INCLUDE_DIRS}")
-
-target_include_directories(${PROJECT_NAME} PRIVATE ${LLVM_INCLUDE_DIRS})
-target_link_libraries(${PROJECT_NAME} PRIVATE ${LLVM_LIBS})
-llvm_map_components_to_libnames(LLVM_LIBS core orcjit native)
