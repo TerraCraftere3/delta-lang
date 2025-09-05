@@ -1,0 +1,12 @@
+{
+    "cmake.debugConfig": {
+        "args": [
+            "-i",
+            "example.dlt",
+            "-o",
+            "example.exe",
+            "--verbose",
+            "--run"
+        ]
+    }
+}
