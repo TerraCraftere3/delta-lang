@@ -2,6 +2,8 @@
 #include "Log.h"
 #include "Files.h"
 #include "Tokenizer.h"
+#include "Parser.h"
+#include "Assembler.h"
 #include <fstream>
 
 namespace Delta
@@ -43,7 +45,19 @@ namespace Delta
         Tokenizer tokenizer(contents);
         std::vector<Token> tokens = tokenizer.tokenize();
         LOG_TRACE("Tokenized {} tokens", tokens.size());
-        std::string assembly = assemble(tokens);
+        Parser parser(tokens);
+        auto parseTree = parser.parse();
+        std::string assembly = "";
+        if (parseTree.has_value())
+        {
+            Assembler assembler(parseTree.value());
+            assembly = assembler.generate();
+        }
+        else
+        {
+            LOG_ERROR("Failed to create parse tree");
+            return 1;
+        }
 
         std::string intDir = Files::joinPaths(Files::getDirectory(props.outputFile), "int");
         if (!Files::fileExists(intDir))
