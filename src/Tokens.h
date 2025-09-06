@@ -8,8 +8,13 @@ namespace Delta
     enum class TokenType
     {
         exit,
+        let,
+        equals,
         int_literal,
-        semicolon
+        semicolon,
+        open_paren,
+        close_paren,
+        identifier
     };
 
     struct Token

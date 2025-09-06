@@ -23,10 +23,17 @@ namespace Delta
                     buf.clear();
                     continue;
                 }
+                else if (buf == "let")
+                {
+                    tokens.push_back({TokenType::let});
+                    buf.clear();
+                    continue;
+                }
                 else
                 {
-                    LOG_ERROR("Unexpected identifier: '{}'", buf);
-                    exit(EXIT_FAILURE);
+                    tokens.push_back({TokenType::identifier, buf});
+                    buf.clear();
+                    continue;
                 }
             }
             else if (std::isdigit(peek().value()))
@@ -44,6 +51,24 @@ namespace Delta
             {
                 consume();
                 tokens.push_back({TokenType::semicolon});
+                continue;
+            }
+            else if (peek().value() == '(')
+            {
+                consume();
+                tokens.push_back({TokenType::open_paren});
+                continue;
+            }
+            else if (peek().value() == ')')
+            {
+                consume();
+                tokens.push_back({TokenType::close_paren});
+                continue;
+            }
+            else if (peek().value() == '=')
+            {
+                consume();
+                tokens.push_back({TokenType::equals});
                 continue;
             }
             else if (std::isspace(peek().value()))

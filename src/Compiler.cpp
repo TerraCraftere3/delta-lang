@@ -46,7 +46,7 @@ namespace Delta
         std::vector<Token> tokens = tokenizer.tokenize();
         LOG_TRACE("Tokenized {} tokens", tokens.size());
         Parser parser(tokens);
-        auto parseTree = parser.parse();
+        auto parseTree = parser.parseProgram();
         std::string assembly = "";
         if (parseTree.has_value())
         {
@@ -55,7 +55,7 @@ namespace Delta
         }
         else
         {
-            LOG_ERROR("Failed to create parse tree");
+            LOG_ERROR("Invalid Program");
             return 1;
         }
 

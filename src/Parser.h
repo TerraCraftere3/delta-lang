@@ -10,10 +10,11 @@ namespace Delta
     {
     public:
         Parser(std::vector<Token> tokens);
-        std::optional<NodeExit> parse();
+        std::optional<NodeProgram> parseProgram();
+        std::optional<NodeStatement> parseStatement();
+        std::optional<NodeExpression> parseExpression();
 
     private:
-        std::optional<NodeExpression> parseExpression();
         std::optional<Token> peek(int count = 1) const;
         Token consume();
 
