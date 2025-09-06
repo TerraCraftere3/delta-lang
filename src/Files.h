@@ -17,6 +17,7 @@ namespace Delta
         static std::string getDirectory(const std::string &path);
         static bool createDirectory(const std::string &path);
         static std::string getProgramPath();
+        static std::string getWorkingDirectory();
         static std::string joinPaths(const std::string &path1, const std::string &path2);
     };
 }

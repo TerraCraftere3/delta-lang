@@ -7,7 +7,7 @@ namespace Delta
 {
     enum class TokenType
     {
-        _return,
+        exit,
         int_literal,
         semicolon
     };

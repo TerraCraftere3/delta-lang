@@ -98,6 +98,8 @@ bool Delta::Files::createDirectory(const std::string &path)
 
 std::string Delta::Files::getProgramPath() { return GetExecutablePath(); }
 
+std::string Delta::Files::getWorkingDirectory() { return std::filesystem::current_path().string(); }
+
 std::string Delta::Files::joinPaths(const std::string &path1,
                                     const std::string &path2)
 {
