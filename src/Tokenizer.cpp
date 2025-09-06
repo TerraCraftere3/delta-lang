@@ -71,6 +71,30 @@ namespace Delta
                 tokens.push_back({TokenType::equals});
                 continue;
             }
+            else if (peek().value() == '+')
+            {
+                consume();
+                tokens.push_back({TokenType::add});
+                continue;
+            }
+            else if (peek().value() == '-')
+            {
+                consume();
+                tokens.push_back({TokenType::sub});
+                continue;
+            }
+            else if (peek().value() == '*')
+            {
+                consume();
+                tokens.push_back({TokenType::mult});
+                continue;
+            }
+            else if (peek().value() == '/')
+            {
+                consume();
+                tokens.push_back({TokenType::divide});
+                continue;
+            }
             else if (std::isspace(peek().value()))
             {
                 consume();

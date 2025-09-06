@@ -12,18 +12,34 @@ The Delta Programming Language
 ## Grammar
 $$
 \begin{align}
-[\text{prog}] &\to [\text{statement}]^*
+[\text{Prog}] &\to [\text{Statement}]^*
 \\
-[\text{statement}] &\to \begin{cases}
-exit([\text{expr}]); 
-\\
- let \space\text{identifier} = [\text{expr}];
+[\text{Statement}] &\to 
+\begin{cases}
+    exit([\text{Expr}]); 
+    \\
+    let \space\text{Identifier} = [\text{Expr}];
 \end{cases}
 \\
-[\text{expr}] &\to \begin{cases}
-\text{int\_lit}
+[\text{BinExpr}] &\to
+\begin{cases}
+    [\text{Expr}] * [\text{Expr}] & \text{prec}=1
+    \\
+    [\text{Expr}] + [\text{Expr}] & \text{prec}=0
+\end{cases}
 \\
-\text{ident}
+[\text{Term}] &\to 
+\begin{cases}
+    \text{Int Literal}
+    \\
+    \text{Identifier}
+\end{cases}
+\\
+[\text{Expr}] &\to 
+\begin{cases}
+    \text{Term}
+    \\
+    \text{BinExpr}
 \end{cases}
 \end{align}
 $$

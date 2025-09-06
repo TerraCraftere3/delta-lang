@@ -7,14 +7,18 @@ extern ExitProcess
 
 section .text
 _start:
-	mov rax, 7
+	mov rax, 3
 	push rax ; Stack now at 1
-	mov rax, 8
+	mov rax, 4
 	push rax ; Stack now at 2
 	push QWORD [rsp+8] ; Stack now at 3
-	pop rcx ; Stack now at 2
-	sub rsp, 40
+	push QWORD [rsp+8] ; Stack now at 4
+	pop rax ; Stack now at 3
+	pop rbx ; Stack now at 2
+	add rax, rbx
+	push rax ; Stack now at 3
+	push QWORD [rsp+0] ; Stack now at 4
+	pop rcx ; Stack now at 3
 	call ExitProcess
-	sub rsp, 40
-	mov ecx, 0
+	mov rcx, 0
 	call ExitProcess

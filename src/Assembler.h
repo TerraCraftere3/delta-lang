@@ -17,12 +17,14 @@ namespace Delta
     public:
         Assembler(NodeProgram root);
         std::string generate();
-        void generateExpression(const NodeExpression &expression);
-        void generateStatement(const NodeStatement &statement);
+        void generateTerm(const NodeExpressionTerm *term);
+        void generateExpression(const NodeExpression *expression);
+        void generateStatement(const NodeStatement *statement);
 
     private:
         void push(const std::string &reg);
         void pop(const std::string &reg);
+        void alignStackAndCall(const std::string &function);
 
     private:
         const NodeProgram m_program;

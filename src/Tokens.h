@@ -14,7 +14,11 @@ namespace Delta
         semicolon,
         open_paren,
         close_paren,
-        identifier
+        identifier,
+        add,
+        sub,
+        mult,
+        divide
     };
 
     struct Token
