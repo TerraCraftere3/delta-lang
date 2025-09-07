@@ -93,6 +93,7 @@ namespace Delta
                 LOG_ERROR("Invalid Scope");
                 exit(EXIT_FAILURE);
             }
+            stmt_if->pred = parseIfPred();
             auto stmt = m_allocator.alloc<NodeStatement>();
             stmt->var = stmt_if;
             statement = stmt;
@@ -135,6 +136,55 @@ namespace Delta
         {
             return std::nullopt;
         }
+    }
+
+    std::optional<NodeIfPred *> Parser::parseIfPred()
+    {
+        if (try_consume(TokenType::elif).has_value())
+        {
+            try_consume(TokenType::open_paren, "Expected '('");
+            auto elif = m_allocator.alloc<NodeIfPredElif>();
+            if (auto expr = parseExpression())
+            {
+                elif->expr = expr.value();
+            }
+            else
+            {
+                LOG_ERROR("Expected Expression");
+                exit(EXIT_FAILURE);
+            }
+            try_consume(TokenType::close_paren, "Expected ')'");
+            if (auto scope = parseScope())
+            {
+                elif->scope = scope.value();
+            }
+            else
+            {
+                LOG_ERROR("Expected Scope");
+                exit(EXIT_FAILURE);
+            }
+            elif->pred = parseIfPred();
+            auto pred = m_allocator.alloc<NodeIfPred>();
+            pred->var = elif;
+            return pred;
+        }
+        if (try_consume(TokenType::else_).has_value())
+        {
+            auto else_ = m_allocator.alloc<NodeIfPredElse>();
+            if (auto scope = parseScope())
+            {
+                else_->scope = scope.value();
+            }
+            else
+            {
+                LOG_ERROR("Expected Scope");
+                exit(EXIT_FAILURE);
+            }
+            auto pred = m_allocator.alloc<NodeIfPred>();
+            pred->var = else_;
+            return pred;
+        }
+        return std::nullopt;
     }
 
     std::optional<NodeExpression *> Parser::parseExpression(int min_prec)

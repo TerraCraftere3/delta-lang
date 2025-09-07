@@ -79,10 +79,34 @@ namespace Delta
         const char *id = "Scope";
     };
 
+    struct NodeIfPred;
+
+    struct NodeIfPredElif
+    {
+        NodeExpression *expr;
+        NodeScope *scope;
+        std::optional<NodeIfPred *> pred;
+        const char *id = "If Pred Elif";
+    };
+
+    struct NodeIfPredElse
+    {
+        NodeScope *scope;
+        const char *id = "If Pred Else";
+    };
+
+    struct NodeIfPred
+    {
+        std::variant<NodeIfPredElif *, NodeIfPredElse *> var;
+        const char *id = "If Pred";
+    };
+
     struct NodeStatementIf
     {
         NodeExpression *expr;
         NodeScope *scope;
+        std::optional<NodeIfPred *> pred;
+        const char *id = "Statement If";
     };
 
     struct NodeStatementExit
@@ -109,4 +133,11 @@ namespace Delta
         std::vector<NodeStatement *> statements;
         const char *id = "Program";
     };
+
+    template <typename T>
+    std::string getNodeID(T node)
+    {
+        std::string name = std::string(node.id);
+        return name;
+    }
 }

@@ -32,6 +32,16 @@ namespace Delta
                     tokens.push_back({TokenType::if_});
                     buf.clear();
                 }
+                else if (buf == "elif")
+                {
+                    tokens.push_back({TokenType::elif});
+                    buf.clear();
+                }
+                else if (buf == "else")
+                {
+                    tokens.push_back({TokenType::else_});
+                    buf.clear();
+                }
                 else
                 {
                     tokens.push_back({TokenType::identifier, buf});

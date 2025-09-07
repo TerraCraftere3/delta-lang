@@ -7,17 +7,51 @@ extern ExitProcess
 
 section .text
 _start:
-	mov rax, 3
+	mov rax, 2
 	push rax
 	mov rax, 3
+	push rax
+	mov rax, 2
 	push rax
 	pop rax
 	pop rbx
 	mul rbx
 	push rax
+	mov rax, 10
+	push rax
+	pop rax
+	pop rbx
+	sub rax, rbx
+	push rax
+	pop rax
+	pop rbx
+	div rbx
+	push rax
 	mov rax, 1
 	push rax
+	push QWORD [rsp+0]
+	pop rax
+	test rax, rax
+	jz label0
+	; Begin Scope 1
+	mov rax, 69
+	push rax
 	pop rcx
+	sub rsp, 8 ; Align stack for Windows ABI
 	call ExitProcess
+	add rsp, 8 ; Restore stack after call
+	; End Scope 1
+label0:
+	; Begin Scope 1
+	mov rax, 68
+	push rax
+	pop rcx
+	sub rsp, 8 ; Align stack for Windows ABI
+	call ExitProcess
+	add rsp, 8 ; Restore stack after call
+	; End Scope 1
+label1:
 	mov rcx, 0
+	sub rsp, 8 ; Align stack for Windows ABI
 	call ExitProcess
+	add rsp, 8 ; Restore stack after call

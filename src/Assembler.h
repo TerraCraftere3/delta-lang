@@ -24,6 +24,7 @@ namespace Delta
         void generateBinaryExpression(const NodeExpressionBinary *bin_expr);
         void generateExpression(const NodeExpression *expression);
         void generateScope(const NodeScope *scope);
+        void generateIfPred(const NodeIfPred *pred, const std::string &end_label);
         void generateStatement(const NodeStatement *statement);
 
     private:

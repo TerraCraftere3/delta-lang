@@ -1,6 +1,8 @@
-let x = 3 * 3;
-// Test Comment
-/*if (x) {
-    exit(42);
-}*/
-exit(1);
+let y = (10 - 2 * 3) / 2;
+let x = 1;
+
+if(x){
+    exit(69);
+}else{
+    exit(68);
+}

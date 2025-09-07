@@ -8,6 +8,8 @@ namespace Delta
     enum class TokenType
     {
         if_,         // if
+        elif,        // elif
+        else_,       // else
         exit,        // exit
         let,         // let
         equals,      // =

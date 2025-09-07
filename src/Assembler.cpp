@@ -126,7 +126,8 @@ namespace Delta
 
         ExpressionVisitor visitor(this);
         std::visit(visitor, expression->var);
-    }
+    };
+
     void Assembler::generateScope(const NodeScope *scope)
     {
         begin_scope();
@@ -135,6 +136,40 @@ namespace Delta
             generateStatement(statement);
         }
         end_scope();
+    };
+
+    void Assembler::generateIfPred(const NodeIfPred *pred, const std::string &end_label)
+    {
+        struct PredVisitor
+        {
+            Assembler *gen;
+            const std::string &end_label;
+            PredVisitor(Assembler *gen, const std::string &end_label) : gen(gen), end_label(end_label) {}
+
+            void operator()(const NodeIfPredElif *pred_elif)
+            {
+                gen->generateExpression(pred_elif->expr);
+                gen->pop("rax");
+                std::string label = gen->create_label();
+                gen->m_output << "\ttest rax, rax\n";
+                gen->m_output << "\tjz " << label << "\n";
+                gen->generateScope(pred_elif->scope);
+                gen->m_output << "\tjmp " << end_label << "\n";
+                if (pred_elif->pred.has_value())
+                {
+                    gen->m_output << label << ":\n";
+                    gen->generateIfPred(pred_elif->pred.value(), end_label);
+                }
+            }
+
+            void operator()(const NodeIfPredElse *pred_else)
+            {
+                gen->generateScope(pred_else->scope);
+            }
+        };
+
+        PredVisitor visitor(this, end_label);
+        std::visit(visitor, pred->var);
     };
 
     void Assembler::generateStatement(const NodeStatement *statement)
@@ -175,6 +210,12 @@ namespace Delta
                 gen->m_output << "\tjz " << label << "\n";
                 gen->generateScope(statement_if->scope);
                 gen->m_output << label << ":\n";
+                if (statement_if->pred.has_value())
+                {
+                    std::string end_label = gen->create_label();
+                    gen->generateIfPred(statement_if->pred.value(), label);
+                    gen->m_output << end_label << ":\n";
+                }
             }
         };
 
@@ -216,8 +257,8 @@ namespace Delta
 
     std::string Assembler::create_label()
     {
-        m_label_count++;
         std::string name = "label" + std::to_string(m_label_count);
+        m_label_count++;
         return name;
     }
 
