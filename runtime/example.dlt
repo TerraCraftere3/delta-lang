@@ -1,9 +1,5 @@
-let x = 16 * 2;
-{
-    let y = 9;
-    {
-        let z = 3;
-    }
-    let z = 64;
+let x = 3 * 3;
+if (x) {
+    exit(42);
 }
-exit(x);
+exit(1);

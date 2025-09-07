@@ -27,6 +27,11 @@ namespace Delta
                     tokens.push_back({TokenType::let});
                     buf.clear();
                 }
+                else if (buf == "if")
+                {
+                    tokens.push_back({TokenType::if_});
+                    buf.clear();
+                }
                 else
                 {
                     tokens.push_back({TokenType::identifier, buf});

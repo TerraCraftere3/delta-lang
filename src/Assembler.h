@@ -23,11 +23,13 @@ namespace Delta
         void generateTerm(const NodeExpressionTerm *term);
         void generateBinaryExpression(const NodeExpressionBinary *bin_expr);
         void generateExpression(const NodeExpression *expression);
+        void generateScope(const NodeScope *scope);
         void generateStatement(const NodeStatement *statement);
 
     private:
         void push(const std::string &reg);
         void pop(const std::string &reg);
+        std::string create_label();
         void begin_scope();
         void end_scope();
         void alignStackAndCall(const std::string &function);
@@ -36,6 +38,7 @@ namespace Delta
         const NodeProgram m_program;
         std::stringstream m_output;
         size_t m_stack_size = 0;
+        size_t m_label_count = 0;
         std::vector<Var> m_vars{};
         std::vector<size_t> m_scopes{};
     };

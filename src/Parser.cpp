@@ -56,16 +56,45 @@ namespace Delta
             }
             try_consume(TokenType::semicolon, "Expected ';'");
         }
-        else if (auto open_curly = try_consume(TokenType::open_curly))
+        else if (peek().has_value() && peek().value().type == TokenType::open_curly)
         {
-            auto scope = m_allocator.alloc<NodeStatementScope>();
-            while (auto statement = parseStatement())
+            if (auto scope = parseScope())
             {
-                scope->statements.push_back(statement.value());
+                auto stmt = m_allocator.alloc<NodeStatement>();
+                stmt->var = scope.value();
+                statement = stmt;
             }
-            try_consume(TokenType::close_curly, "Expected '}'");
+            else
+            {
+                LOG_ERROR("Invalid Scope");
+                exit(EXIT_FAILURE);
+            }
+        }
+        else if (auto if_ = try_consume(TokenType::if_))
+        {
+            try_consume(TokenType::open_paren, "Expected '('");
+            auto stmt_if = m_allocator.alloc<NodeStatementIf>();
+            if (auto expr = parseExpression())
+            {
+                stmt_if->expr = expr.value();
+            }
+            else
+            {
+                LOG_ERROR("Invalid Expression");
+                exit(EXIT_FAILURE);
+            }
+            try_consume(TokenType::close_paren, "Expected ')'");
+            if (auto scope = parseScope())
+            {
+                stmt_if->scope = scope.value();
+            }
+            else
+            {
+                LOG_ERROR("Invalid Scope");
+                exit(EXIT_FAILURE);
+            }
             auto stmt = m_allocator.alloc<NodeStatement>();
-            stmt->var = scope;
+            stmt->var = stmt_if;
             statement = stmt;
         }
 
@@ -88,6 +117,24 @@ namespace Delta
             }
         }
         return program;
+    }
+
+    std::optional<NodeScope *> Parser::parseScope()
+    {
+        if (auto open_curly = try_consume(TokenType::open_curly))
+        {
+            auto scope = m_allocator.alloc<NodeScope>();
+            while (auto statement = parseStatement())
+            {
+                scope->statements.push_back(statement.value());
+            }
+            try_consume(TokenType::close_curly, "Expected '}'");
+            return scope;
+        }
+        else
+        {
+            return std::nullopt;
+        }
     }
 
     std::optional<NodeExpression *> Parser::parseExpression(int min_prec)

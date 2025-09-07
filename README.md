@@ -1,4 +1,4 @@
-# delta-lang [![CMake](https://github.com/TerraCraftere3/delta-lang/actions/workflows/cmake.yml/badge.svg)](https://github.com/TerraCraftere3/delta-lang/actions/workflows/cmake.yml)
+# delta-lang [![CMake](https://github.com/TerraCraftere3/delta-lang/actions/workflows/cmake_windows.yml/badge.svg)](https://github.com/TerraCraftere3/delta-lang/actions/workflows/cmake_windows.yml)
 The Delta Programming Language
 
 ## How to Build
@@ -38,6 +38,16 @@ let a = 3;
 }
 let b = 3;
 ```
+You cannot shadow variables that are outside scopes
+
+### IF Statements
+```
+let a = 3;
+if(a){
+    let b = a + 3;
+}
+```
+You cannot shadow variables that are outside scopes
 
 ## Grammar
 $$
@@ -50,12 +60,18 @@ $$
     \\
     let \space\text{Identifier} = [\text{Expr}];
     \\
+    if([\text{Expr}])[\text{Scope}]
+    \\
+    [\text{Scope}]
+\end{cases}
+\\
+[\text{Scope}] &\to
+\begin{cases}
     \{[\text{Statement}]^*\}
 \end{cases}
 \\
 [\text{BinExpr}] &\to
 \begin{cases}
-    \\
     [\text{Expr}] / [\text{Expr}] & \text{prec}=1
     \\
     [\text{Expr}] * [\text{Expr}] & \text{prec}=1

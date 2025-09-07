@@ -7,27 +7,27 @@ extern ExitProcess
 
 section .text
 _start:
-	mov rax, 2
+	mov rax, 3
 	push rax
-	mov rax, 16
+	mov rax, 3
 	push rax
 	pop rax
 	pop rbx
 	mul rbx
 	push rax
-	; Begin Scope 1
-	mov rax, 9
-	push rax
-	; Begin Scope 2
-	mov rax, 3
-	push rax
-	add rsp, 8 ; Clean up 1 variable
-	; End Scope 2
-	mov rax, 64
-	push rax
-	add rsp, 16 ; Clean up 2 variables
-	; End Scope 1
 	push QWORD [rsp+0]
+	pop rax
+	test rax, rax
+	jz label1
+	; Begin Scope 1
+	mov rax, 42
+	push rax
+	pop rcx
+	call ExitProcess
+	; End Scope 1
+label1:
+	mov rax, 1
+	push rax
 	pop rcx
 	call ExitProcess
 	mov rcx, 0

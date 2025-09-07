@@ -7,6 +7,7 @@ namespace Delta
 {
     enum class TokenType
     {
+        if_,         // if
         exit,        // exit
         let,         // let
         equals,      // =

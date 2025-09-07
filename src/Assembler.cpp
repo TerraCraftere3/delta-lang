@@ -28,29 +28,29 @@ namespace Delta
     {
         struct TermVisitor
         {
-            Assembler *generator;
-            TermVisitor(Assembler *gen) : generator(gen) {}
+            Assembler *gen;
+            TermVisitor(Assembler *gen) : gen(gen) {}
             void operator()(const NodeTermIntegerLiteral *term_int_lit) const
             {
-                generator->m_output << "\tmov rax, " << term_int_lit->int_literal.value.value() << "\n"; // ASM: Move integer into rax
-                generator->push("rax");                                                                  // ASM: Push rax (integer) to the stack
+                gen->m_output << "\tmov rax, " << term_int_lit->int_literal.value.value() << "\n"; // ASM: Move integer into rax
+                gen->push("rax");                                                                  // ASM: Push rax (integer) to the stack
             }
             void operator()(const NodeTermIdentifier *term_ident) const
             {
-                auto it = std::find_if(generator->m_vars.cbegin(), generator->m_vars.cend(), [&](const Var &var)
+                auto it = std::find_if(gen->m_vars.cbegin(), gen->m_vars.cend(), [&](const Var &var)
                                        { return var.name == term_ident->ident.value.value(); });
-                if (it == generator->m_vars.cend())
+                if (it == gen->m_vars.cend())
                 {
                     LOG_ERROR("Undeclared identifier {}", term_ident->ident.value.value());
                     exit(EXIT_FAILURE);
                 }
 
-                size_t offset = (generator->m_stack_size - (*it).stack_loc - 1) * 8;
-                generator->push("QWORD [rsp+" + std::to_string(offset) + "]");
+                size_t offset = (gen->m_stack_size - (*it).stack_loc - 1) * 8;
+                gen->push("QWORD [rsp+" + std::to_string(offset) + "]");
             }
             void operator()(const NodeTermParen *term_paren) const
             {
-                generator->generateExpression(term_paren->expr);
+                gen->generateExpression(term_paren->expr);
             }
         };
         TermVisitor visitor(this);
@@ -61,44 +61,44 @@ namespace Delta
     {
         struct BinaryExpressionVisitor
         {
-            Assembler *generator;
-            BinaryExpressionVisitor(Assembler *gen) : generator(gen) {}
+            Assembler *gen;
+            BinaryExpressionVisitor(Assembler *gen) : gen(gen) {}
 
             void operator()(const NodeExpressionBinarySubtraction *sub) const
             {
-                generator->generateExpression(sub->right);
-                generator->generateExpression(sub->left);
-                generator->pop("rax");
-                generator->pop("rbx");
-                generator->m_output << "\tsub rax, rbx\n";
-                generator->push("rax");
+                gen->generateExpression(sub->right);
+                gen->generateExpression(sub->left);
+                gen->pop("rax");
+                gen->pop("rbx");
+                gen->m_output << "\tsub rax, rbx\n";
+                gen->push("rax");
             }
             void operator()(const NodeExpressionBinaryAddition *add) const
             {
-                generator->generateExpression(add->right);
-                generator->generateExpression(add->left);
-                generator->pop("rax");
-                generator->pop("rbx");
-                generator->m_output << "\tadd rax, rbx\n";
-                generator->push("rax");
+                gen->generateExpression(add->right);
+                gen->generateExpression(add->left);
+                gen->pop("rax");
+                gen->pop("rbx");
+                gen->m_output << "\tadd rax, rbx\n";
+                gen->push("rax");
             }
             void operator()(const NodeExpressionBinaryMultiplication *mul) const
             {
-                generator->generateExpression(mul->right);
-                generator->generateExpression(mul->left);
-                generator->pop("rax");
-                generator->pop("rbx");
-                generator->m_output << "\tmul rbx\n";
-                generator->push("rax");
+                gen->generateExpression(mul->right);
+                gen->generateExpression(mul->left);
+                gen->pop("rax");
+                gen->pop("rbx");
+                gen->m_output << "\tmul rbx\n";
+                gen->push("rax");
             }
             void operator()(const NodeExpressionBinaryDivision *div) const
             {
-                generator->generateExpression(div->right);
-                generator->generateExpression(div->left);
-                generator->pop("rax");
-                generator->pop("rbx");
-                generator->m_output << "\tdiv rbx\n";
-                generator->push("rax");
+                gen->generateExpression(div->right);
+                gen->generateExpression(div->left);
+                gen->pop("rax");
+                gen->pop("rbx");
+                gen->m_output << "\tdiv rbx\n";
+                gen->push("rax");
             }
         };
 
@@ -110,57 +110,71 @@ namespace Delta
     {
         struct ExpressionVisitor
         {
-            Assembler *generator;
-            ExpressionVisitor(Assembler *gen) : generator(gen) {}
+            Assembler *gen;
+            ExpressionVisitor(Assembler *gen) : gen(gen) {}
 
             void
             operator()(const NodeExpressionTerm *expression_term) const
             {
-                generator->generateTerm(expression_term);
+                gen->generateTerm(expression_term);
             }
             void operator()(const NodeExpressionBinary *expression_binary) const
             {
-                generator->generateBinaryExpression(expression_binary);
+                gen->generateBinaryExpression(expression_binary);
             }
         };
 
         ExpressionVisitor visitor(this);
         std::visit(visitor, expression->var);
+    }
+    void Assembler::generateScope(const NodeScope *scope)
+    {
+        begin_scope();
+        for (const NodeStatement *statement : scope->statements)
+        {
+            generateStatement(statement);
+        }
+        end_scope();
     };
 
     void Assembler::generateStatement(const NodeStatement *statement)
     {
         struct StatementVisitor
         {
-            Assembler *generator;
-            StatementVisitor(Assembler *gen) : generator(gen) {}
+            Assembler *gen;
+            StatementVisitor(Assembler *gen) : gen(gen) {}
 
-            void operator()(const NodeStatementScope *scope)
-            {
-                generator->begin_scope();
-                for (const NodeStatement *statement : scope->statements)
-                {
-                    generator->generateStatement(statement);
-                }
-                generator->end_scope();
-            }
             void operator()(const NodeStatementExit *statement_exit)
             {
-                generator->generateExpression(statement_exit->expression); // ASM: Expression
-                generator->pop("rcx");                                     // ASM: Pop into Exit Code Register (rcx)
-                generator->alignStackAndCall("ExitProcess");               // ASM: Call ExitProcess
+                gen->generateExpression(statement_exit->expression); // ASM: Expression
+                gen->pop("rcx");                                     // ASM: Pop into Exit Code Register (rcx)
+                gen->alignStackAndCall("ExitProcess");               // ASM: Call ExitProcess
             }
             void operator()(const NodeStatementLet *statement_let)
             {
-                auto it = std::find_if(generator->m_vars.cbegin(), generator->m_vars.cend(), [&](const Var &var)
+                auto it = std::find_if(gen->m_vars.cbegin(), gen->m_vars.cend(), [&](const Var &var)
                                        { return var.name == statement_let->ident.value.value(); });
-                if (it != generator->m_vars.cend())
+                if (it != gen->m_vars.cend())
                 {
                     LOG_ERROR("Identifier '{}' exists already", statement_let->ident.value.value());
                     exit(EXIT_FAILURE);
                 }
-                generator->m_vars.push_back(Var{statement_let->ident.value.value(), generator->m_stack_size});
-                generator->generateExpression(statement_let->expression);
+                gen->m_vars.push_back(Var{statement_let->ident.value.value(), gen->m_stack_size});
+                gen->generateExpression(statement_let->expression);
+            }
+            void operator()(const NodeScope *scope)
+            {
+                gen->generateScope(scope);
+            }
+            void operator()(const NodeStatementIf *statement_if)
+            {
+                gen->generateExpression(statement_if->expr);
+                gen->pop("rax");
+                std::string label = gen->create_label();
+                gen->m_output << "\ttest rax, rax\n";
+                gen->m_output << "\tjz " << label << "\n";
+                gen->generateScope(statement_if->scope);
+                gen->m_output << label << ":\n";
             }
         };
 
@@ -193,16 +207,26 @@ namespace Delta
         m_output << "\tpush " << reg << "\n";
         m_stack_size++;
     }
+
     void Assembler::pop(const std::string &reg)
     {
         m_output << "\tpop " << reg << "\n";
         m_stack_size--;
     }
+
+    std::string Assembler::create_label()
+    {
+        m_label_count++;
+        std::string name = "label" + std::to_string(m_label_count);
+        return name;
+    }
+
     void Assembler::begin_scope()
     {
         m_scopes.push_back(m_vars.size());
         m_output << "\t; Begin Scope " << m_scopes.size() << "\n";
     }
+
     void Assembler::end_scope()
     {
         size_t pop_count = m_vars.size() - m_scopes.back();

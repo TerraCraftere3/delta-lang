@@ -71,6 +71,20 @@ namespace Delta
         const char *id = "Expression";
     };
 
+    struct NodeStatement;
+
+    struct NodeScope
+    {
+        std::vector<NodeStatement *> statements;
+        const char *id = "Scope";
+    };
+
+    struct NodeStatementIf
+    {
+        NodeExpression *expr;
+        NodeScope *scope;
+    };
+
     struct NodeStatementExit
     {
         NodeExpression *expression;
@@ -84,17 +98,9 @@ namespace Delta
         const char *id = "Statement Let";
     };
 
-    struct NodeStatement;
-
-    struct NodeStatementScope
-    {
-        std::vector<NodeStatement *> statements;
-        const char *id = "Scope";
-    };
-
     struct NodeStatement
     {
-        std::variant<NodeStatementExit *, NodeStatementLet *, NodeStatementScope *> var;
+        std::variant<NodeStatementExit *, NodeStatementLet *, NodeStatementIf *, NodeScope *> var;
         const char *id = "Statement";
     };
 
