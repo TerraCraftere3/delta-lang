@@ -7,77 +7,80 @@ extern ExitProcess
 
 section .text
 _start:
-; let int64
-	mov rax, 2
+; let int64 y
+	mov eax, 2
 	push rax
-	mov rax, 3
+	mov eax, 3
 	push rax
-	mov rax, 2
-	push rax
-	pop rax
-	pop rbx
-	mul rbx
-	push rax
-	mov rax, 10
+	mov eax, 2
 	push rax
 	pop rax
 	pop rbx
-	sub rax, rbx
+	imul eax, ebx
+	push rax
+	mov eax, 10
 	push rax
 	pop rax
 	pop rbx
-	div rbx
+	sub eax, ebx
+	push rax
+	pop rax
+	pop rbx
+	cdq
+	idiv ebx
 	push rax
 ; /let int64
-; let int8
-	mov rax, 7
+; let int8 x
+	mov eax, 7
 	push rax
 ; /let int8
 ; if
-	mov rax, 1
+	mov eax, 1
 	push rax
 	pop rax
 	test rax, rax
 	jz label0
 ; Begin Scope 1
-; assign int8
-	mov rax, 1
+; assign int8 x
+	mov eax, 1
 	push rax
 	pop rax
-	mov [rsp+0], rax
+	mov BYTE [rsp+0], al
 ; /assign int8
 ; Begin Scope 2
-; let int64
-	mov rax, 3
+; let int64 a
+	mov eax, 3
 	push rax
-	mov rax, 3
+	mov eax, 3
 	push rax
-	push QWORD [rsp+24]
+	mov rax, QWORD [rsp+24]
+	push rax
 	pop rax
 	pop rbx
 	add rax, rbx
 	push rax
-	mov rax, 27
+	mov eax, 27
 	push rax
 	pop rax
 	pop rbx
-	mul rbx
+	imul rax, rbx
 	push rax
 	pop rax
 	pop rbx
-	div rbx
+	cqo
+	idiv rbx
 	push rax
 ; /let int64
-; let int32
-	mov rax, 1
+; let int32 b
+	mov eax, 1
 	push rax
 ; /let int32
-; let int16
-	mov rax, 2
+; let int16 c
+	mov eax, 2
 	push rax
 ; /let int16
-; let int8
-	mov rax, 3
+; let int8 d
+	mov eax, 3
 	push rax
 ; /let int8
 	add rsp, 32 ; Clean up 4 variables (32 bytes)
@@ -86,17 +89,18 @@ _start:
 	jmp label1
 label0:
 ; Begin Scope 1
-; assign int8
-	mov rax, 0
+; assign int8 x
+	mov eax, 0
 	push rax
 	pop rax
-	mov [rsp+0], rax
+	mov BYTE [rsp+0], al
 ; /assign int8
 ; End Scope 1
 label1:
 ; /if
 ; exit
-	push QWORD [rsp+0]
+	mov al, BYTE [rsp+0]
+	push rax
 	pop rcx
 	sub rsp, 8 ; Align stack for Windows ABI
 	call ExitProcess

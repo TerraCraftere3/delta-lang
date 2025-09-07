@@ -36,10 +36,21 @@ namespace Delta
     private:
         void push(const std::string &reg);
         void pop(const std::string &reg);
+        void pushTyped(const std::string &reg, DataType type);
+        void popTyped(const std::string &reg, DataType type);
         std::string create_label();
         void begin_scope();
         void end_scope();
         void alignStackAndCall(const std::string &function);
+
+        // Type-aware helper methods
+        std::string getAppropriateRegister(DataType type, const std::string &base_reg = "rax");
+        void generateTypedMove(const std::string &dest, const std::string &src, DataType type);
+        void generateTypedBinaryOp(const std::string &op, DataType leftType, DataType rightType);
+        DataType inferExpressionType(const NodeExpression *expression);
+        DataType inferTermType(const NodeExpressionTerm *term);
+        DataType inferBinaryExpressionType(const NodeExpressionBinary *bin_expr);
+        void validateTypeCompatibility(DataType expected, DataType actual, const std::string &context);
 
     private:
         const NodeProgram m_program;
@@ -49,5 +60,8 @@ namespace Delta
         size_t m_label_count = 0;
         std::vector<Var> m_vars{};
         std::vector<size_t> m_scopes{};
+
+        // Type tracking for expressions
+        std::map<const NodeExpression *, DataType> m_expression_types{};
     };
 }

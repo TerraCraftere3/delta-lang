@@ -84,16 +84,13 @@ namespace Delta
         if (declared == actual)
             return true;
 
-        if (declared == DataType::INT64 &&
-            (actual == DataType::INT32 || actual == DataType::INT16 || actual == DataType::INT8))
+        if ((declared == DataType::INT8 || declared == DataType::INT16 ||
+             declared == DataType::INT32 || declared == DataType::INT64) &&
+            (actual == DataType::INT8 || actual == DataType::INT16 ||
+             actual == DataType::INT32 || actual == DataType::INT64))
+        {
             return true;
-
-        if (declared == DataType::INT32 &&
-            (actual == DataType::INT16 || actual == DataType::INT8))
-            return true;
-
-        if (declared == DataType::INT16 && actual == DataType::INT8)
-            return true;
+        }
 
         return false;
     }
