@@ -1,7 +1,12 @@
-long add(long a, long b) {
-    return a + b;
+int fibonacci(int n) {
+    if (n <= 1){
+        return n;
+    }
+    else{
+        return fibonacci(n - 1) + fibonacci(n - 2);
+    }
 }
 
 int main() {
-    return add(5, 3);
+    return fibonacci(10); // should output 55
 }

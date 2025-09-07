@@ -290,6 +290,155 @@ namespace Delta
                 DataType resultType = (getTypeSize(leftType) >= getTypeSize(rightType)) ? leftType : rightType;
                 gen->pushTyped("rax", resultType);
             }
+            void operator()(const NodeExpressionBinaryGreater *gt) const
+            {
+                DataType rightType = gen->inferExpressionType(gt->right);
+                DataType leftType = gen->inferExpressionType(gt->left);
+
+                gen->generateExpression(gt->right);
+                gen->generateExpression(gt->left);
+
+                gen->pop("rax"); // left operand
+                gen->pop("rbx"); // right operand
+
+                // Compare left with right
+                DataType compareType = (getTypeSize(leftType) >= getTypeSize(rightType)) ? leftType : rightType;
+
+                switch (compareType)
+                {
+                case DataType::INT8:
+                    gen->m_output << "\tcmp al, bl\n";
+                    break;
+                case DataType::INT16:
+                    gen->m_output << "\tcmp ax, bx\n";
+                    break;
+                case DataType::INT32:
+                    gen->m_output << "\tcmp eax, ebx\n";
+                    break;
+                case DataType::INT64:
+                    gen->m_output << "\tcmp rax, rbx\n";
+                    break;
+                default:
+                    gen->m_output << "\tcmp rax, rbx\n";
+                    break;
+                }
+
+                // Set result based on comparison (1 if true, 0 if false)
+                gen->m_output << "\tsetg al\n";         // Set AL to 1 if greater
+                gen->m_output << "\tmovzx rax, al\n";   // Zero-extend to full register
+                gen->pushTyped("rax", DataType::INT32); // Push boolean result as int
+            }
+
+            void operator()(const NodeExpressionBinaryGreaterEquals *gte) const
+            {
+                DataType rightType = gen->inferExpressionType(gte->right);
+                DataType leftType = gen->inferExpressionType(gte->left);
+
+                gen->generateExpression(gte->right);
+                gen->generateExpression(gte->left);
+
+                gen->pop("rax"); // left operand
+                gen->pop("rbx"); // right operand
+
+                DataType compareType = (getTypeSize(leftType) >= getTypeSize(rightType)) ? leftType : rightType;
+
+                switch (compareType)
+                {
+                case DataType::INT8:
+                    gen->m_output << "\tcmp al, bl\n";
+                    break;
+                case DataType::INT16:
+                    gen->m_output << "\tcmp ax, bx\n";
+                    break;
+                case DataType::INT32:
+                    gen->m_output << "\tcmp eax, ebx\n";
+                    break;
+                case DataType::INT64:
+                    gen->m_output << "\tcmp rax, rbx\n";
+                    break;
+                default:
+                    gen->m_output << "\tcmp rax, rbx\n";
+                    break;
+                }
+
+                gen->m_output << "\tsetge al\n";      // Set AL to 1 if greater or equal
+                gen->m_output << "\tmovzx rax, al\n"; // Zero-extend to full register
+                gen->pushTyped("rax", DataType::INT32);
+            }
+
+            void operator()(const NodeExpressionBinaryLess *lt) const
+            {
+                DataType rightType = gen->inferExpressionType(lt->right);
+                DataType leftType = gen->inferExpressionType(lt->left);
+
+                gen->generateExpression(lt->right);
+                gen->generateExpression(lt->left);
+
+                gen->pop("rax"); // left operand
+                gen->pop("rbx"); // right operand
+
+                DataType compareType = (getTypeSize(leftType) >= getTypeSize(rightType)) ? leftType : rightType;
+
+                switch (compareType)
+                {
+                case DataType::INT8:
+                    gen->m_output << "\tcmp al, bl\n";
+                    break;
+                case DataType::INT16:
+                    gen->m_output << "\tcmp ax, bx\n";
+                    break;
+                case DataType::INT32:
+                    gen->m_output << "\tcmp eax, ebx\n";
+                    break;
+                case DataType::INT64:
+                    gen->m_output << "\tcmp rax, rbx\n";
+                    break;
+                default:
+                    gen->m_output << "\tcmp rax, rbx\n";
+                    break;
+                }
+
+                gen->m_output << "\tsetl al\n";       // Set AL to 1 if less
+                gen->m_output << "\tmovzx rax, al\n"; // Zero-extend to full register
+                gen->pushTyped("rax", DataType::INT32);
+            }
+
+            void operator()(const NodeExpressionBinaryLessEquals *lte) const
+            {
+                DataType rightType = gen->inferExpressionType(lte->right);
+                DataType leftType = gen->inferExpressionType(lte->left);
+
+                gen->generateExpression(lte->right);
+                gen->generateExpression(lte->left);
+
+                gen->pop("rax"); // left operand
+                gen->pop("rbx"); // right operand
+
+                DataType compareType = (getTypeSize(leftType) >= getTypeSize(rightType)) ? leftType : rightType;
+
+                switch (compareType)
+                {
+                case DataType::INT8:
+                    gen->m_output << "\tcmp al, bl\n";
+                    break;
+                case DataType::INT16:
+                    gen->m_output << "\tcmp ax, bx\n";
+                    break;
+                case DataType::INT32:
+                    gen->m_output << "\tcmp eax, ebx\n";
+                    break;
+                case DataType::INT64:
+                    gen->m_output << "\tcmp rax, rbx\n";
+                    break;
+                default:
+                    gen->m_output << "\tcmp rax, rbx\n";
+                    break;
+                }
+
+                gen->m_output << "\tsetle al\n";      // Set AL to 1 if less or equal
+                gen->m_output << "\tmovzx rax, al\n"; // Zero-extend to full register
+                gen->pushTyped("rax", DataType::INT32);
+            }
         };
 
         BinaryExpressionVisitor visitor(this);
@@ -784,6 +933,25 @@ namespace Delta
                 DataType leftType = gen->inferExpressionType(div->left);
                 DataType rightType = gen->inferExpressionType(div->right);
                 return (getTypeSize(leftType) >= getTypeSize(rightType)) ? leftType : rightType;
+            }
+            DataType operator()(const NodeExpressionBinaryGreater *gt) const
+            {
+                return DataType::INT32;
+            }
+
+            DataType operator()(const NodeExpressionBinaryGreaterEquals *gte) const
+            {
+                return DataType::INT32;
+            }
+
+            DataType operator()(const NodeExpressionBinaryLess *lt) const
+            {
+                return DataType::INT32;
+            }
+
+            DataType operator()(const NodeExpressionBinaryLessEquals *lte) const
+            {
+                return DataType::INT32;
             }
         };
 

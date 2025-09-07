@@ -104,6 +104,28 @@ namespace Delta
                 if (peek().has_value())
                     consume();
             }
+            else if (peek().value() == '>' && peek(2).has_value() && peek(2).value() == '=')
+            {
+                consume(); // '>'
+                consume(); // '='
+                tokens.push_back({TokenType::greater_equals, line_count});
+            }
+            else if (peek().value() == '<' && peek(2).has_value() && peek(2).value() == '=')
+            {
+                consume(); // '<'
+                consume(); // '='
+                tokens.push_back({TokenType::less_equals, line_count});
+            }
+            else if (peek().value() == '>')
+            {
+                consume();
+                tokens.push_back({TokenType::greater, line_count});
+            }
+            else if (peek().value() == '<')
+            {
+                consume();
+                tokens.push_back({TokenType::less, line_count});
+            }
             else if (peek().value() == ',')
             {
                 consume();
@@ -182,6 +204,10 @@ namespace Delta
     {
         switch (type)
         {
+        case TokenType::greater:
+        case TokenType::greater_equals:
+        case TokenType::less:
+        case TokenType::less_equals:
         case TokenType::plus:
         case TokenType::star:
         case TokenType::minus:
@@ -196,12 +222,17 @@ namespace Delta
     {
         switch (type)
         {
-        case TokenType::plus:
-        case TokenType::minus:
-            return 0;
-        case TokenType::star:
-        case TokenType::slash:
+        case TokenType::star:  // *
+        case TokenType::slash: // /
+            return 2;
+        case TokenType::plus:  // +
+        case TokenType::minus: // -
             return 1;
+        case TokenType::greater:        // >
+        case TokenType::greater_equals: // >=
+        case TokenType::less:           // <
+        case TokenType::less_equals:    // <=
+            return 0;
         default:
             return std::nullopt;
         }

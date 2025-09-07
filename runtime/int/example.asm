@@ -4,36 +4,89 @@
 ; Link Arguments: /subsystem:console /entry:_start /defaultlib:kernel32.lib /defaultlib:msvcrt.lib
 global _start
 extern ExitProcess
-global add
+global fibonacci
 
 section .text
-add:
-; Begin Function add
+fibonacci:
+; Begin Function fibonacci
 	push rbp
 	mov rbp, rsp
 	push rcx
-	push rdx
 ; Begin Scope 1
-; return
-	mov rax, QWORD [rsp+0]
+; if
+	mov eax, 1
 	push rax
-	mov rax, QWORD [rsp+16]
+	mov eax, DWORD [rsp+8]
 	push rax
 	pop rax
 	pop rbx
-	add rax, rbx
+	cmp eax, ebx
+	setle al
+	movzx rax, al
+	push rax
+	pop rax
+	test rax, rax
+	jz label0
+; Begin Scope 2
+; return
+	mov eax, DWORD [rsp+0]
 	push rax
 	pop rax
 	mov rsp, rbp
 	pop rbp
 	ret
 ; /return
+; End Scope 2
+	jmp label1
+label0:
+; Begin Scope 2
+; return
+; call fibonacci
+	mov eax, 2
+	push rax
+	mov eax, DWORD [rsp+8]
+	push rax
+	pop rax
+	pop rbx
+	sub eax, ebx
+	push rax
+	pop rcx
+	call fibonacci
+	push rax
+; /call fibonacci
+; call fibonacci
+	mov eax, 1
+	push rax
+	mov eax, DWORD [rsp+16]
+	push rax
+	pop rax
+	pop rbx
+	sub eax, ebx
+	push rax
+	pop rcx
+	sub rsp, 8 ; Align stack for Windows ABI
+	call fibonacci
+	add rsp, 8 ; Restore stack after call
+	push rax
+; /call fibonacci
+	pop rax
+	pop rbx
+	add eax, ebx
+	push rax
+	pop rax
+	mov rsp, rbp
+	pop rbp
+	ret
+; /return
+; End Scope 2
+label1:
+; /if
 ; End Scope 1
 	mov rax, 0
 	mov rsp, rbp
 	pop rbp
 	ret
-	add rsp, 16 ; Clean up function variables
+	add rsp, 8 ; Clean up function variables
 ; End Function
 
 main:
@@ -42,18 +95,15 @@ main:
 	mov rbp, rsp
 ; Begin Scope 1
 ; return
-; call add
-	mov eax, 3
-	push rax
-	mov eax, 5
+; call fibonacci
+	mov eax, 10
 	push rax
 	pop rcx
-	pop rdx
 	sub rsp, 8 ; Align stack for Windows ABI
-	call add
+	call fibonacci
 	add rsp, 8 ; Restore stack after call
 	push rax
-; /call add
+; /call fibonacci
 	pop rax
 	mov rsp, rbp
 	pop rbp

@@ -33,6 +33,34 @@ namespace Delta
         const char *id = "Function Call";
     };
 
+    struct NodeExpressionBinaryGreaterEquals
+    {
+        NodeExpression *left;
+        NodeExpression *right;
+        const char *id = "Binary Expression Greater Equals";
+    };
+
+    struct NodeExpressionBinaryGreater
+    {
+        NodeExpression *left;
+        NodeExpression *right;
+        const char *id = "Binary Expression Greater ";
+    };
+
+    struct NodeExpressionBinaryLessEquals
+    {
+        NodeExpression *left;
+        NodeExpression *right;
+        const char *id = "Binary Expression Less Equals";
+    };
+
+    struct NodeExpressionBinaryLess
+    {
+        NodeExpression *left;
+        NodeExpression *right;
+        const char *id = "Binary Expression Less";
+    };
+
     struct NodeExpressionBinaryAddition
     {
         NodeExpression *left;
@@ -63,7 +91,16 @@ namespace Delta
 
     struct NodeExpressionBinary
     {
-        std::variant<NodeExpressionBinaryAddition *, NodeExpressionBinarySubtraction *, NodeExpressionBinaryMultiplication *, NodeExpressionBinaryDivision *> var;
+        std::variant<
+            NodeExpressionBinaryAddition *,
+            NodeExpressionBinarySubtraction *,
+            NodeExpressionBinaryMultiplication *,
+            NodeExpressionBinaryDivision *,
+            NodeExpressionBinaryGreaterEquals *,
+            NodeExpressionBinaryGreater *,
+            NodeExpressionBinaryLessEquals *,
+            NodeExpressionBinaryLess *>
+            var;
         const char *id = "Binary Expression";
     };
 

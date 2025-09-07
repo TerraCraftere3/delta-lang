@@ -437,6 +437,38 @@ namespace Delta
                 mult->right = expr_rhs.value();
                 expr->var = mult;
             }
+            else if (op.type == TokenType::greater)
+            {
+                auto greater = m_allocator.alloc<NodeExpressionBinaryGreater>();
+                expr_lhs2->var = expr_lhs->var;
+                greater->left = expr_lhs2;
+                greater->right = expr_rhs.value();
+                expr->var = greater;
+            }
+            else if (op.type == TokenType::greater_equals)
+            {
+                auto greater_eq = m_allocator.alloc<NodeExpressionBinaryGreaterEquals>();
+                expr_lhs2->var = expr_lhs->var;
+                greater_eq->left = expr_lhs2;
+                greater_eq->right = expr_rhs.value();
+                expr->var = greater_eq;
+            }
+            else if (op.type == TokenType::less)
+            {
+                auto less = m_allocator.alloc<NodeExpressionBinaryLess>();
+                expr_lhs2->var = expr_lhs->var;
+                less->left = expr_lhs2;
+                less->right = expr_rhs.value();
+                expr->var = less;
+            }
+            else if (op.type == TokenType::less_equals)
+            {
+                auto less_eq = m_allocator.alloc<NodeExpressionBinaryLessEquals>();
+                expr_lhs2->var = expr_lhs->var;
+                less_eq->left = expr_lhs2;
+                less_eq->right = expr_rhs.value();
+                expr->var = less_eq;
+            }
             else
             {
                 assert(false);
