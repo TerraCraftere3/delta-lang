@@ -18,6 +18,7 @@ namespace Delta
         Assembler(NodeProgram root);
         std::string generate();
         void generateTerm(const NodeExpressionTerm *term);
+        void generateBinaryExpression(const NodeExpressionBinary *bin_expr);
         void generateExpression(const NodeExpression *expression);
         void generateStatement(const NodeStatement *statement);
 

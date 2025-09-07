@@ -47,9 +47,62 @@ namespace Delta
                 size_t offset = (generator->m_stack_size - var.stack_loc - 1) * 8;
                 generator->push("QWORD [rsp+" + std::to_string(offset) + "]");
             }
+            void operator()(const NodeTermParen *term_paren) const
+            {
+                generator->generateExpression(term_paren->expr);
+            }
         };
         TermVisitor visitor(this);
         std::visit(visitor, term->var);
+    }
+
+    void Assembler::generateBinaryExpression(const NodeExpressionBinary *bin_expr)
+    {
+        struct BinaryExpressionVisitor
+        {
+            Assembler *generator;
+            BinaryExpressionVisitor(Assembler *gen) : generator(gen) {}
+
+            void operator()(const NodeExpressionBinarySubtraction *sub) const
+            {
+                generator->generateExpression(sub->right);
+                generator->generateExpression(sub->left);
+                generator->pop("rax");
+                generator->pop("rbx");
+                generator->m_output << "\tsub rax, rbx\n";
+                generator->push("rax");
+            }
+            void operator()(const NodeExpressionBinaryAddition *add) const
+            {
+                generator->generateExpression(add->right);
+                generator->generateExpression(add->left);
+                generator->pop("rax");
+                generator->pop("rbx");
+                generator->m_output << "\tadd rax, rbx\n";
+                generator->push("rax");
+            }
+            void operator()(const NodeExpressionBinaryMultiplication *mul) const
+            {
+                generator->generateExpression(mul->right);
+                generator->generateExpression(mul->left);
+                generator->pop("rax");
+                generator->pop("rbx");
+                generator->m_output << "\tmul rbx\n";
+                generator->push("rax");
+            }
+            void operator()(const NodeExpressionBinaryDivision *div) const
+            {
+                generator->generateExpression(div->right);
+                generator->generateExpression(div->left);
+                generator->pop("rax");
+                generator->pop("rbx");
+                generator->m_output << "\tdiv rbx\n";
+                generator->push("rax");
+            }
+        };
+
+        BinaryExpressionVisitor visitor(this);
+        std::visit(visitor, bin_expr->var);
     }
 
     void Assembler::generateExpression(const NodeExpression *expression)
@@ -66,12 +119,7 @@ namespace Delta
             }
             void operator()(const NodeExpressionBinary *expression_binary) const
             {
-                generator->generateExpression(expression_binary->add->left);
-                generator->generateExpression(expression_binary->add->right);
-                generator->pop("rax");
-                generator->pop("rbx");
-                generator->m_output << "\tadd rax, rbx\n";
-                generator->push("rax");
+                generator->generateBinaryExpression(expression_binary);
             }
         };
 
@@ -110,16 +158,12 @@ namespace Delta
 
     void Assembler::alignStackAndCall(const std::string &function)
     {
-        // Windows x64 ABI requires 16-byte stack alignment before calls
-        // RSP must be (16n + 8) before the call instruction
-        // After call instruction, RSP will be (16n) due to return address push
-
         size_t current_stack_bytes = m_stack_size * 8;
         size_t misalignment = current_stack_bytes % 16;
 
         if (misalignment != 8)
         {
-            // We need to adjust to make RSP = (16n + 8)
+            // RSP = (16n + 8)
             size_t needed_adjustment = (misalignment == 0) ? 8 : (16 - misalignment + 8);
             m_output << "\tsub rsp, " << needed_adjustment << " ; Align stack for Windows ABI\n";
             m_output << "\tcall " << function << "\n";
@@ -127,7 +171,6 @@ namespace Delta
         }
         else
         {
-            // Stack is already properly aligned
             m_output << "\tcall " << function << "\n";
         }
     }

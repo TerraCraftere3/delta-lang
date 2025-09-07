@@ -21,19 +21,16 @@ namespace Delta
                 {
                     tokens.push_back({TokenType::exit});
                     buf.clear();
-                    continue;
                 }
                 else if (buf == "let")
                 {
                     tokens.push_back({TokenType::let});
                     buf.clear();
-                    continue;
                 }
                 else
                 {
                     tokens.push_back({TokenType::identifier, buf});
                     buf.clear();
-                    continue;
                 }
             }
             else if (std::isdigit(peek().value()))
@@ -45,60 +42,50 @@ namespace Delta
                 }
                 tokens.push_back({TokenType::int_literal, buf});
                 buf.clear();
-                continue;
             }
             else if (peek().value() == ';')
             {
                 consume();
                 tokens.push_back({TokenType::semicolon});
-                continue;
             }
             else if (peek().value() == '(')
             {
                 consume();
                 tokens.push_back({TokenType::open_paren});
-                continue;
             }
             else if (peek().value() == ')')
             {
                 consume();
                 tokens.push_back({TokenType::close_paren});
-                continue;
             }
             else if (peek().value() == '=')
             {
                 consume();
                 tokens.push_back({TokenType::equals});
-                continue;
             }
             else if (peek().value() == '+')
             {
                 consume();
                 tokens.push_back({TokenType::add});
-                continue;
             }
             else if (peek().value() == '-')
             {
                 consume();
                 tokens.push_back({TokenType::sub});
-                continue;
             }
             else if (peek().value() == '*')
             {
                 consume();
                 tokens.push_back({TokenType::mult});
-                continue;
             }
             else if (peek().value() == '/')
             {
                 consume();
                 tokens.push_back({TokenType::divide});
-                continue;
             }
             else if (std::isspace(peek().value()))
             {
                 consume();
-                continue;
             }
             else
             {
@@ -108,6 +95,35 @@ namespace Delta
         }
         m_position = 0;
         return tokens;
+    }
+
+    bool Tokenizer::isBinaryOP(TokenType type)
+    {
+        switch (type)
+        {
+        case TokenType::add:
+        case TokenType::mult:
+        case TokenType::sub:
+        case TokenType::divide:
+            return true;
+        default:
+            return false;
+        }
+    }
+
+    std::optional<int> Tokenizer::getBinaryOPPrec(TokenType type)
+    {
+        switch (type)
+        {
+        case TokenType::add:
+        case TokenType::sub:
+            return 0;
+        case TokenType::mult:
+        case TokenType::divide:
+            return 1;
+        default:
+            return std::nullopt;
+        }
     }
 
     std::optional<char> Tokenizer::peek(int count) const

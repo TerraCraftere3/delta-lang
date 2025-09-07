@@ -13,7 +13,7 @@ namespace Delta
         Parser(std::vector<Token> tokens);
         std::optional<NodeProgram> parseProgram();
         std::optional<NodeStatement *> parseStatement();
-        std::optional<NodeExpression *> parseExpression();
+        std::optional<NodeExpression *> parseExpression(int min_prec = 0);
         std::optional<NodeExpressionBinary *> parseBinaryExpression();
         std::optional<NodeExpressionTerm *> parseTerm();
 

@@ -1,4 +1,2 @@
-let a = 3;
-let b = 4;
-let c = a + b;
-exit(c);
+let x = (10 - 2 * 3) / 2;
+exit(x);

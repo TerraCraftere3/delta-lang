@@ -1,4 +1,5 @@
 #include "Parser.h"
+#include "Tokenizer.h"
 #include "Log.h"
 
 namespace Delta
@@ -77,50 +78,84 @@ namespace Delta
         return program;
     }
 
-    std::optional<NodeExpression *> Parser::parseExpression()
+    std::optional<NodeExpression *> Parser::parseExpression(int min_prec)
     {
-        if (auto term = parseTerm())
-        {
-            if (peek().has_value() && peek().value().type == TokenType::add)
-            {
-                auto bin_expr = m_allocator.alloc<NodeExpressionBinary>();
-                if (try_consume(TokenType::add))
-                {
-                    auto bin_expr_add = m_allocator.alloc<NodeExpressionBinaryAddition>();
-                    auto lhs_expr = m_allocator.alloc<NodeExpression>();
-                    lhs_expr->var = term.value();
-                    bin_expr_add->left = lhs_expr;
-                    if (auto rhs = parseExpression())
-                    {
-                        bin_expr_add->right = rhs.value();
-                        bin_expr->add = bin_expr_add;
-                        auto node_expr = m_allocator.alloc<NodeExpression>();
-                        node_expr->var = bin_expr;
-                        return node_expr;
-                    }
-                    else
-                    {
-                        LOG_ERROR("Invalid Expression");
-                        exit(EXIT_FAILURE);
-                    }
-                }
-                else
-                {
-                    LOG_ERROR("Unsupported binary operator");
-                    exit(EXIT_FAILURE);
-                }
-            }
-            else
-            {
-                auto expr = m_allocator.alloc<NodeExpression>();
-                expr->var = term.value();
-                return expr;
-            }
-        }
-        else
+        std::optional<NodeExpressionTerm *> term_lhs = parseTerm();
+        if (!term_lhs.has_value())
         {
             return std::nullopt;
         }
+
+        auto expr_lhs = m_allocator.alloc<NodeExpression>();
+        expr_lhs->var = term_lhs.value();
+
+        while (true)
+        {
+            std::optional<Token> curr_token = peek();
+            std::optional<int> prec;
+            if (curr_token.has_value())
+            {
+                prec = Tokenizer::getBinaryOPPrec(curr_token.value().type);
+                if (!prec.has_value() || prec.value() < min_prec)
+                    break;
+            }
+            else
+            {
+                break;
+            }
+
+            Token op = consume();
+
+            int next_min_prec = prec.value() + 1;
+            auto expr_rhs = parseExpression(next_min_prec);
+            if (!expr_rhs.has_value())
+            {
+                LOG_ERROR("Unable to parse Expression");
+                exit(EXIT_FAILURE);
+            }
+
+            auto expr = m_allocator.alloc<NodeExpressionBinary>();
+            auto expr_lhs2 = m_allocator.alloc<NodeExpression>();
+            if (op.type == TokenType::add)
+            {
+                auto add = m_allocator.alloc<NodeExpressionBinaryAddition>();
+                expr_lhs2->var = expr_lhs->var;
+                add->left = expr_lhs2;
+                add->right = expr_rhs.value();
+                expr->var = add;
+            }
+            else if (op.type == TokenType::sub)
+            {
+                auto sub = m_allocator.alloc<NodeExpressionBinarySubtraction>();
+                expr_lhs2->var = expr_lhs->var;
+                sub->left = expr_lhs2;
+                sub->right = expr_rhs.value();
+                expr->var = sub;
+            }
+            else if (op.type == TokenType::divide)
+            {
+                auto div = m_allocator.alloc<NodeExpressionBinaryDivision>();
+                expr_lhs2->var = expr_lhs->var;
+                div->left = expr_lhs2;
+                div->right = expr_rhs.value();
+                expr->var = div;
+            }
+            else if (op.type == TokenType::mult)
+            {
+                auto mult = m_allocator.alloc<NodeExpressionBinaryMultiplication>();
+                expr_lhs2->var = expr_lhs->var;
+                mult->left = expr_lhs2;
+                mult->right = expr_rhs.value();
+                expr->var = mult;
+            }
+            else
+            {
+                assert(false);
+            }
+            expr_lhs->var = expr;
+        }
+
+        return expr_lhs;
     }
 
     std::optional<NodeExpressionBinary *> Parser::parseBinaryExpression()
@@ -150,6 +185,21 @@ namespace Delta
             term_ident->ident = id.value();
             auto node_term = m_allocator.alloc<NodeExpressionTerm>();
             node_term->var = term_ident;
+            return node_term;
+        }
+        else if (auto open_paren = try_consume(TokenType::open_paren))
+        {
+            auto expr = parseExpression();
+            if (!expr.has_value())
+            {
+                LOG_ERROR("Expected Expression");
+                exit(EXIT_FAILURE);
+            }
+            try_consume(TokenType::close_paren, "Expected ')'");
+            auto node_term_paren = m_allocator.alloc<NodeTermParen>();
+            node_term_paren->expr = expr.value();
+            auto node_term = m_allocator.alloc<NodeExpressionTerm>();
+            node_term->var = node_term_paren;
             return node_term;
         }
         return std::nullopt;

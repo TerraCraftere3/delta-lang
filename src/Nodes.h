@@ -20,6 +20,11 @@ namespace Delta
 
     struct NodeExpression;
 
+    struct NodeTermParen
+    {
+        NodeExpression *expr;
+    };
+
     struct NodeExpressionBinaryAddition
     {
         NodeExpression *left;
@@ -27,22 +32,36 @@ namespace Delta
         const char *id = "Binary Expression Addition";
     };
 
-    /*struct NodeExpressionBinaryMultiplication
+    struct NodeExpressionBinarySubtraction
+    {
+        NodeExpression *left;
+        NodeExpression *right;
+        const char *id = "Binary Expression Subtraction";
+    };
+
+    struct NodeExpressionBinaryDivision
+    {
+        NodeExpression *left;
+        NodeExpression *right;
+        const char *id = "Binary Expression Division";
+    };
+
+    struct NodeExpressionBinaryMultiplication
     {
         NodeExpression *left;
         NodeExpression *right;
         const char *id = "Binary Expression Multiplication";
-    };*/
+    };
 
     struct NodeExpressionBinary
     {
-        NodeExpressionBinaryAddition *add;
+        std::variant<NodeExpressionBinaryAddition *, NodeExpressionBinarySubtraction *, NodeExpressionBinaryMultiplication *, NodeExpressionBinaryDivision *> var;
         const char *id = "Binary Expression";
     };
 
     struct NodeExpressionTerm
     {
-        std::variant<NodeTermIntegerLiteral *, NodeTermIdentifier *> var;
+        std::variant<NodeTermIntegerLiteral *, NodeTermIdentifier *, NodeTermParen *> var;
         const char *id = "Term Expression";
     };
 

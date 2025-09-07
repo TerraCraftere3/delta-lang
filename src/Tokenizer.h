@@ -12,6 +12,8 @@ namespace Delta
     public:
         Tokenizer(const std::string &source) : m_source(source) {}
         std::vector<Token> tokenize();
+        static bool isBinaryOP(TokenType type);
+        static std::optional<int> getBinaryOPPrec(TokenType type);
 
     private:
         std::optional<char> peek(int count = 1) const;
