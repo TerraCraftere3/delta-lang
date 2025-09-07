@@ -37,14 +37,15 @@ namespace Delta
             }
             void operator()(const NodeTermIdentifier *term_ident) const
             {
-                if (!generator->m_vars.contains(term_ident->ident.value.value()))
+                auto it = std::find_if(generator->m_vars.cbegin(), generator->m_vars.cend(), [&](const Var &var)
+                                       { return var.name == term_ident->ident.value.value(); });
+                if (it == generator->m_vars.cend())
                 {
                     LOG_ERROR("Undeclared identifier {}", term_ident->ident.value.value());
                     exit(EXIT_FAILURE);
                 }
-                const auto var = generator->m_vars.at(term_ident->ident.value.value());
 
-                size_t offset = (generator->m_stack_size - var.stack_loc - 1) * 8;
+                size_t offset = (generator->m_stack_size - (*it).stack_loc - 1) * 8;
                 generator->push("QWORD [rsp+" + std::to_string(offset) + "]");
             }
             void operator()(const NodeTermParen *term_paren) const
@@ -134,6 +135,15 @@ namespace Delta
             Assembler *generator;
             StatementVisitor(Assembler *gen) : generator(gen) {}
 
+            void operator()(const NodeStatementScope *scope)
+            {
+                generator->begin_scope();
+                for (const NodeStatement *statement : scope->statements)
+                {
+                    generator->generateStatement(statement);
+                }
+                generator->end_scope();
+            }
             void operator()(const NodeStatementExit *statement_exit)
             {
                 generator->generateExpression(statement_exit->expression); // ASM: Expression
@@ -142,12 +152,14 @@ namespace Delta
             }
             void operator()(const NodeStatementLet *statement_let)
             {
-                if (generator->m_vars.contains(statement_let->ident.value.value()))
+                auto it = std::find_if(generator->m_vars.cbegin(), generator->m_vars.cend(), [&](const Var &var)
+                                       { return var.name == statement_let->ident.value.value(); });
+                if (it != generator->m_vars.cend())
                 {
                     LOG_ERROR("Identifier '{}' exists already", statement_let->ident.value.value());
                     exit(EXIT_FAILURE);
                 }
-                generator->m_vars.insert({statement_let->ident.value.value(), Var{generator->m_stack_size}});
+                generator->m_vars.push_back(Var{statement_let->ident.value.value(), generator->m_stack_size});
                 generator->generateExpression(statement_let->expression);
             }
         };
@@ -156,7 +168,8 @@ namespace Delta
         std::visit(visitor, statement->var);
     }
 
-    void Assembler::alignStackAndCall(const std::string &function)
+    void
+    Assembler::alignStackAndCall(const std::string &function)
     {
         size_t current_stack_bytes = m_stack_size * 8;
         size_t misalignment = current_stack_bytes % 16;
@@ -177,10 +190,32 @@ namespace Delta
 
     void Assembler::push(const std::string &reg)
     {
-        m_output << "\tpush " << reg << " ; Stack now at " << ++m_stack_size << "\n";
+        m_output << "\tpush " << reg << "\n";
+        m_stack_size++;
     }
     void Assembler::pop(const std::string &reg)
     {
-        m_output << "\tpop " << reg << " ; Stack now at " << --m_stack_size << "\n";
+        m_output << "\tpop " << reg << "\n";
+        m_stack_size--;
+    }
+    void Assembler::begin_scope()
+    {
+        m_scopes.push_back(m_vars.size());
+        m_output << "\t; Begin Scope " << m_scopes.size() << "\n";
+    }
+    void Assembler::end_scope()
+    {
+        size_t pop_count = m_vars.size() - m_scopes.back();
+        if (pop_count > 0)
+        {
+            m_output << "\tadd rsp, " << pop_count * 8 << " ; Clean up " << pop_count << " " + std::string(pop_count == 1 ? "variable" : "variables") + "\n";
+            m_stack_size -= pop_count;
+        }
+        m_output << "\t; End Scope " << m_scopes.size() << "\n";
+        for (int i = 0; i < pop_count; i++)
+        {
+            m_vars.pop_back();
+        }
+        m_scopes.pop_back();
     }
 } // namespace Delta

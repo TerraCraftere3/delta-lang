@@ -56,6 +56,18 @@ namespace Delta
             }
             try_consume(TokenType::semicolon, "Expected ';'");
         }
+        else if (auto open_curly = try_consume(TokenType::open_curly))
+        {
+            auto scope = m_allocator.alloc<NodeStatementScope>();
+            while (auto statement = parseStatement())
+            {
+                scope->statements.push_back(statement.value());
+            }
+            try_consume(TokenType::close_curly, "Expected '}'");
+            auto stmt = m_allocator.alloc<NodeStatement>();
+            stmt->var = scope;
+            statement = stmt;
+        }
 
         return statement;
     }
@@ -116,7 +128,7 @@ namespace Delta
 
             auto expr = m_allocator.alloc<NodeExpressionBinary>();
             auto expr_lhs2 = m_allocator.alloc<NodeExpression>();
-            if (op.type == TokenType::add)
+            if (op.type == TokenType::plus)
             {
                 auto add = m_allocator.alloc<NodeExpressionBinaryAddition>();
                 expr_lhs2->var = expr_lhs->var;
@@ -124,7 +136,7 @@ namespace Delta
                 add->right = expr_rhs.value();
                 expr->var = add;
             }
-            else if (op.type == TokenType::sub)
+            else if (op.type == TokenType::minus)
             {
                 auto sub = m_allocator.alloc<NodeExpressionBinarySubtraction>();
                 expr_lhs2->var = expr_lhs->var;
@@ -132,7 +144,7 @@ namespace Delta
                 sub->right = expr_rhs.value();
                 expr->var = sub;
             }
-            else if (op.type == TokenType::divide)
+            else if (op.type == TokenType::slash)
             {
                 auto div = m_allocator.alloc<NodeExpressionBinaryDivision>();
                 expr_lhs2->var = expr_lhs->var;
@@ -140,7 +152,7 @@ namespace Delta
                 div->right = expr_rhs.value();
                 expr->var = div;
             }
-            else if (op.type == TokenType::mult)
+            else if (op.type == TokenType::star)
             {
                 auto mult = m_allocator.alloc<NodeExpressionBinaryMultiplication>();
                 expr_lhs2->var = expr_lhs->var;
@@ -156,17 +168,6 @@ namespace Delta
         }
 
         return expr_lhs;
-    }
-
-    std::optional<NodeExpressionBinary *> Parser::parseBinaryExpression()
-    {
-        if (auto lhs = parseExpression())
-        {
-        }
-        else
-        {
-            return std::nullopt;
-        }
     }
 
     std::optional<NodeExpressionTerm *> Parser::parseTerm()

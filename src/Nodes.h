@@ -84,9 +84,17 @@ namespace Delta
         const char *id = "Statement Let";
     };
 
+    struct NodeStatement;
+
+    struct NodeStatementScope
+    {
+        std::vector<NodeStatement *> statements;
+        const char *id = "Scope";
+    };
+
     struct NodeStatement
     {
-        std::variant<NodeStatementExit *, NodeStatementLet *> var;
+        std::variant<NodeStatementExit *, NodeStatementLet *, NodeStatementScope *> var;
         const char *id = "Statement";
     };
 

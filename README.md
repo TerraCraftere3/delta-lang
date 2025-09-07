@@ -1,4 +1,4 @@
-# delta-lang
+# delta-lang [![CMake](https://github.com/TerraCraftere3/delta-lang/actions/workflows/cmake.yml/badge.svg)](https://github.com/TerraCraftere3/delta-lang/actions/workflows/cmake.yml)
 The Delta Programming Language
 
 ## How to Build
@@ -8,6 +8,36 @@ The Delta Programming Language
     - `cd build`
     - `cmake .. -G "Visual Studio 17 2022"` (Adjust the Generator to your Visual Studio Version)
     - `cmake --build . --config Release` or open the generated Solution File
+
+## Examples
+### Variables
+```
+let a = 42;
+let b = 3;
+let c = a + b;
+```
+
+### Maths 
+```
+let d = a * b;
+let e = d - 128;
+```
+
+### Exit
+```
+let code = 0;
+exit(code);
+```
+or just `exit(0)`
+
+### Scopes
+```
+let a = 3;
+{
+    let b = 9;
+}
+let b = 3;
+```
 
 ## Grammar
 $$
@@ -19,6 +49,8 @@ $$
     exit([\text{Expr}]); 
     \\
     let \space\text{Identifier} = [\text{Expr}];
+    \\
+    \{[\text{Statement}]^*\}
 \end{cases}
 \\
 [\text{BinExpr}] &\to

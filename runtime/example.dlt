@@ -1,2 +1,9 @@
-let x = (10 - 2 * 3) / 2;
+let x = 16 * 2;
+{
+    let y = 9;
+    {
+        let z = 3;
+    }
+    let z = 64;
+}
 exit(x);

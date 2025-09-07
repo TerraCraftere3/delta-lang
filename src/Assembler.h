@@ -2,11 +2,14 @@
 
 #include "Nodes.h"
 #include <sstream>
-#include <unordered_map>
+#include <map>
+#include <vector>
+#include <string>
 
-// not used by anything else
+// not used by anything else except Assembler.cpp
 struct Var
 {
+    std::string name;
     size_t stack_loc;
 };
 
@@ -25,12 +28,15 @@ namespace Delta
     private:
         void push(const std::string &reg);
         void pop(const std::string &reg);
+        void begin_scope();
+        void end_scope();
         void alignStackAndCall(const std::string &function);
 
     private:
         const NodeProgram m_program;
         std::stringstream m_output;
         size_t m_stack_size = 0;
-        std::unordered_map<std::string, Var> m_vars{};
+        std::vector<Var> m_vars{};
+        std::vector<size_t> m_scopes{};
     };
 }

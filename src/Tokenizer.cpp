@@ -66,22 +66,32 @@ namespace Delta
             else if (peek().value() == '+')
             {
                 consume();
-                tokens.push_back({TokenType::add});
+                tokens.push_back({TokenType::plus});
             }
             else if (peek().value() == '-')
             {
                 consume();
-                tokens.push_back({TokenType::sub});
+                tokens.push_back({TokenType::minus});
             }
             else if (peek().value() == '*')
             {
                 consume();
-                tokens.push_back({TokenType::mult});
+                tokens.push_back({TokenType::star});
             }
             else if (peek().value() == '/')
             {
                 consume();
-                tokens.push_back({TokenType::divide});
+                tokens.push_back({TokenType::slash});
+            }
+            else if (peek().value() == '{')
+            {
+                consume();
+                tokens.push_back({TokenType::open_curly});
+            }
+            else if (peek().value() == '}')
+            {
+                consume();
+                tokens.push_back({TokenType::close_curly});
             }
             else if (std::isspace(peek().value()))
             {
@@ -101,10 +111,10 @@ namespace Delta
     {
         switch (type)
         {
-        case TokenType::add:
-        case TokenType::mult:
-        case TokenType::sub:
-        case TokenType::divide:
+        case TokenType::plus:
+        case TokenType::star:
+        case TokenType::minus:
+        case TokenType::slash:
             return true;
         default:
             return false;
@@ -115,11 +125,11 @@ namespace Delta
     {
         switch (type)
         {
-        case TokenType::add:
-        case TokenType::sub:
+        case TokenType::plus:
+        case TokenType::minus:
             return 0;
-        case TokenType::mult:
-        case TokenType::divide:
+        case TokenType::star:
+        case TokenType::slash:
             return 1;
         default:
             return std::nullopt;
