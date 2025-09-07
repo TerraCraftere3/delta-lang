@@ -1,8 +1,12 @@
 let y = (10 - 2 * 3) / 2;
-let x = 1;
+let x = 7;
 
-if(x){
-    exit(69);
+if(1){
+    x = 1;
+    {
+        let z = 27 * (y + 3) / 3;
+    }
 }else{
-    exit(68);
+    x = 0;
 }
+exit(x);

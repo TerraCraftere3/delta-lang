@@ -115,6 +115,13 @@ namespace Delta
         const char *id = "Statement Exit";
     };
 
+    struct NodeStatementAssign
+    {
+        Token ident;
+        NodeExpression *expression;
+        const char *id = "Statement Assign";
+    };
+
     struct NodeStatementLet
     {
         Token ident;
@@ -124,7 +131,7 @@ namespace Delta
 
     struct NodeStatement
     {
-        std::variant<NodeStatementExit *, NodeStatementLet *, NodeStatementIf *, NodeScope *> var;
+        std::variant<NodeStatementExit *, NodeStatementLet *, NodeStatementAssign *, NodeStatementIf *, NodeScope *> var;
         const char *id = "Statement";
     };
 

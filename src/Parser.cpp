@@ -56,7 +56,26 @@ namespace Delta
             }
             try_consume(TokenType::semicolon, "Expected ';'");
         }
-        else if (peek().has_value() && peek().value().type == TokenType::open_curly)
+        else if (peek().value().type == TokenType::identifier && peek(2).has_value() && peek(2).value().type == TokenType::equals)
+        {
+            auto assign = m_allocator.alloc<NodeStatementAssign>();
+            assign->ident = consume();
+            consume(); // equals sign
+            if (auto expr = parseExpression())
+            {
+                assign->expression = expr.value();
+            }
+            else
+            {
+                LOG_ERROR("Invalid Expression");
+                exit(EXIT_FAILURE);
+            }
+            try_consume(TokenType::semicolon, "Expected ';'");
+            auto stmt = m_allocator.alloc<NodeStatement>();
+            stmt->var = assign;
+            statement = stmt;
+        }
+        else if (peek().value().type == TokenType::open_curly)
         {
             if (auto scope = parseScope())
             {

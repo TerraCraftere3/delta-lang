@@ -181,12 +181,15 @@ namespace Delta
 
             void operator()(const NodeStatementExit *statement_exit)
             {
+                gen->m_output << "; exit\n";
                 gen->generateExpression(statement_exit->expression); // ASM: Expression
                 gen->pop("rcx");                                     // ASM: Pop into Exit Code Register (rcx)
                 gen->alignStackAndCall("ExitProcess");               // ASM: Call ExitProcess
+                gen->m_output << "; /exit\n";
             }
             void operator()(const NodeStatementLet *statement_let)
             {
+                gen->m_output << "; let\n";
                 auto it = std::find_if(gen->m_vars.cbegin(), gen->m_vars.cend(), [&](const Var &var)
                                        { return var.name == statement_let->ident.value.value(); });
                 if (it != gen->m_vars.cend())
@@ -196,6 +199,23 @@ namespace Delta
                 }
                 gen->m_vars.push_back(Var{statement_let->ident.value.value(), gen->m_stack_size});
                 gen->generateExpression(statement_let->expression);
+                gen->m_output << "; /let\n";
+            }
+            void operator()(const NodeStatementAssign *assign)
+            {
+                gen->m_output << "; assign\n";
+                auto it = std::find_if(gen->m_vars.cbegin(), gen->m_vars.cend(), [&](const Var &var)
+                                       { return var.name == assign->ident.value.value(); });
+                if (it == gen->m_vars.cend())
+                {
+                    LOG_ERROR("Undeclared identifier {}", assign->ident.value.value());
+                    exit(EXIT_FAILURE);
+                }
+                gen->generateExpression(assign->expression);
+                gen->pop("rax");
+                size_t offset = (gen->m_stack_size - (*it).stack_loc - 1) * 8;
+                gen->m_output << "\tmov [rsp+" << std::to_string(offset) << "], rax\n";
+                gen->m_output << "; /assign\n";
             }
             void operator()(const NodeScope *scope)
             {
@@ -203,19 +223,27 @@ namespace Delta
             }
             void operator()(const NodeStatementIf *statement_if)
             {
+                gen->m_output << "; if\n";
                 gen->generateExpression(statement_if->expr);
                 gen->pop("rax");
                 std::string label = gen->create_label();
                 gen->m_output << "\ttest rax, rax\n";
                 gen->m_output << "\tjz " << label << "\n";
                 gen->generateScope(statement_if->scope);
-                gen->m_output << label << ":\n";
                 if (statement_if->pred.has_value())
                 {
                     std::string end_label = gen->create_label();
-                    gen->generateIfPred(statement_if->pred.value(), label);
+                    gen->m_output << "\tjmp " << end_label << "\n";
+                    gen->m_output << label << ":\n";
+                    gen->generateIfPred(statement_if->pred.value(), end_label);
                     gen->m_output << end_label << ":\n";
                 }
+                else
+                {
+
+                    gen->m_output << label << ":\n";
+                }
+                gen->m_output << "; /if\n";
             }
         };
 

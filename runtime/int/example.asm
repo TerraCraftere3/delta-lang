@@ -7,6 +7,7 @@ extern ExitProcess
 
 section .text
 _start:
+; let
 	mov rax, 2
 	push rax
 	mov rax, 3
@@ -27,30 +28,68 @@ _start:
 	pop rbx
 	div rbx
 	push rax
+; /let
+; let
+	mov rax, 7
+	push rax
+; /let
+; if
 	mov rax, 1
 	push rax
-	push QWORD [rsp+0]
 	pop rax
 	test rax, rax
 	jz label0
 	; Begin Scope 1
-	mov rax, 69
+; assign
+	mov rax, 1
 	push rax
-	pop rcx
-	sub rsp, 8 ; Align stack for Windows ABI
-	call ExitProcess
-	add rsp, 8 ; Restore stack after call
+	pop rax
+	mov [rsp+0], rax
+; /assign
+	; Begin Scope 2
+; let
+	mov rax, 3
+	push rax
+	mov rax, 3
+	push rax
+	push QWORD [rsp+24]
+	pop rax
+	pop rbx
+	add rax, rbx
+	push rax
+	mov rax, 27
+	push rax
+	pop rax
+	pop rbx
+	mul rbx
+	push rax
+	pop rax
+	pop rbx
+	div rbx
+	push rax
+; /let
+	add rsp, 8 ; Clean up 1 variable
+	; End Scope 2
 	; End Scope 1
+	jmp label1
 label0:
 	; Begin Scope 1
-	mov rax, 68
+; assign
+	mov rax, 0
 	push rax
+	pop rax
+	mov [rsp+0], rax
+; /assign
+	; End Scope 1
+label1:
+; /if
+; exit
+	push QWORD [rsp+0]
 	pop rcx
 	sub rsp, 8 ; Align stack for Windows ABI
 	call ExitProcess
 	add rsp, 8 ; Restore stack after call
-	; End Scope 1
-label1:
+; /exit
 	mov rcx, 0
 	sub rsp, 8 ; Align stack for Windows ABI
 	call ExitProcess

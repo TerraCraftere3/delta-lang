@@ -72,6 +72,8 @@ $$
     \\
     let \space\text{Identifier} = [\text{Expr}];
     \\
+    \text{Identifier} = [\text{Expr}];
+    \\
     if([\text{Expr}])[\text{Scope}][\text{IfPred}]
     \\
     [\text{Scope}]
