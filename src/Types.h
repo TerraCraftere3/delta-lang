@@ -11,6 +11,7 @@ namespace Delta
         INT16,
         INT32,
         INT64,
+        VOID,
     };
 
     size_t getTypeSize(DataType type);

@@ -24,7 +24,9 @@ namespace Delta
         minus,       // -
         star,        // *
         slash,       // /
-        const_       // const
+        comma,       // ,
+        const_,      // const
+        return_      // return
     };
 
     struct Token

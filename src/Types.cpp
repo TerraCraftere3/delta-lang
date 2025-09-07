@@ -6,6 +6,8 @@ namespace Delta
     {
         switch (type)
         {
+        case DataType::VOID:
+            return 0;
         case DataType::INT8:
             return 1;
         case DataType::INT16:
@@ -84,6 +86,9 @@ namespace Delta
         if (declared == actual)
             return true;
 
+        if (declared == DataType::VOID || actual == DataType::VOID)
+            return false;
+
         if ((declared == DataType::INT8 || declared == DataType::INT16 ||
              declared == DataType::INT32 || declared == DataType::INT64) &&
             (actual == DataType::INT8 || actual == DataType::INT16 ||
@@ -99,6 +104,8 @@ namespace Delta
     {
         switch (type)
         {
+        case DataType::VOID:
+            return "void";
         case DataType::INT8:
             return "int8";
         case DataType::INT16:
@@ -114,7 +121,9 @@ namespace Delta
 
     DataType stringToType(std::string s)
     {
-        if (s == "int8")
+        if (s == "void")
+            return DataType::VOID;
+        else if (s == "int8")
             return DataType::INT8;
         else if (s == "int16")
             return DataType::INT16;

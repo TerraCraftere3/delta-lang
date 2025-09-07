@@ -4,24 +4,116 @@
 
 namespace Delta
 {
-    Assembler::Assembler(NodeProgram root) : m_program(root) {}
+    Assembler::Assembler(NodeProgram root) : m_program(root)
+    {
+        registerBuiltinFunctions();
+    }
 
     std::string Assembler::generate()
     {
-        m_output << "global _start\n";      // ASM: Text Section
-        m_output << "extern ExitProcess\n"; // ASM: WinAPI ExitProcess
-        m_output << "\n";                   // ASM:
-        m_output << "section .text\n";      // ASM: Entry Point definition
-        m_output << "_start:\n";            // ASM: Start Label
+        m_output << "global _start\n";
+        m_output << "extern ExitProcess\n";
 
-        for (const NodeStatement *statement : m_program.statements)
+        // Declare all user-defined functions
+        for (const NodeFunctionDeclaration *func : m_program.functions)
         {
-            generateStatement(statement);
+            if (func->function_name.value.value() != "main")
+            {
+                m_output << "global " << func->function_name.value.value() << "\n";
+            }
         }
 
-        m_output << "\tmov rcx, 0\n"; // ASM: Move 0 to Exit Code Register (rcx)
+        m_output << "\n";
+        m_output << "section .text\n";
+
+        // Generate all function declarations first
+        for (const NodeFunctionDeclaration *func : m_program.functions)
+        {
+            generateFunctionDeclaration(func);
+        }
+
+        // Generate entry point
+        m_output << "_start:\n";
+
+        // Look for main function
+        Function *main_func = findFunction("main");
+        if (main_func)
+        {
+            alignStackAndCall("main");
+            m_output << "\tmov rcx, rax\n"; // Use main's return value as exit code
+        }
+        else
+        {
+            // No main function, execute global statements
+            for (const NodeStatement *statement : m_program.statements)
+            {
+                generateStatement(statement);
+            }
+            m_output << "\tmov rcx, 0\n";
+        }
+
         alignStackAndCall("ExitProcess");
         return m_output.str();
+    }
+
+    void Assembler::generateFunctionDeclaration(const NodeFunctionDeclaration *func_decl)
+    {
+        // Register function
+        std::vector<DataType> param_types;
+        for (const NodeParameter *param : func_decl->parameters)
+        {
+            param_types.push_back(param->type);
+        }
+
+        std::string func_label = func_decl->function_name.value.value();
+        Function func(func_decl->function_name.value.value(), param_types,
+                      func_decl->return_type, func_label);
+        m_functions.push_back(func);
+
+        // Generate function label
+        m_output << func_label << ":\n";
+
+        // Setup function context
+        begin_function(func_decl->function_name.value.value());
+        m_current_function_return_type = func_decl->return_type;
+
+        setupFunctionPrologue();
+
+        // Add parameters as local variables (they're passed via registers/stack)
+        std::vector<std::string> arg_registers = getCallingConventionRegisters();
+
+        for (size_t i = 0; i < func_decl->parameters.size(); i++)
+        {
+            const NodeParameter *param = func_decl->parameters[i];
+            Var var(param->ident.value.value(), m_stack_size, param->type);
+            m_vars.push_back(var);
+
+            // Move parameter from register to stack
+            if (i < arg_registers.size())
+            {
+                std::string param_reg = getAppropriateRegister(param->type, arg_registers[i]);
+                pushTyped(arg_registers[i], param->type);
+            }
+            else
+            {
+                // Parameter passed on stack - need to handle this case
+                LOG_ERROR("Stack-passed parameters not yet implemented");
+                exit(EXIT_FAILURE);
+            }
+        }
+
+        // Generate function body
+        generateScope(func_decl->body);
+
+        // If no explicit return and function has return type, add default return
+        if (func_decl->return_type != DataType::VOID)
+        {
+            m_output << "\tmov rax, 0\n"; // Default return value
+        }
+
+        setupFunctionEpilogue();
+        end_function();
+        m_output << "\n";
     }
 
     void Assembler::generateTerm(const NodeExpressionTerm *term)
@@ -30,15 +122,16 @@ namespace Delta
         {
             Assembler *gen;
             TermVisitor(Assembler *gen) : gen(gen) {}
+
             void operator()(const NodeTermIntegerLiteral *term_int_lit) const
             {
-                // Integer literals default to INT32, but we could infer based on value
                 DataType literalType = DataType::INT32;
                 std::string reg = gen->getAppropriateRegister(literalType);
 
                 gen->m_output << "\tmov " << reg << ", " << term_int_lit->int_literal.value.value() << "\n";
-                gen->pushTyped("rax", literalType); // Always push full register for stack alignment
+                gen->pushTyped("rax", literalType);
             }
+
             void operator()(const NodeTermIdentifier *term_ident) const
             {
                 auto it = std::find_if(gen->m_vars.cbegin(), gen->m_vars.cend(), [&](const Var &var)
@@ -52,7 +145,6 @@ namespace Delta
                 size_t offset = (gen->m_stack_size - (*it).stack_loc - 1) * 8;
                 DataType varType = (*it).type;
 
-                // Load with appropriate size
                 std::string reg = gen->getAppropriateRegister(varType);
                 gen->m_output << "\tmov " << reg << ", ";
 
@@ -77,13 +169,50 @@ namespace Delta
 
                 gen->pushTyped("rax", varType);
             }
+
             void operator()(const NodeTermParen *term_paren) const
             {
                 gen->generateExpression(term_paren->expr);
             }
+
+            void operator()(const NodeTermFunctionCall *func_call) const
+            {
+                gen->generateFunctionCall(func_call);
+            }
         };
         TermVisitor visitor(this);
         std::visit(visitor, term->var);
+    }
+
+    void Assembler::generateFunctionCall(const NodeTermFunctionCall *func_call)
+    {
+        std::string func_name = func_call->function_name.value.value();
+
+        // Validate function call
+        validateFunctionCall(func_name, func_call->arguments);
+
+        Function *func = findFunction(func_name);
+        if (!func)
+        {
+            LOG_ERROR("Unknown function: {}", func_name);
+            exit(EXIT_FAILURE);
+        }
+
+        m_output << "; call " << func_name << "\n";
+
+        // Pass arguments according to calling convention
+        passArgumentsToFunction(func_call->arguments, *func);
+
+        // Align stack and call function
+        alignStackAndCall(func_name);
+
+        // Push return value onto expression stack if function returns something
+        if (func->return_type != DataType::VOID)
+        {
+            pushTyped("rax", func->return_type);
+        }
+
+        m_output << "; /call " << func_name << "\n";
     }
 
     void Assembler::generateBinaryExpression(const NodeExpressionBinary *bin_expr)
@@ -121,7 +250,7 @@ namespace Delta
                 gen->generateExpression(mul->right);
                 gen->generateExpression(mul->left);
 
-                gen->generateTypedBinaryOp("imul", leftType, rightType); // Use imul for signed multiplication
+                gen->generateTypedBinaryOp("imul", leftType, rightType);
             }
             void operator()(const NodeExpressionBinaryDivision *div) const
             {
@@ -131,27 +260,25 @@ namespace Delta
                 gen->generateExpression(div->right);
                 gen->generateExpression(div->left);
 
-                // Division requires special handling
                 gen->pop("rax");
                 gen->pop("rbx");
 
-                // Sign extend for signed division
                 switch (leftType)
                 {
                 case DataType::INT8:
-                    gen->m_output << "\tcbw\n"; // AL -> AX
+                    gen->m_output << "\tcbw\n";
                     gen->m_output << "\tidiv bl\n";
                     break;
                 case DataType::INT16:
-                    gen->m_output << "\tcwd\n"; // AX -> DX:AX
+                    gen->m_output << "\tcwd\n";
                     gen->m_output << "\tidiv bx\n";
                     break;
                 case DataType::INT32:
-                    gen->m_output << "\tcdq\n"; // EAX -> EDX:EAX
+                    gen->m_output << "\tcdq\n";
                     gen->m_output << "\tidiv ebx\n";
                     break;
                 case DataType::INT64:
-                    gen->m_output << "\tcqo\n"; // RAX -> RDX:RAX
+                    gen->m_output << "\tcqo\n";
                     gen->m_output << "\tidiv rbx\n";
                     break;
                 default:
@@ -160,7 +287,6 @@ namespace Delta
                     break;
                 }
 
-                // Result type is the larger of the two operand types
                 DataType resultType = (getTypeSize(leftType) >= getTypeSize(rightType)) ? leftType : rightType;
                 gen->pushTyped("rax", resultType);
             }
@@ -250,15 +376,15 @@ namespace Delta
             {
                 gen->m_output << "; exit\n";
                 gen->generateExpression(statement_exit->expression);
-                gen->pop("rcx"); // Exit code must be in RCX for Windows
+                gen->pop("rcx");
                 gen->alignStackAndCall("ExitProcess");
                 gen->m_output << "; /exit\n";
             }
+
             void operator()(const NodeStatementLet *statement_let)
             {
                 gen->m_output << "; let " << typeToString(statement_let->type) << " " << statement_let->ident.value.value() << "\n";
 
-                // Check if identifier already exists
                 auto it = std::find_if(gen->m_vars.cbegin(), gen->m_vars.cend(), [&](const Var &var)
                                        { return var.name == statement_let->ident.value.value(); });
                 if (it != gen->m_vars.cend())
@@ -267,11 +393,9 @@ namespace Delta
                     exit(EXIT_FAILURE);
                 }
 
-                // Type check the expression
                 DataType exprType = gen->inferExpressionType(statement_let->expression);
                 gen->validateTypeCompatibility(statement_let->type, exprType, "variable declaration");
 
-                // Add variable before generating expression (for recursion support)
                 Var var = Var(statement_let->ident.value.value(), gen->m_stack_size, statement_let->type);
                 var.setConstant(statement_let->isConst);
                 gen->m_vars.push_back(var);
@@ -279,6 +403,7 @@ namespace Delta
 
                 gen->m_output << "; /let " << typeToString(statement_let->type) << "\n";
             }
+
             void operator()(const NodeStatementAssign *assign)
             {
                 auto it = std::find_if(gen->m_vars.cbegin(), gen->m_vars.cend(), [&](const Var &var)
@@ -297,7 +422,6 @@ namespace Delta
                 }
                 gen->m_output << "; assign " << typeToString(var.type) << " " << var.name << "\n";
 
-                // Type check the assignment
                 DataType exprType = gen->inferExpressionType(assign->expression);
                 gen->validateTypeCompatibility(var.type, exprType, "assignment");
 
@@ -306,8 +430,6 @@ namespace Delta
 
                 size_t offset = (gen->m_stack_size - var.stack_loc - 1) * 8;
 
-                // Store with appropriate size
-                std::string reg = gen->getAppropriateRegister(var.type);
                 switch (var.type)
                 {
                 case DataType::INT8:
@@ -329,10 +451,12 @@ namespace Delta
 
                 gen->m_output << "; /assign " << typeToString(var.type) << "\n";
             }
+
             void operator()(const NodeScope *scope)
             {
                 gen->generateScope(scope);
             }
+
             void operator()(const NodeStatementIf *statement_if)
             {
                 gen->m_output << "; if\n";
@@ -356,11 +480,43 @@ namespace Delta
                 }
                 gen->m_output << "; /if\n";
             }
+
+            void operator()(const NodeStatementReturn *statement_return)
+            {
+                gen->m_output << "; return\n";
+                if (statement_return->expression)
+                {
+                    if (gen->m_current_function_return_type == DataType::VOID)
+                    {
+                        LOG_ERROR("Cannot return value from void function");
+                        exit(EXIT_FAILURE);
+                    }
+
+                    DataType exprType = gen->inferExpressionType(statement_return->expression);
+                    gen->validateTypeCompatibility(gen->m_current_function_return_type, exprType, "return statement");
+
+                    gen->generateExpression(statement_return->expression);
+                    gen->pop("rax"); // Return value goes in RAX
+                }
+                else
+                {
+                    if (gen->m_current_function_return_type != DataType::VOID)
+                    {
+                        LOG_ERROR("Must return value from non-void function");
+                        exit(EXIT_FAILURE);
+                    }
+                }
+
+                gen->setupFunctionEpilogue();
+                gen->m_output << "; /return\n";
+            }
         };
 
         StatementVisitor visitor(this);
         std::visit(visitor, statement->var);
     }
+
+    // Implementation of helper methods...
 
     void Assembler::alignStackAndCall(const std::string &function)
     {
@@ -413,6 +569,11 @@ namespace Delta
         return name;
     }
 
+    std::string Assembler::create_function_label(const std::string &func_name)
+    {
+        return func_name;
+    }
+
     void Assembler::begin_scope()
     {
         m_scopes.push_back(m_vars.size());
@@ -434,6 +595,51 @@ namespace Delta
             m_vars.pop_back();
         }
         m_scopes.pop_back();
+    }
+
+    void Assembler::begin_function(const std::string &func_name)
+    {
+        m_current_function = func_name;
+        m_in_function = true;
+        m_function_param_count = 0;
+        m_output << "; Begin Function " << func_name << "\n";
+    }
+
+    void Assembler::end_function()
+    {
+        // Clean up all function variables
+        while (!m_scopes.empty())
+        {
+            end_scope();
+        }
+
+        size_t vars_to_clean = m_vars.size();
+        if (vars_to_clean > 0)
+        {
+            m_output << "\tadd rsp, " << vars_to_clean * 8 << " ; Clean up function variables\n";
+            m_stack_size -= vars_to_clean;
+            m_stack_byte_size -= vars_to_clean * 8;
+            m_vars.clear();
+        }
+
+        m_current_function = "";
+        m_in_function = false;
+        m_function_param_count = 0;
+        m_current_function_return_type = DataType::VOID;
+        m_output << "; End Function\n";
+    }
+
+    void Assembler::setupFunctionPrologue()
+    {
+        m_output << "\tpush rbp\n";
+        m_output << "\tmov rbp, rsp\n";
+    }
+
+    void Assembler::setupFunctionEpilogue()
+    {
+        m_output << "\tmov rsp, rbp\n";
+        m_output << "\tpop rbp\n";
+        m_output << "\tret\n";
     }
 
     std::string Assembler::getAppropriateRegister(DataType type, const std::string &base_reg)
@@ -532,6 +738,16 @@ namespace Delta
             {
                 return gen->inferExpressionType(term_paren->expr);
             }
+            DataType operator()(const NodeTermFunctionCall *func_call) const
+            {
+                Function *func = gen->findFunction(func_call->function_name.value.value());
+                if (!func)
+                {
+                    LOG_ERROR("Unknown function: {}", func_call->function_name.value.value());
+                    exit(EXIT_FAILURE);
+                }
+                return func->return_type;
+            }
         };
 
         TermTypeVisitor visitor(this);
@@ -582,6 +798,88 @@ namespace Delta
             LOG_ERROR("Type mismatch in {}: expected {} but got {}",
                       context, typeToString(expected), typeToString(actual));
             exit(EXIT_FAILURE);
+        }
+    }
+
+    Function *Assembler::findFunction(const std::string &name)
+    {
+        auto it = std::find_if(m_functions.begin(), m_functions.end(),
+                               [&name](const Function &func)
+                               { return func.name == name; });
+        return (it != m_functions.end()) ? &(*it) : nullptr;
+    }
+
+    void Assembler::registerBuiltinFunctions()
+    {
+        // Register ExitProcess as external function
+        Function exitProcess("ExitProcess", {DataType::INT32}, DataType::VOID, "ExitProcess", true);
+        m_functions.push_back(exitProcess);
+
+        // Add other built-in functions as needed
+    }
+
+    void Assembler::validateFunctionCall(const std::string &func_name, const std::vector<NodeExpression *> &arguments)
+    {
+        Function *func = findFunction(func_name);
+        if (!func)
+        {
+            LOG_ERROR("Unknown function: {}", func_name);
+            exit(EXIT_FAILURE);
+        }
+
+        if (arguments.size() != func->parameter_types.size())
+        {
+            LOG_ERROR("Function {} expects {} arguments but got {}",
+                      func_name, func->parameter_types.size(), arguments.size());
+            exit(EXIT_FAILURE);
+        }
+
+        // Validate argument types
+        for (size_t i = 0; i < arguments.size(); i++)
+        {
+            DataType argType = inferExpressionType(arguments[i]);
+            DataType expectedType = func->parameter_types[i];
+
+            if (!isTypeCompatible(expectedType, argType))
+            {
+                LOG_ERROR("Argument {} to function {} has wrong type: expected {} but got {}",
+                          i + 1, func_name, typeToString(expectedType), typeToString(argType));
+                exit(EXIT_FAILURE);
+            }
+        }
+    }
+
+    std::vector<std::string> Assembler::getCallingConventionRegisters()
+    {
+        // Windows x64 calling convention: RCX, RDX, R8, R9
+        return {"rcx", "rdx", "r8", "r9"};
+    }
+
+    void Assembler::passArgumentsToFunction(const std::vector<NodeExpression *> &arguments, const Function &func)
+    {
+        std::vector<std::string> arg_registers = getCallingConventionRegisters();
+
+        // Generate expressions for all arguments first (right to left for stack)
+        for (int i = arguments.size() - 1; i >= 0; i--)
+        {
+            generateExpression(arguments[i]);
+        }
+
+        // Now pop arguments into registers/stack (left to right)
+        for (size_t i = 0; i < arguments.size(); i++)
+        {
+            if (i < arg_registers.size())
+            {
+                // Pass via register
+                pop(arg_registers[i]);
+            }
+            else
+            {
+                // Pass via stack - arguments beyond the 4th go on the stack
+                // This is handled by the calling convention automatically
+                LOG_ERROR("Stack-passed arguments not yet fully implemented");
+                exit(EXIT_FAILURE);
+            }
         }
     }
 

@@ -34,6 +34,11 @@ namespace Delta
                     tokens.push_back({TokenType::const_, line_count});
                     buf.clear();
                 }
+                else if (buf == "return")
+                {
+                    tokens.push_back({TokenType::return_, line_count});
+                    buf.clear();
+                }
                 else if (buf == "exit")
                 {
                     tokens.push_back({TokenType::exit, line_count});
@@ -98,6 +103,11 @@ namespace Delta
                     consume();
                 if (peek().has_value())
                     consume();
+            }
+            else if (peek().value() == ',')
+            {
+                consume();
+                tokens.push_back({TokenType::comma, line_count});
             }
             else if (peek().value() == ';')
             {

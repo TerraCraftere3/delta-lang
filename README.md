@@ -14,8 +14,8 @@ The Delta Programming Language
 ```
 int32 a = 42;
 int32 b = 3;
-int32 c = a + b; // Setting Variable
-c = 2 * c;     // Updating Variable
+int32 c = a + b;  // Setting Variable
+c = 2 * c;        // Updating Variable
 ```
 
 ### Maths 
@@ -79,10 +79,38 @@ d = a;
 ```
 Any integer type is compatible with another integer type, so are other types (like floats in the future).
 
+### Functions
+```
+int32 add(int32 a, int32 b) {
+    return a + b;
+}
+
+int32 result = add(3, 5);
+```
+
+### Main Function
+
+```
+int32 main(){
+    return 0;
+}
+```
+The return value of main() is used as the exit code of the program
+
 ## Grammar
 $$
 \begin{align}
-[\text{Prog}] &\to [\text{Statement}]^*
+[\text{Prog}] &\to [\text{FuncDecl}]^* \space [\text{Statement}]^*
+\\
+[\text{FuncDecl}] &\to [\text{Type}] \space \text{Identifier}([\text{ParamList}]?)[\text{Scope}]
+\\
+[\text{ParamList}] &\to \text{Param}^*
+\\
+[\text{Param}] &\to [\text{Type}] \space \text{Identifier}
+\\
+[\text{FuncCall}] &\to \text{Identifier}([\text{ArgList}]?)
+\\
+[\text{ArgList}] &\to \text{Expr}^*
 \\
 [\text{Statement}] &\to 
 \begin{cases}
@@ -128,7 +156,9 @@ $$
     \\
     \text{Identifier}
     \\
-    (\text{Expr})
+    [\text{Expr}]
+    \\
+    [\text{FuncCall}]
 \end{cases}
 \\
 [\text{Expr}] &\to 

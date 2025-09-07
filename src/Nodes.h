@@ -26,6 +26,13 @@ namespace Delta
         NodeExpression *expr;
     };
 
+    struct NodeTermFunctionCall
+    {
+        Token function_name;
+        std::vector<NodeExpression *> arguments;
+        const char *id = "Function Call";
+    };
+
     struct NodeExpressionBinaryAddition
     {
         NodeExpression *left;
@@ -62,7 +69,7 @@ namespace Delta
 
     struct NodeExpressionTerm
     {
-        std::variant<NodeTermIntegerLiteral *, NodeTermIdentifier *, NodeTermParen *> var;
+        std::variant<NodeTermIntegerLiteral *, NodeTermIdentifier *, NodeTermParen *, NodeTermFunctionCall *> var;
         const char *id = "Term Expression";
     };
 
@@ -132,14 +139,37 @@ namespace Delta
         const char *id = "Statement Let";
     };
 
+    struct NodeStatementReturn
+    {
+        NodeExpression *expression; // Optional - can be nullptr for void returns
+        const char *id = "Statement Return";
+    };
+
+    struct NodeParameter
+    {
+        Token ident;
+        DataType type;
+        const char *id = "Parameter";
+    };
+
+    struct NodeFunctionDeclaration
+    {
+        Token function_name;
+        std::vector<NodeParameter *> parameters;
+        DataType return_type;
+        NodeScope *body;
+        const char *id = "Function Declaration";
+    };
+
     struct NodeStatement
     {
-        std::variant<NodeStatementExit *, NodeStatementLet *, NodeStatementAssign *, NodeStatementIf *, NodeScope *> var;
+        std::variant<NodeStatementExit *, NodeStatementLet *, NodeStatementAssign *, NodeStatementIf *, NodeScope *, NodeStatementReturn *> var;
         const char *id = "Statement";
     };
 
     struct NodeProgram
     {
+        std::vector<NodeFunctionDeclaration *> functions;
         std::vector<NodeStatement *> statements;
         const char *id = "Program";
     };

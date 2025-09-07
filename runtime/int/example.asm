@@ -4,115 +4,73 @@
 ; Link Arguments: /subsystem:console /entry:_start /defaultlib:kernel32.lib /defaultlib:msvcrt.lib
 global _start
 extern ExitProcess
+global add
 
 section .text
-_start:
-; let int64 y
-	mov eax, 2
-	push rax
-	mov eax, 3
-	push rax
-	mov eax, 2
-	push rax
-	pop rax
-	pop rbx
-	imul eax, ebx
-	push rax
-	mov eax, 10
-	push rax
-	pop rax
-	pop rbx
-	sub eax, ebx
-	push rax
-	pop rax
-	pop rbx
-	cdq
-	idiv ebx
-	push rax
-; /let int64
-; let int8 x
-	mov eax, 7
-	push rax
-; /let int8
-; if
-	mov eax, 1
-	push rax
-	pop rax
-	test rax, rax
-	jz label0
+add:
+; Begin Function add
+	push rbp
+	mov rbp, rsp
+	push rcx
+	push rdx
 ; Begin Scope 1
-; assign int8 x
-	mov eax, 1
+; return
+	mov eax, DWORD [rsp+0]
 	push rax
-	pop rax
-	mov BYTE [rsp+0], al
-; /assign int8
-; Begin Scope 2
-; let int64 a
-	mov eax, 3
-	push rax
-	mov eax, 3
-	push rax
-	mov rax, QWORD [rsp+24]
+	mov eax, DWORD [rsp+16]
 	push rax
 	pop rax
 	pop rbx
-	add rax, rbx
-	push rax
-	mov eax, 27
+	add eax, ebx
 	push rax
 	pop rax
-	pop rbx
-	imul rax, rbx
-	push rax
-	pop rax
-	pop rbx
-	cqo
-	idiv rbx
-	push rax
-; /let int64
-; let int32 b
-	mov eax, 1
-	push rax
-; /let int32
-; let int16 c
-	mov eax, 2
-	push rax
-; /let int16
-; let int8 d
-	mov eax, 3
-	push rax
-; /let int8
-; assign int8 x
-	mov rax, QWORD [rsp+24]
-	push rax
-	pop rax
-	mov BYTE [rsp+32], al
-; /assign int8
-	add rsp, 32 ; Clean up 4 variables (32 bytes)
-; End Scope 2
+	mov rsp, rbp
+	pop rbp
+	ret
+; /return
 ; End Scope 1
-	jmp label1
-label0:
+	mov rax, 0
+	mov rsp, rbp
+	pop rbp
+	ret
+	add rsp, 16 ; Clean up function variables
+; End Function
+
+main:
+; Begin Function main
+	push rbp
+	mov rbp, rsp
 ; Begin Scope 1
-; assign int8 x
-	mov eax, 0
+; return
+; call add
+	mov eax, 3
 	push rax
-	pop rax
-	mov BYTE [rsp+0], al
-; /assign int8
-; End Scope 1
-label1:
-; /if
-; exit
-	mov al, BYTE [rsp+0]
+	mov eax, 5
 	push rax
 	pop rcx
+	pop rdx
 	sub rsp, 8 ; Align stack for Windows ABI
-	call ExitProcess
+	call add
 	add rsp, 8 ; Restore stack after call
-; /exit
-	mov rcx, 0
+	push rax
+; /call add
+	pop rax
+	mov rsp, rbp
+	pop rbp
+	ret
+; /return
+; End Scope 1
+	mov rax, 0
+	mov rsp, rbp
+	pop rbp
+	ret
+; End Function
+
+_start:
+	sub rsp, 8 ; Align stack for Windows ABI
+	call main
+	add rsp, 8 ; Restore stack after call
+	mov rcx, rax
 	sub rsp, 8 ; Align stack for Windows ABI
 	call ExitProcess
 	add rsp, 8 ; Restore stack after call

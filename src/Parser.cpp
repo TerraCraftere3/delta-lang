@@ -17,6 +17,8 @@ namespace Delta
         {
             exit(EXIT_FAILURE);
         }
+
+        // Exit statement: exit(expr);
         if (peek().value().type == TokenType::exit && peek(2).has_value() && peek(2).value().type == TokenType::open_paren)
         {
             consume();
@@ -37,6 +39,36 @@ namespace Delta
             try_consume(TokenType::close_paren, "')'", open_paren.line);
             try_consume(TokenType::semicolon, "';'", open_paren.line);
         }
+        // Return statement: return expr?;
+        else if (peek().value().type == TokenType::return_)
+        {
+            auto return_token = consume();
+            auto *statement_return = m_allocator.alloc<NodeStatementReturn>();
+
+            // Check if there's an expression (optional for void functions)
+            if (peek().has_value() && peek().value().type != TokenType::semicolon)
+            {
+                if (auto node_expr = parseExpression())
+                {
+                    statement_return->expression = node_expr.value();
+                }
+                else
+                {
+                    LOG_ERROR("Invalid Expression in return statement");
+                    exit(EXIT_FAILURE);
+                }
+            }
+            else
+            {
+                statement_return->expression = nullptr; // No return value
+            }
+
+            auto *stmt = m_allocator.alloc<NodeStatement>();
+            stmt->var = statement_return;
+            statement = stmt;
+            try_consume(TokenType::semicolon, "';'", return_token.line);
+        }
+        // Const variable declaration: const type identifier = expr;
         else if (peek().value().type == TokenType::const_ && peek(2).has_value() && peek(2).value().type == TokenType::data_type && peek(3).has_value() && peek(3).value().type == TokenType::identifier && peek(4).has_value() && peek(4).value().type == TokenType::equals)
         {
             consume(); // const
@@ -60,6 +92,7 @@ namespace Delta
             }
             try_consume(TokenType::semicolon, "';'", eq.line);
         }
+        // Variable declaration: type identifier = expr;
         else if (peek().value().type == TokenType::data_type && peek(2).has_value() && peek(2).value().type == TokenType::identifier && peek(3).has_value() && peek(3).value().type == TokenType::equals)
         {
             auto data_type = consume();
@@ -82,6 +115,7 @@ namespace Delta
             }
             try_consume(TokenType::semicolon, "';'", eq.line);
         }
+        // Assignment: identifier = expr;
         else if (peek().value().type == TokenType::identifier && peek(2).has_value() && peek(2).value().type == TokenType::equals)
         {
             auto assign = m_allocator.alloc<NodeStatementAssign>();
@@ -101,6 +135,7 @@ namespace Delta
             stmt->var = assign;
             statement = stmt;
         }
+        // Scope: { statements }
         else if (peek().value().type == TokenType::open_curly)
         {
             if (auto scope = parseScope())
@@ -115,6 +150,7 @@ namespace Delta
                 exit(EXIT_FAILURE);
             }
         }
+        // If statement: if(expr) scope pred?
         else if (auto if_ = try_consume(TokenType::if_))
         {
             try_consume(TokenType::open_paren, "'('", if_.value().line);
@@ -150,19 +186,124 @@ namespace Delta
     std::optional<NodeProgram> Parser::parseProgram()
     {
         NodeProgram program;
+
         while (peek().has_value())
         {
-            if (auto statement = parseStatement())
+            // Try to parse function declaration first
+            if (auto func_decl = parseFunctionDeclaration())
+            {
+                program.functions.push_back(func_decl.value());
+            }
+            // Otherwise parse statement
+            else if (auto statement = parseStatement())
             {
                 program.statements.push_back(statement.value());
             }
             else
             {
-                LOG_ERROR("Invalid Statement");
+                LOG_ERROR("Invalid Statement or Function Declaration");
                 exit(EXIT_FAILURE);
             }
         }
         return program;
+    }
+
+    std::optional<NodeFunctionDeclaration *> Parser::parseFunctionDeclaration()
+    {
+        // Check if this looks like a function: type identifier(
+        if (peek().has_value() && peek().value().type == TokenType::data_type &&
+            peek(2).has_value() && peek(2).value().type == TokenType::identifier &&
+            peek(3).has_value() && peek(3).value().type == TokenType::open_paren)
+        {
+            auto return_type_token = consume();
+            auto function_name = consume();
+            auto open_paren = consume();
+
+            auto *func_decl = m_allocator.alloc<NodeFunctionDeclaration>();
+            func_decl->return_type = stringToType(return_type_token.value.value());
+            func_decl->function_name = function_name;
+
+            // Parse parameter list
+            if (peek().has_value() && peek().value().type != TokenType::close_paren)
+            {
+                if (auto param_list = parseParameterList())
+                {
+                    func_decl->parameters = param_list.value();
+                }
+                else
+                {
+                    LOG_ERROR("Invalid parameter list");
+                    exit(EXIT_FAILURE);
+                }
+            }
+
+            try_consume(TokenType::close_paren, "')'", open_paren.line);
+
+            // Parse function body
+            if (auto body = parseScope())
+            {
+                func_decl->body = body.value();
+            }
+            else
+            {
+                LOG_ERROR("Expected function body");
+                exit(EXIT_FAILURE);
+            }
+
+            return func_decl;
+        }
+
+        return std::nullopt;
+    }
+
+    std::optional<std::vector<NodeParameter *>> Parser::parseParameterList()
+    {
+        std::vector<NodeParameter *> parameters;
+
+        // Parse first parameter
+        if (auto param = parseParameter())
+        {
+            parameters.push_back(param.value());
+        }
+        else
+        {
+            return std::nullopt;
+        }
+
+        // Parse remaining parameters (comma-separated)
+        while (peek().has_value() && peek().value().type == TokenType::comma)
+        {
+            consume(); // consume comma
+            if (auto param = parseParameter())
+            {
+                parameters.push_back(param.value());
+            }
+            else
+            {
+                LOG_ERROR("Expected parameter after comma");
+                exit(EXIT_FAILURE);
+            }
+        }
+
+        return parameters;
+    }
+
+    std::optional<NodeParameter *> Parser::parseParameter()
+    {
+        if (peek().has_value() && peek().value().type == TokenType::data_type &&
+            peek(2).has_value() && peek(2).value().type == TokenType::identifier)
+        {
+            auto type_token = consume();
+            auto name_token = consume();
+
+            auto *param = m_allocator.alloc<NodeParameter>();
+            param->type = stringToType(type_token.value.value());
+            param->ident = name_token;
+
+            return param;
+        }
+
+        return std::nullopt;
     }
 
     std::optional<NodeScope *> Parser::parseScope()
@@ -308,6 +449,7 @@ namespace Delta
 
     std::optional<NodeExpressionTerm *> Parser::parseTerm()
     {
+        // Integer literal
         if (auto int_lit = try_consume(TokenType::int_literal))
         {
             auto term_int_lit = m_allocator.alloc<NodeTermIntegerLiteral>();
@@ -316,6 +458,37 @@ namespace Delta
             node_term->var = term_int_lit;
             return node_term;
         }
+        // Function call: identifier(args)
+        else if (peek().has_value() && peek().value().type == TokenType::identifier &&
+                 peek(2).has_value() && peek(2).value().type == TokenType::open_paren)
+        {
+            auto function_name = consume();
+            auto open_paren = consume();
+
+            auto *func_call = m_allocator.alloc<NodeTermFunctionCall>();
+            func_call->function_name = function_name;
+
+            // Parse argument list
+            if (peek().has_value() && peek().value().type != TokenType::close_paren)
+            {
+                if (auto arg_list = parseArgumentList())
+                {
+                    func_call->arguments = arg_list.value();
+                }
+                else
+                {
+                    LOG_ERROR("Invalid argument list");
+                    exit(EXIT_FAILURE);
+                }
+            }
+
+            try_consume(TokenType::close_paren, "')'", open_paren.line);
+
+            auto node_term = m_allocator.alloc<NodeExpressionTerm>();
+            node_term->var = func_call;
+            return node_term;
+        }
+        // Identifier (variable)
         else if (auto id = try_consume(TokenType::identifier))
         {
             auto term_ident = m_allocator.alloc<NodeTermIdentifier>();
@@ -324,6 +497,7 @@ namespace Delta
             node_term->var = term_ident;
             return node_term;
         }
+        // Parenthesized expression: (expr)
         else if (auto open_paren = try_consume(TokenType::open_paren))
         {
             auto expr = parseExpression();
@@ -340,6 +514,38 @@ namespace Delta
             return node_term;
         }
         return std::nullopt;
+    }
+
+    std::optional<std::vector<NodeExpression *>> Parser::parseArgumentList()
+    {
+        std::vector<NodeExpression *> arguments;
+
+        // Parse first argument
+        if (auto expr = parseExpression())
+        {
+            arguments.push_back(expr.value());
+        }
+        else
+        {
+            return std::nullopt;
+        }
+
+        // Parse remaining arguments (comma-separated)
+        while (peek().has_value() && peek().value().type == TokenType::comma)
+        {
+            consume(); // consume comma
+            if (auto expr = parseExpression())
+            {
+                arguments.push_back(expr.value());
+            }
+            else
+            {
+                LOG_ERROR("Expected expression after comma in argument list");
+                exit(EXIT_FAILURE);
+            }
+        }
+
+        return arguments;
     }
 
     std::optional<Token> Parser::peek(int count) const
@@ -365,6 +571,7 @@ namespace Delta
             Error::throwExpected(c, line, row);
         }
     }
+
     std::optional<Token> Parser::try_consume(TokenType type)
     {
         if (peek().has_value() && peek().value().type == type)

@@ -25,6 +25,19 @@ struct Var
     }
 };
 
+struct Function
+{
+    std::string name;
+    std::vector<Delta::DataType> parameter_types;
+    Delta::DataType return_type;
+    std::string label;
+    bool is_external = false;
+
+    Function(const std::string &n, const std::vector<Delta::DataType> &params,
+             Delta::DataType ret_type, const std::string &lbl = "", bool external = false)
+        : name(n), parameter_types(params), return_type(ret_type), label(lbl), is_external(external) {}
+};
+
 namespace Delta
 {
     class Assembler
@@ -38,6 +51,8 @@ namespace Delta
         void generateScope(const NodeScope *scope);
         void generateIfPred(const NodeIfPred *pred, const std::string &end_label);
         void generateStatement(const NodeStatement *statement);
+        void generateFunctionCall(const NodeTermFunctionCall *func_call);
+        void generateFunctionDeclaration(const NodeFunctionDeclaration *func_decl);
 
     private:
         void push(const std::string &reg);
@@ -45,9 +60,14 @@ namespace Delta
         void pushTyped(const std::string &reg, DataType type);
         void popTyped(const std::string &reg, DataType type);
         std::string create_label();
+        std::string create_function_label(const std::string &func_name);
         void begin_scope();
         void end_scope();
+        void begin_function(const std::string &func_name);
+        void end_function();
         void alignStackAndCall(const std::string &function);
+        void setupFunctionPrologue();
+        void setupFunctionEpilogue();
 
         // Type-aware helper methods
         std::string getAppropriateRegister(DataType type, const std::string &base_reg = "rax");
@@ -58,6 +78,13 @@ namespace Delta
         DataType inferBinaryExpressionType(const NodeExpressionBinary *bin_expr);
         void validateTypeCompatibility(DataType expected, DataType actual, const std::string &context);
 
+        // Function-related helpers
+        Function *findFunction(const std::string &name);
+        void registerBuiltinFunctions();
+        void validateFunctionCall(const std::string &func_name, const std::vector<NodeExpression *> &arguments);
+        std::vector<std::string> getCallingConventionRegisters();
+        void passArgumentsToFunction(const std::vector<NodeExpression *> &arguments, const Function &func);
+
     private:
         const NodeProgram m_program;
         std::stringstream m_output;
@@ -66,6 +93,13 @@ namespace Delta
         size_t m_label_count = 0;
         std::vector<Var> m_vars{};
         std::vector<size_t> m_scopes{};
+        std::vector<Function> m_functions{};
+
+        // Function context
+        std::string m_current_function = "";
+        size_t m_function_param_count = 0;
+        DataType m_current_function_return_type = DataType::VOID;
+        bool m_in_function = false;
 
         // Type tracking for expressions
         std::map<const NodeExpression *, DataType> m_expression_types{};
