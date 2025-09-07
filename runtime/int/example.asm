@@ -15,17 +15,6 @@ _start:
 	pop rbx
 	mul rbx
 	push rax
-	push QWORD [rsp+0]
-	pop rax
-	test rax, rax
-	jz label1
-	; Begin Scope 1
-	mov rax, 42
-	push rax
-	pop rcx
-	call ExitProcess
-	; End Scope 1
-label1:
 	mov rax, 1
 	push rax
 	pop rcx

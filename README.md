@@ -9,7 +9,7 @@ The Delta Programming Language
     - `cmake .. -G "Visual Studio 17 2022"` (Adjust the Generator to your Visual Studio Version)
     - `cmake --build . --config Release` or open the generated Solution File
 
-## Examples
+## Usage
 ### Variables
 ```
 let a = 42;
@@ -19,16 +19,15 @@ let c = a + b;
 
 ### Maths 
 ```
-let d = a * b;
+let d = a * (b + 2);
 let e = d - 128;
 ```
 
 ### Exit
 ```
 let code = 0;
-exit(code);
+exit(code); // or just exit(0)
 ```
-or just `exit(0)`
 
 ### Scopes
 ```
@@ -36,18 +35,30 @@ let a = 3;
 {
     let b = 9;
 }
-let b = 3;
+let b = 3; // Can redefine because scope is closed
 ```
 You cannot shadow variables that are outside scopes
 
 ### IF Statements
 ```
 let a = 3;
+// Check if a not 0
 if(a){
-    let b = a + 3;
+    ...
 }
 ```
 You cannot shadow variables that are outside scopes
+
+### Comments
+```
+// This is an example comment
+let a = 3
+
+// This is a multiline comment
+/*if(error) {
+    exit(error)
+}*/
+```
 
 ## Grammar
 $$

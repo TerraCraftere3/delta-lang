@@ -48,6 +48,30 @@ namespace Delta
                 tokens.push_back({TokenType::int_literal, buf});
                 buf.clear();
             }
+            else if (peek().value() == '/' && peek(2).has_value() && peek(2).value() == '/')
+            {
+                consume();
+                consume();
+                while (peek().has_value() && peek().value() != '\n')
+                {
+                    consume();
+                }
+            }
+            else if (peek().value() == '/' && peek(2).has_value() && peek(2).value() == '*')
+            {
+                consume();
+                consume();
+                while (peek().has_value())
+                {
+                    if (peek().value() == '*' && peek(2).has_value() && peek(2).value() == '/')
+                        break;
+                    consume();
+                }
+                if (peek().has_value())
+                    consume();
+                if (peek().has_value())
+                    consume();
+            }
             else if (peek().value() == ';')
             {
                 consume();

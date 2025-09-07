@@ -1,5 +1,6 @@
 let x = 3 * 3;
-if (x) {
+// Test Comment
+/*if (x) {
     exit(42);
-}
+}*/
 exit(1);
