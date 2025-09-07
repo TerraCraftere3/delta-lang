@@ -37,10 +37,11 @@ namespace Delta
             try_consume(TokenType::close_paren, "')'", open_paren.line);
             try_consume(TokenType::semicolon, "';'", open_paren.line);
         }
-        else if (peek().value().type == TokenType::let && peek(2).has_value() && peek(2).value().type == TokenType::identifier && peek(3).has_value() && peek(3).value().type == TokenType::equals)
+        else if (peek().value().type == TokenType::data_type && peek(2).has_value() && peek(2).value().type == TokenType::identifier && peek(3).has_value() && peek(3).value().type == TokenType::equals)
         {
-            consume();
+            auto data_type = consume();
             auto *statement_let = m_allocator.alloc<NodeStatementLet>();
+            statement_let->type = stringToType(data_type.value.value());
             statement_let->ident = consume();
             auto eq = consume();
             if (auto node_expr = parseExpression())

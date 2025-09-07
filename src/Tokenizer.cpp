@@ -1,5 +1,6 @@
 #include "Tokenizer.h"
 
+#include "Types.h"
 #include "Log.h"
 
 namespace Delta
@@ -23,9 +24,9 @@ namespace Delta
                     tokens.push_back({TokenType::exit, line_count});
                     buf.clear();
                 }
-                else if (buf == "let")
+                else if (isValidDataType(buf))
                 {
-                    tokens.push_back({TokenType::let, line_count});
+                    tokens.push_back({TokenType::data_type, line_count, buf});
                     buf.clear();
                 }
                 else if (buf == "if")

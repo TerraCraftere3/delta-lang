@@ -11,7 +11,7 @@ namespace Delta
         elif,        // elif
         else_,       // else
         exit,        // exit
-        let,         // let
+        data_type,   // int64, float32, bool, etc.
         equals,      // =
         int_literal, // integer like 10, etc
         semicolon,   // ;

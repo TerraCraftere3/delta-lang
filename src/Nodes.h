@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Tokens.h"
+#include "Types.h"
 #include <variant>
 #include <vector>
 
@@ -126,6 +127,7 @@ namespace Delta
     {
         Token ident;
         NodeExpression *expression;
+        DataType type;
         const char *id = "Statement Let";
     };
 

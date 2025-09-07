@@ -71,7 +71,7 @@ $$
 \begin{cases}
     exit([\text{Expr}]); 
     \\
-    let \space\text{Identifier} = [\text{Expr}];
+    [\text{Type}] \space\text{Identifier} = [\text{Expr}];
     \\
     \text{Identifier} = [\text{Expr}];
     \\
@@ -119,6 +119,17 @@ $$
     \text{Term}
     \\
     \text{BinExpr}
+\end{cases}
+\\
+[\text{Type}] &\to 
+\begin{cases}
+    \text{int8}
+    \\
+    \text{int16}
+    \\
+    \text{int32}
+    \\
+    \text{int64}
 \end{cases}
 \end{align}
 $$
