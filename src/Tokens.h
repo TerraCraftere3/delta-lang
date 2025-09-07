@@ -29,6 +29,7 @@ namespace Delta
     struct Token
     {
         TokenType type;
+        int line;
         std::optional<std::string> value; // For literals
     };
 }

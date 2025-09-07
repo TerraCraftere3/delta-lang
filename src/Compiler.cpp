@@ -4,6 +4,7 @@
 #include "Tokenizer.h"
 #include "Parser.h"
 #include "Assembler.h"
+#include "Error.h"
 #include <fstream>
 
 namespace Delta

@@ -1,6 +1,7 @@
 #include "Parser.h"
 #include "Tokenizer.h"
 #include "Log.h"
+#include "Error.h"
 
 namespace Delta
 {
@@ -19,7 +20,7 @@ namespace Delta
         if (peek().value().type == TokenType::exit && peek(2).has_value() && peek(2).value().type == TokenType::open_paren)
         {
             consume();
-            consume();
+            auto open_paren = consume();
             if (auto node_expr = parseExpression())
             {
                 auto *statement_exit = m_allocator.alloc<NodeStatementExit>();
@@ -33,15 +34,15 @@ namespace Delta
                 LOG_ERROR("Invalid Expression");
                 exit(EXIT_FAILURE);
             }
-            try_consume(TokenType::close_paren, "Expected ')'");
-            try_consume(TokenType::semicolon, "Expected ';'");
+            try_consume(TokenType::close_paren, "')'", open_paren.line);
+            try_consume(TokenType::semicolon, "';'", open_paren.line);
         }
         else if (peek().value().type == TokenType::let && peek(2).has_value() && peek(2).value().type == TokenType::identifier && peek(3).has_value() && peek(3).value().type == TokenType::equals)
         {
             consume();
             auto *statement_let = m_allocator.alloc<NodeStatementLet>();
             statement_let->ident = consume();
-            consume();
+            auto eq = consume();
             if (auto node_expr = parseExpression())
             {
                 statement_let->expression = node_expr.value();
@@ -54,13 +55,13 @@ namespace Delta
                 LOG_ERROR("Invalid Expression");
                 exit(EXIT_FAILURE);
             }
-            try_consume(TokenType::semicolon, "Expected ';'");
+            try_consume(TokenType::semicolon, "';'", eq.line);
         }
         else if (peek().value().type == TokenType::identifier && peek(2).has_value() && peek(2).value().type == TokenType::equals)
         {
             auto assign = m_allocator.alloc<NodeStatementAssign>();
             assign->ident = consume();
-            consume(); // equals sign
+            auto eq = consume(); // equals sign
             if (auto expr = parseExpression())
             {
                 assign->expression = expr.value();
@@ -70,7 +71,7 @@ namespace Delta
                 LOG_ERROR("Invalid Expression");
                 exit(EXIT_FAILURE);
             }
-            try_consume(TokenType::semicolon, "Expected ';'");
+            try_consume(TokenType::semicolon, "';'", eq.line);
             auto stmt = m_allocator.alloc<NodeStatement>();
             stmt->var = assign;
             statement = stmt;
@@ -91,7 +92,7 @@ namespace Delta
         }
         else if (auto if_ = try_consume(TokenType::if_))
         {
-            try_consume(TokenType::open_paren, "Expected '('");
+            try_consume(TokenType::open_paren, "'('", if_.value().line);
             auto stmt_if = m_allocator.alloc<NodeStatementIf>();
             if (auto expr = parseExpression())
             {
@@ -102,7 +103,7 @@ namespace Delta
                 LOG_ERROR("Invalid Expression");
                 exit(EXIT_FAILURE);
             }
-            try_consume(TokenType::close_paren, "Expected ')'");
+            try_consume(TokenType::close_paren, "')'", if_.value().line);
             if (auto scope = parseScope())
             {
                 stmt_if->scope = scope.value();
@@ -148,7 +149,7 @@ namespace Delta
             {
                 scope->statements.push_back(statement.value());
             }
-            try_consume(TokenType::close_curly, "Expected '}'");
+            try_consume(TokenType::close_curly, "'}'", peek(-1).value().line);
             return scope;
         }
         else
@@ -159,9 +160,9 @@ namespace Delta
 
     std::optional<NodeIfPred *> Parser::parseIfPred()
     {
-        if (try_consume(TokenType::elif).has_value())
+        if (auto _ = try_consume(TokenType::elif))
         {
-            try_consume(TokenType::open_paren, "Expected '('");
+            try_consume(TokenType::open_paren, "'('", _.value().line);
             auto elif = m_allocator.alloc<NodeIfPredElif>();
             if (auto expr = parseExpression())
             {
@@ -172,22 +173,19 @@ namespace Delta
                 LOG_ERROR("Expected Expression");
                 exit(EXIT_FAILURE);
             }
-            try_consume(TokenType::close_paren, "Expected ')'");
+            try_consume(TokenType::close_paren, "')'", _.value().line);
             if (auto scope = parseScope())
             {
                 elif->scope = scope.value();
             }
             else
-            {
-                LOG_ERROR("Expected Scope");
-                exit(EXIT_FAILURE);
-            }
+                Error::throwExpected("Scope", _.value().line);
             elif->pred = parseIfPred();
             auto pred = m_allocator.alloc<NodeIfPred>();
             pred->var = elif;
             return pred;
         }
-        if (try_consume(TokenType::else_).has_value())
+        if (auto _ = try_consume(TokenType::else_))
         {
             auto else_ = m_allocator.alloc<NodeIfPredElse>();
             if (auto scope = parseScope())
@@ -195,10 +193,7 @@ namespace Delta
                 else_->scope = scope.value();
             }
             else
-            {
-                LOG_ERROR("Expected Scope");
-                exit(EXIT_FAILURE);
-            }
+                Error::throwExpected("Scope", _.value().line);
             auto pred = m_allocator.alloc<NodeIfPred>();
             pred->var = else_;
             return pred;
@@ -312,7 +307,7 @@ namespace Delta
                 LOG_ERROR("Expected Expression");
                 exit(EXIT_FAILURE);
             }
-            try_consume(TokenType::close_paren, "Expected ')'");
+            try_consume(TokenType::close_paren, "')'", open_paren.value().line);
             auto node_term_paren = m_allocator.alloc<NodeTermParen>();
             node_term_paren->expr = expr.value();
             auto node_term = m_allocator.alloc<NodeExpressionTerm>();
@@ -334,7 +329,7 @@ namespace Delta
         return m_tokens.at(m_position++);
     }
 
-    Token Parser::try_consume(TokenType type, const std::string &error_msg)
+    Token Parser::try_consume(TokenType type, const std::string &c, int line, int row)
     {
         if (peek().has_value() && peek().value().type == type)
         {
@@ -342,8 +337,7 @@ namespace Delta
         }
         else
         {
-            LOG_ERROR(error_msg);
-            exit(EXIT_FAILURE);
+            Error::throwExpected(c, line, row);
         }
     }
     std::optional<Token> Parser::try_consume(TokenType type)

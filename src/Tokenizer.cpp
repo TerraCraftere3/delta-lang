@@ -8,6 +8,7 @@ namespace Delta
     {
         std::vector<Token> tokens;
         std::string buf;
+        int line_count = 1;
         while (peek().has_value())
         {
             if (std::isalpha(peek().value()))
@@ -19,32 +20,32 @@ namespace Delta
                 }
                 if (buf == "exit")
                 {
-                    tokens.push_back({TokenType::exit});
+                    tokens.push_back({TokenType::exit, line_count});
                     buf.clear();
                 }
                 else if (buf == "let")
                 {
-                    tokens.push_back({TokenType::let});
+                    tokens.push_back({TokenType::let, line_count});
                     buf.clear();
                 }
                 else if (buf == "if")
                 {
-                    tokens.push_back({TokenType::if_});
+                    tokens.push_back({TokenType::if_, line_count});
                     buf.clear();
                 }
                 else if (buf == "elif")
                 {
-                    tokens.push_back({TokenType::elif});
+                    tokens.push_back({TokenType::elif, line_count});
                     buf.clear();
                 }
                 else if (buf == "else")
                 {
-                    tokens.push_back({TokenType::else_});
+                    tokens.push_back({TokenType::else_, line_count});
                     buf.clear();
                 }
                 else
                 {
-                    tokens.push_back({TokenType::identifier, buf});
+                    tokens.push_back({TokenType::identifier, line_count, buf});
                     buf.clear();
                 }
             }
@@ -55,7 +56,7 @@ namespace Delta
                 {
                     buf.push_back(consume());
                 }
-                tokens.push_back({TokenType::int_literal, buf});
+                tokens.push_back({TokenType::int_literal, line_count, buf});
                 buf.clear();
             }
             else if (peek().value() == '/' && peek(2).has_value() && peek(2).value() == '/')
@@ -85,52 +86,57 @@ namespace Delta
             else if (peek().value() == ';')
             {
                 consume();
-                tokens.push_back({TokenType::semicolon});
+                tokens.push_back({TokenType::semicolon, line_count});
             }
             else if (peek().value() == '(')
             {
                 consume();
-                tokens.push_back({TokenType::open_paren});
+                tokens.push_back({TokenType::open_paren, line_count});
             }
             else if (peek().value() == ')')
             {
                 consume();
-                tokens.push_back({TokenType::close_paren});
+                tokens.push_back({TokenType::close_paren, line_count});
             }
             else if (peek().value() == '=')
             {
                 consume();
-                tokens.push_back({TokenType::equals});
+                tokens.push_back({TokenType::equals, line_count});
             }
             else if (peek().value() == '+')
             {
                 consume();
-                tokens.push_back({TokenType::plus});
+                tokens.push_back({TokenType::plus, line_count});
             }
             else if (peek().value() == '-')
             {
                 consume();
-                tokens.push_back({TokenType::minus});
+                tokens.push_back({TokenType::minus, line_count});
             }
             else if (peek().value() == '*')
             {
                 consume();
-                tokens.push_back({TokenType::star});
+                tokens.push_back({TokenType::star, line_count});
             }
             else if (peek().value() == '/')
             {
                 consume();
-                tokens.push_back({TokenType::slash});
+                tokens.push_back({TokenType::slash, line_count});
             }
             else if (peek().value() == '{')
             {
                 consume();
-                tokens.push_back({TokenType::open_curly});
+                tokens.push_back({TokenType::open_curly, line_count});
             }
             else if (peek().value() == '}')
             {
                 consume();
-                tokens.push_back({TokenType::close_curly});
+                tokens.push_back({TokenType::close_curly, line_count});
+            }
+            else if (peek().value() == '\n')
+            {
+                line_count++;
+                consume();
             }
             else if (std::isspace(peek().value()))
             {
@@ -138,7 +144,7 @@ namespace Delta
             }
             else
             {
-                LOG_ERROR("Unexpected character: '{}'", peek().value());
+                LOG_ERROR("Unexpected character '{}' on line {}", peek().value(), line_count);
                 exit(EXIT_FAILURE);
             }
         }

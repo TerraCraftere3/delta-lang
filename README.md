@@ -14,7 +14,8 @@ The Delta Programming Language
 ```
 let a = 42;
 let b = 3;
-let c = a + b;
+let c = a + b; // Setting Variable
+c = 2 * c;     // Updating Variable
 ```
 
 ### Maths 

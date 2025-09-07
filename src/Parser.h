@@ -21,7 +21,7 @@ namespace Delta
     private:
         std::optional<Token> peek(int count = 1) const;
         Token consume();
-        Token try_consume(TokenType type, const std::string &error_msg);
+        Token try_consume(TokenType type, const std::string &c, int line, int row = 0);
         std::optional<Token> try_consume(TokenType type);
 
     private:
