@@ -125,10 +125,16 @@ namespace Delta
             return DataType::VOID;
         else if (s == "int8")
             return DataType::INT8;
+        else if (s == "short")
+            return DataType::INT16;
         else if (s == "int16")
             return DataType::INT16;
+        else if (s == "int")
+            return DataType::INT32;
         else if (s == "int32")
             return DataType::INT32;
+        else if (s == "long")
+            return DataType::INT64;
         else if (s == "int64")
             return DataType::INT64;
         return DataType::ERRORTYPE;

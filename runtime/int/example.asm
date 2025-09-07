@@ -15,13 +15,13 @@ add:
 	push rdx
 ; Begin Scope 1
 ; return
-	mov eax, DWORD [rsp+0]
+	mov rax, QWORD [rsp+0]
 	push rax
-	mov eax, DWORD [rsp+16]
+	mov rax, QWORD [rsp+16]
 	push rax
 	pop rax
 	pop rbx
-	add eax, ebx
+	add rax, rbx
 	push rax
 	pop rax
 	mov rsp, rbp

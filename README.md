@@ -70,9 +70,12 @@ const int64 ZERO = 0;
 ### Types
 ```
 int64 a = 1;
-int32 b = 2;
-int16 c = 3;
-int8 d = 4;
+long b = 2; // same as int64
+int32 c = 3;
+int d = 4; // same as int32
+int16 e = 5;
+short f = 6; // same as int16
+int8 g = 7;
 
 // Any integer type is compatible with each other (for example assigning the value of an int64 to an int8)
 d = a;
@@ -81,11 +84,11 @@ Any integer type is compatible with another integer type, so are other types (li
 
 ### Functions
 ```
-int32 add(int32 a, int32 b) {
+int add(int a, int b) {
     return a + b;
 }
 
-int32 result = add(3, 5);
+int result = add(3, 5);
 ```
 
 ### Main Function
