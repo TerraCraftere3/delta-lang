@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Nodes.h"
+#include "Types.h"
 #include <sstream>
 #include <map>
 #include <vector>
@@ -11,6 +12,11 @@ struct Var
 {
     std::string name;
     size_t stack_loc;
+    Delta::DataType type;
+    size_t type_size;
+
+    Var(const std::string &n, size_t loc, Delta::DataType t)
+        : name(n), stack_loc(loc), type(t), type_size(Delta::getTypeSize(t)) {}
 };
 
 namespace Delta
@@ -39,6 +45,7 @@ namespace Delta
         const NodeProgram m_program;
         std::stringstream m_output;
         size_t m_stack_size = 0;
+        size_t m_stack_byte_size = 0;
         size_t m_label_count = 0;
         std::vector<Var> m_vars{};
         std::vector<size_t> m_scopes{};

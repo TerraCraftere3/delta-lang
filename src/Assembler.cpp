@@ -189,7 +189,7 @@ namespace Delta
             }
             void operator()(const NodeStatementLet *statement_let)
             {
-                gen->m_output << "; let\n";
+                gen->m_output << "; let " << typeToString(statement_let->type) << "\n";
                 auto it = std::find_if(gen->m_vars.cbegin(), gen->m_vars.cend(), [&](const Var &var)
                                        { return var.name == statement_let->ident.value.value(); });
                 if (it != gen->m_vars.cend())
@@ -197,13 +197,12 @@ namespace Delta
                     LOG_ERROR("Identifier '{}' exists already", statement_let->ident.value.value());
                     exit(EXIT_FAILURE);
                 }
-                gen->m_vars.push_back(Var{statement_let->ident.value.value(), gen->m_stack_size});
+                gen->m_vars.push_back(Var(statement_let->ident.value.value(), gen->m_stack_size, statement_let->type));
                 gen->generateExpression(statement_let->expression);
-                gen->m_output << "; /let\n";
+                gen->m_output << "; /let " << typeToString(statement_let->type) << "\n";
             }
             void operator()(const NodeStatementAssign *assign)
             {
-                gen->m_output << "; assign\n";
                 auto it = std::find_if(gen->m_vars.cbegin(), gen->m_vars.cend(), [&](const Var &var)
                                        { return var.name == assign->ident.value.value(); });
                 if (it == gen->m_vars.cend())
@@ -211,11 +210,13 @@ namespace Delta
                     LOG_ERROR("Undeclared identifier {}", assign->ident.value.value());
                     exit(EXIT_FAILURE);
                 }
+                Var var = (*it);
+                gen->m_output << "; assign " << typeToString(var.type) << "\n";
                 gen->generateExpression(assign->expression);
                 gen->pop("rax");
-                size_t offset = (gen->m_stack_size - (*it).stack_loc - 1) * 8;
+                size_t offset = (gen->m_stack_size - var.stack_loc - 1) * 8;
                 gen->m_output << "\tmov [rsp+" << std::to_string(offset) << "], rax\n";
-                gen->m_output << "; /assign\n";
+                gen->m_output << "; /assign " << typeToString(var.type) << "\n";
             }
             void operator()(const NodeScope *scope)
             {
@@ -275,12 +276,14 @@ namespace Delta
     {
         m_output << "\tpush " << reg << "\n";
         m_stack_size++;
+        m_stack_byte_size += 8;
     }
 
     void Assembler::pop(const std::string &reg)
     {
         m_output << "\tpop " << reg << "\n";
         m_stack_size--;
+        m_stack_byte_size -= 8;
     }
 
     std::string Assembler::create_label()
@@ -293,7 +296,7 @@ namespace Delta
     void Assembler::begin_scope()
     {
         m_scopes.push_back(m_vars.size());
-        m_output << "\t; Begin Scope " << m_scopes.size() << "\n";
+        m_output << "; Begin Scope " << m_scopes.size() << "\n";
     }
 
     void Assembler::end_scope()
@@ -301,10 +304,11 @@ namespace Delta
         size_t pop_count = m_vars.size() - m_scopes.back();
         if (pop_count > 0)
         {
-            m_output << "\tadd rsp, " << pop_count * 8 << " ; Clean up " << pop_count << " " + std::string(pop_count == 1 ? "variable" : "variables") + "\n";
+            m_output << "\tadd rsp, " << pop_count * 8 << " ; Clean up " << pop_count << " " + std::string(pop_count == 1 ? "variable" : "variables") + " (" << pop_count * 8 << " bytes)\n";
             m_stack_size -= pop_count;
+            m_stack_byte_size -= pop_count * 8;
         }
-        m_output << "\t; End Scope " << m_scopes.size() << "\n";
+        m_output << "; End Scope " << m_scopes.size() << "\n";
         for (int i = 0; i < pop_count; i++)
         {
             m_vars.pop_back();

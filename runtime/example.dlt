@@ -1,10 +1,13 @@
 int64 y = (10 - 2 * 3) / 2;
 int8 x = 7;
 
-if(1){
+if(true){
     x = 1;
     {
-        int64 z = 27 * (y + 3) / 3;
+        int64 a = 27 * (y + 3) / 3;
+        int32 b = 1;
+        int16 c = 2;
+        int8 d = 3;
     }
 }else{
     x = 0;

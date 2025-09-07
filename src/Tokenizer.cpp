@@ -19,7 +19,17 @@ namespace Delta
                 {
                     buf.push_back(consume());
                 }
-                if (buf == "exit")
+                if (buf == "true")
+                {
+                    tokens.push_back({TokenType::int_literal, line_count, "1"});
+                    buf.clear();
+                }
+                else if (buf == "false")
+                {
+                    tokens.push_back({TokenType::int_literal, line_count, "0"});
+                    buf.clear();
+                }
+                else if (buf == "exit")
                 {
                     tokens.push_back({TokenType::exit, line_count});
                     buf.clear();

@@ -7,7 +7,7 @@ extern ExitProcess
 
 section .text
 _start:
-; let
+; let int64
 	mov rax, 2
 	push rax
 	mov rax, 3
@@ -28,26 +28,26 @@ _start:
 	pop rbx
 	div rbx
 	push rax
-; /let
-; let
+; /let int64
+; let int8
 	mov rax, 7
 	push rax
-; /let
+; /let int8
 ; if
 	mov rax, 1
 	push rax
 	pop rax
 	test rax, rax
 	jz label0
-	; Begin Scope 1
-; assign
+; Begin Scope 1
+; assign int8
 	mov rax, 1
 	push rax
 	pop rax
 	mov [rsp+0], rax
-; /assign
-	; Begin Scope 2
-; let
+; /assign int8
+; Begin Scope 2
+; let int64
 	mov rax, 3
 	push rax
 	mov rax, 3
@@ -67,20 +67,32 @@ _start:
 	pop rbx
 	div rbx
 	push rax
-; /let
-	add rsp, 8 ; Clean up 1 variable
-	; End Scope 2
-	; End Scope 1
+; /let int64
+; let int32
+	mov rax, 1
+	push rax
+; /let int32
+; let int16
+	mov rax, 2
+	push rax
+; /let int16
+; let int8
+	mov rax, 3
+	push rax
+; /let int8
+	add rsp, 32 ; Clean up 4 variables (32 bytes)
+; End Scope 2
+; End Scope 1
 	jmp label1
 label0:
-	; Begin Scope 1
-; assign
+; Begin Scope 1
+; assign int8
 	mov rax, 0
 	push rax
 	pop rax
 	mov [rsp+0], rax
-; /assign
-	; End Scope 1
+; /assign int8
+; End Scope 1
 label1:
 ; /if
 ; exit
