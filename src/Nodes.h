@@ -128,6 +128,7 @@ namespace Delta
         Token ident;
         NodeExpression *expression;
         DataType type;
+        bool isConst = false;
         const char *id = "Statement Let";
     };
 

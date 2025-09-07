@@ -23,7 +23,8 @@ namespace Delta
         plus,        // +
         minus,       // -
         star,        // *
-        slash        // /
+        slash,       // /
+        const_       // const
     };
 
     struct Token

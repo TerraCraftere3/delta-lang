@@ -272,7 +272,9 @@ namespace Delta
                 gen->validateTypeCompatibility(statement_let->type, exprType, "variable declaration");
 
                 // Add variable before generating expression (for recursion support)
-                gen->m_vars.push_back(Var(statement_let->ident.value.value(), gen->m_stack_size, statement_let->type));
+                Var var = Var(statement_let->ident.value.value(), gen->m_stack_size, statement_let->type);
+                var.setConstant(statement_let->isConst);
+                gen->m_vars.push_back(var);
                 gen->generateExpression(statement_let->expression);
 
                 gen->m_output << "; /let " << typeToString(statement_let->type) << "\n";
@@ -288,6 +290,11 @@ namespace Delta
                 }
 
                 Var var = (*it);
+                if (var.isConstant)
+                {
+                    LOG_ERROR("Variable {} is constant", var.name);
+                    exit(EXIT_FAILURE);
+                }
                 gen->m_output << "; assign " << typeToString(var.type) << " " << var.name << "\n";
 
                 // Type check the assignment

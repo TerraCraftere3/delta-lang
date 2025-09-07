@@ -83,6 +83,12 @@ _start:
 	mov eax, 3
 	push rax
 ; /let int8
+; assign int8 x
+	mov rax, QWORD [rsp+24]
+	push rax
+	pop rax
+	mov BYTE [rsp+32], al
+; /assign int8
 	add rsp, 32 ; Clean up 4 variables (32 bytes)
 ; End Scope 2
 ; End Scope 1

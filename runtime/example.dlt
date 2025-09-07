@@ -1,4 +1,4 @@
-int64 y = (10 - 2 * 3) / 2;
+const int64 y = (10 - 2 * 3) / 2;
 int8 x = 7;
 
 if(true){
@@ -8,6 +8,7 @@ if(true){
         int32 b = 1;
         int16 c = 2;
         int8 d = 3;
+        x = a;
     }
 }else{
     x = 0;

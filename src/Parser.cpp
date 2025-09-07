@@ -37,12 +37,36 @@ namespace Delta
             try_consume(TokenType::close_paren, "')'", open_paren.line);
             try_consume(TokenType::semicolon, "';'", open_paren.line);
         }
+        else if (peek().value().type == TokenType::const_ && peek(2).has_value() && peek(2).value().type == TokenType::data_type && peek(3).has_value() && peek(3).value().type == TokenType::identifier && peek(4).has_value() && peek(4).value().type == TokenType::equals)
+        {
+            consume(); // const
+            auto data_type = consume();
+            auto *statement_let = m_allocator.alloc<NodeStatementLet>();
+            statement_let->type = stringToType(data_type.value.value());
+            statement_let->ident = consume();
+            statement_let->isConst = true;
+            auto eq = consume();
+            if (auto node_expr = parseExpression())
+            {
+                statement_let->expression = node_expr.value();
+                auto *stmt = m_allocator.alloc<NodeStatement>();
+                stmt->var = statement_let;
+                statement = stmt;
+            }
+            else
+            {
+                LOG_ERROR("Invalid Expression");
+                exit(EXIT_FAILURE);
+            }
+            try_consume(TokenType::semicolon, "';'", eq.line);
+        }
         else if (peek().value().type == TokenType::data_type && peek(2).has_value() && peek(2).value().type == TokenType::identifier && peek(3).has_value() && peek(3).value().type == TokenType::equals)
         {
             auto data_type = consume();
             auto *statement_let = m_allocator.alloc<NodeStatementLet>();
             statement_let->type = stringToType(data_type.value.value());
             statement_let->ident = consume();
+            statement_let->isConst = false;
             auto eq = consume();
             if (auto node_expr = parseExpression())
             {

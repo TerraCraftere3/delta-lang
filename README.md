@@ -61,6 +61,12 @@ int32 a = 3
 }*/
 ```
 
+### Constants
+```
+// Constant values cant be changed after declaration
+const int64 ZERO = 0;
+```
+
 ### Types
 ```
 int64 a = 1;
@@ -71,6 +77,7 @@ int8 d = 4;
 // Any integer type is compatible with each other (for example assigning the value of an int64 to an int8)
 d = a;
 ```
+Any integer type is compatible with another integer type, so are other types (like floats in the future).
 
 ## Grammar
 $$
@@ -81,7 +88,7 @@ $$
 \begin{cases}
     exit([\text{Expr}]); 
     \\
-    [\text{Type}] \space\text{Identifier} = [\text{Expr}];
+    [\text{const}|\epsilon]\space[\text{Type}] \space\text{Identifier} = [\text{Expr}];
     \\
     \text{Identifier} = [\text{Expr}];
     \\

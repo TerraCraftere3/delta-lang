@@ -29,6 +29,11 @@ namespace Delta
                     tokens.push_back({TokenType::int_literal, line_count, "0"});
                     buf.clear();
                 }
+                else if (buf == "const")
+                {
+                    tokens.push_back({TokenType::const_, line_count});
+                    buf.clear();
+                }
                 else if (buf == "exit")
                 {
                     tokens.push_back({TokenType::exit, line_count});

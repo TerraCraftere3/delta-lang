@@ -14,9 +14,15 @@ struct Var
     size_t stack_loc;
     Delta::DataType type;
     size_t type_size;
+    bool isConstant = false;
 
     Var(const std::string &n, size_t loc, Delta::DataType t)
         : name(n), stack_loc(loc), type(t), type_size(Delta::getTypeSize(t)) {}
+
+    void setConstant(bool c)
+    {
+        isConstant = c;
+    }
 };
 
 namespace Delta
