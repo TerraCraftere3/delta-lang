@@ -439,6 +439,42 @@ namespace Delta
                 gen->m_output << "\tmovzx rax, al\n"; // Zero-extend to full register
                 gen->pushTyped("rax", DataType::INT32);
             }
+            void operator()(const NodeExpressionBinaryEquals *eq) const
+            {
+                DataType rightType = gen->inferExpressionType(eq->right);
+                DataType leftType = gen->inferExpressionType(eq->left);
+
+                gen->generateExpression(eq->right);
+                gen->generateExpression(eq->left);
+
+                gen->pop("rax"); // left operand
+                gen->pop("rbx"); // right operand
+
+                DataType compareType = (getTypeSize(leftType) >= getTypeSize(rightType)) ? leftType : rightType;
+
+                switch (compareType)
+                {
+                case DataType::INT8:
+                    gen->m_output << "\tcmp al, bl\n";
+                    break;
+                case DataType::INT16:
+                    gen->m_output << "\tcmp ax, bx\n";
+                    break;
+                case DataType::INT32:
+                    gen->m_output << "\tcmp eax, ebx\n";
+                    break;
+                case DataType::INT64:
+                    gen->m_output << "\tcmp rax, rbx\n";
+                    break;
+                default:
+                    gen->m_output << "\tcmp rax, rbx\n";
+                    break;
+                }
+
+                gen->m_output << "\tsete al\n";       // Set AL to 1 if equal
+                gen->m_output << "\tmovzx rax, al\n"; // Zero-extend to full register
+                gen->pushTyped("rax", DataType::INT32);
+            }
         };
 
         BinaryExpressionVisitor visitor(this);
@@ -950,6 +986,10 @@ namespace Delta
             }
 
             DataType operator()(const NodeExpressionBinaryLessEquals *lte) const
+            {
+                return DataType::INT32;
+            }
+            DataType operator()(const NodeExpressionBinaryEquals *eq) const
             {
                 return DataType::INT32;
             }

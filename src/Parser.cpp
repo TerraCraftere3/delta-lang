@@ -469,6 +469,14 @@ namespace Delta
                 less_eq->right = expr_rhs.value();
                 expr->var = less_eq;
             }
+            else if (op.type == TokenType::double_equals)
+            {
+                auto eq = m_allocator.alloc<NodeExpressionBinaryEquals>();
+                expr_lhs2->var = expr_lhs->var;
+                eq->left = expr_lhs2;
+                eq->right = expr_rhs.value();
+                expr->var = eq;
+            }
             else
             {
                 assert(false);

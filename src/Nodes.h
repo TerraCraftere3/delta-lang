@@ -61,6 +61,13 @@ namespace Delta
         const char *id = "Binary Expression Less";
     };
 
+    struct NodeExpressionBinaryEquals
+    {
+        NodeExpression *left;
+        NodeExpression *right;
+        const char *id = "Binary Expression Equals";
+    };
+
     struct NodeExpressionBinaryAddition
     {
         NodeExpression *left;
@@ -99,7 +106,8 @@ namespace Delta
             NodeExpressionBinaryGreaterEquals *,
             NodeExpressionBinaryGreater *,
             NodeExpressionBinaryLessEquals *,
-            NodeExpressionBinaryLess *>
+            NodeExpressionBinaryLess *,
+            NodeExpressionBinaryEquals *>
             var;
         const char *id = "Binary Expression";
     };

@@ -104,6 +104,12 @@ namespace Delta
                 if (peek().has_value())
                     consume();
             }
+            else if (peek().value() == '=' && peek(2).has_value() && peek(2).value() == '=')
+            {
+                consume(); // '='
+                consume(); // '='
+                tokens.push_back({TokenType::double_equals, line_count});
+            }
             else if (peek().value() == '>' && peek(2).has_value() && peek(2).value() == '=')
             {
                 consume(); // '>'
@@ -232,6 +238,7 @@ namespace Delta
         case TokenType::greater_equals: // >=
         case TokenType::less:           // <
         case TokenType::less_equals:    // <=
+        case TokenType::double_equals:  // ==
             return 0;
         default:
             return std::nullopt;
