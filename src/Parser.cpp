@@ -6,7 +6,7 @@
 namespace Delta
 {
     Parser::Parser(std::vector<Token> tokens) : m_tokens(tokens),
-                                                m_allocator(1024 * 1024 * 16) // 16 MB
+                                                m_allocator(1024 * 1024 * 4) // 4 MB
     {
     }
 
@@ -315,7 +315,7 @@ namespace Delta
             {
                 scope->statements.push_back(statement.value());
             }
-            try_consume(TokenType::close_curly, "'}'", peek(-1).value().line);
+            try_consume(TokenType::close_curly, "'}'", peek(0).value().line);
             return scope;
         }
         else

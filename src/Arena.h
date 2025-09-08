@@ -1,8 +1,26 @@
 #pragma once
 
+#include "Log.h"
+
+#include <string>
+
+inline std::string formatWithDots(size_t value)
+{
+    std::string s = std::to_string(value);
+    std::string result;
+
+    int count = 0;
+    for (int i = static_cast<int>(s.size()) - 1; i >= 0; --i)
+    {
+        result.insert(result.begin(), s[i]);
+        if (++count % 3 == 0 && i != 0)
+            result.insert(result.begin(), '.');
+    }
+    return result;
+}
+
 namespace Delta
 {
-
     class ArenaAllocator
     {
     public:
@@ -27,6 +45,10 @@ namespace Delta
 
         inline ~ArenaAllocator()
         {
+            size_t used = static_cast<size_t>(m_offset - m_buffer);
+            LOG_TRACE("Parser used {} / {} bytes",
+                      formatWithDots(used),
+                      formatWithDots(m_size));
             free(m_buffer);
         }
 

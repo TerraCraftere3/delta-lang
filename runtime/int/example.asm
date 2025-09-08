@@ -4,111 +4,72 @@
 ; Link Arguments: /subsystem:console /entry:_start /defaultlib:kernel32.lib /defaultlib:msvcrt.lib
 global _start
 extern ExitProcess
-global fibonacci
+; External function declarations
+; kernel32 imports
+extern CloseHandle
+extern CreateFileA
+extern ExitProcess
+extern FormatMessageA
+extern GetConsoleMode
+extern GetLastError
+extern GetLocalTime
+extern GetProcessHeap
+extern GetStdHandle
+extern GetSystemTime
+extern HeapAlloc
+extern HeapFree
+extern ReadConsoleA
+extern ReadFile
+extern SetConsoleMode
+extern Sleep
+extern VirtualAlloc
+extern VirtualFree
+extern WriteConsoleA
+extern WriteFile
+; msvcrt imports
+extern free
+extern malloc
+extern memcpy
+extern memset
+extern printf
+extern scanf
+extern strcmp
+extern strcpy
+extern strlen
+
 
 section .text
-fibonacci:
-; Begin Function fibonacci
-	push rbp
-	mov rbp, rsp
-	push rcx
-; Begin Scope 1
-; if
-	mov eax, 1
-	push rax
-	mov eax, DWORD [rsp+8]
-	push rax
-	pop rax
-	pop rbx
-	cmp eax, ebx
-	setle al
-	movzx rax, al
-	push rax
-	pop rax
-	test rax, rax
-	jz label0
-; Begin Scope 2
-; return
-	mov eax, DWORD [rsp+0]
-	push rax
-	pop rax
-	mov rsp, rbp
-	pop rbp
-	ret
-; /return
-; End Scope 2
-	jmp label1
-label0:
-; Begin Scope 2
-; return
-; call fibonacci
-	mov eax, 2
-	push rax
-	mov eax, DWORD [rsp+8]
-	push rax
-	pop rax
-	pop rbx
-	sub eax, ebx
-	push rax
-	pop rcx
-	call fibonacci
-	push rax
-; /call fibonacci
-; call fibonacci
-	mov eax, 1
-	push rax
-	mov eax, DWORD [rsp+16]
-	push rax
-	pop rax
-	pop rbx
-	sub eax, ebx
-	push rax
-	pop rcx
-	sub rsp, 8 ; Align stack for Windows ABI
-	call fibonacci
-	add rsp, 8 ; Restore stack after call
-	push rax
-; /call fibonacci
-	pop rax
-	pop rbx
-	add eax, ebx
-	push rax
-	pop rax
-	mov rsp, rbp
-	pop rbp
-	ret
-; /return
-; End Scope 2
-label1:
-; /if
-; End Scope 1
-	mov rax, 0
-	mov rsp, rbp
-	pop rbp
-	ret
-	add rsp, 8 ; Clean up function variables
-; End Function
-
 main:
 ; Begin Function main
 	push rbp
 	mov rbp, rsp
 ; Begin Scope 1
-; return
-; call fibonacci
-	mov eax, 10
+; let int64 handle
+; call GetStdHandle
+	mov eax, 11
+	push rax
+	mov eax, 0
+	push rax
+	pop rax
+	pop rbx
+	sub eax, ebx
 	push rax
 	pop rcx
 	sub rsp, 8 ; Align stack for Windows ABI
-	call fibonacci
+	call GetStdHandle
 	add rsp, 8 ; Restore stack after call
 	push rax
-; /call fibonacci
+; /call GetStdHandle
+; /let int64
+; return
+	mov eax, 0
+	push rax
 	pop rax
 	mov rsp, rbp
 	pop rbp
 	ret
 ; /return
+	add rsp, 8 ; Clean up 1 variable (8 bytes)
 ; End Scope 1
 	mov rax, 0
 	mov rsp, rbp

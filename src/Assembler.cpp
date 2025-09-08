@@ -1,18 +1,21 @@
 #include "Assembler.h"
 
 #include "Log.h"
+#include <algorithm>
 
 namespace Delta
 {
     Assembler::Assembler(NodeProgram root) : m_program(root)
     {
         registerBuiltinFunctions();
+        registerWindowsAPIFunctions();
     }
 
     std::string Assembler::generate()
     {
         m_output << "global _start\n";
         m_output << "extern ExitProcess\n";
+        generateExternDeclarations();
 
         // Declare all user-defined functions
         for (const NodeFunctionDeclaration *func : m_program.functions)
@@ -303,25 +306,9 @@ namespace Delta
 
                 // Compare left with right
                 DataType compareType = (getTypeSize(leftType) >= getTypeSize(rightType)) ? leftType : rightType;
-
-                switch (compareType)
-                {
-                case DataType::INT8:
-                    gen->m_output << "\tcmp al, bl\n";
-                    break;
-                case DataType::INT16:
-                    gen->m_output << "\tcmp ax, bx\n";
-                    break;
-                case DataType::INT32:
-                    gen->m_output << "\tcmp eax, ebx\n";
-                    break;
-                case DataType::INT64:
-                    gen->m_output << "\tcmp rax, rbx\n";
-                    break;
-                default:
-                    gen->m_output << "\tcmp rax, rbx\n";
-                    break;
-                }
+                std::string regA = getRegisterName(compareType, "rax");
+                std::string regB = getRegisterName(compareType, "rbx");
+                gen->m_output << "\tcmp " << regA << ", " << regB << "\n";
 
                 // Set result based on comparison (1 if true, 0 if false)
                 gen->m_output << "\tsetg al\n";         // Set AL to 1 if greater
@@ -341,25 +328,9 @@ namespace Delta
                 gen->pop("rbx"); // right operand
 
                 DataType compareType = (getTypeSize(leftType) >= getTypeSize(rightType)) ? leftType : rightType;
-
-                switch (compareType)
-                {
-                case DataType::INT8:
-                    gen->m_output << "\tcmp al, bl\n";
-                    break;
-                case DataType::INT16:
-                    gen->m_output << "\tcmp ax, bx\n";
-                    break;
-                case DataType::INT32:
-                    gen->m_output << "\tcmp eax, ebx\n";
-                    break;
-                case DataType::INT64:
-                    gen->m_output << "\tcmp rax, rbx\n";
-                    break;
-                default:
-                    gen->m_output << "\tcmp rax, rbx\n";
-                    break;
-                }
+                std::string regA = getRegisterName(compareType, "rax");
+                std::string regB = getRegisterName(compareType, "rbx");
+                gen->m_output << "\tcmp " << regA << ", " << regB << "\n";
 
                 gen->m_output << "\tsetge al\n";      // Set AL to 1 if greater or equal
                 gen->m_output << "\tmovzx rax, al\n"; // Zero-extend to full register
@@ -378,25 +349,9 @@ namespace Delta
                 gen->pop("rbx"); // right operand
 
                 DataType compareType = (getTypeSize(leftType) >= getTypeSize(rightType)) ? leftType : rightType;
-
-                switch (compareType)
-                {
-                case DataType::INT8:
-                    gen->m_output << "\tcmp al, bl\n";
-                    break;
-                case DataType::INT16:
-                    gen->m_output << "\tcmp ax, bx\n";
-                    break;
-                case DataType::INT32:
-                    gen->m_output << "\tcmp eax, ebx\n";
-                    break;
-                case DataType::INT64:
-                    gen->m_output << "\tcmp rax, rbx\n";
-                    break;
-                default:
-                    gen->m_output << "\tcmp rax, rbx\n";
-                    break;
-                }
+                std::string regA = getRegisterName(compareType, "rax");
+                std::string regB = getRegisterName(compareType, "rbx");
+                gen->m_output << "\tcmp " << regA << ", " << regB << "\n";
 
                 gen->m_output << "\tsetl al\n";       // Set AL to 1 if less
                 gen->m_output << "\tmovzx rax, al\n"; // Zero-extend to full register
@@ -415,25 +370,9 @@ namespace Delta
                 gen->pop("rbx"); // right operand
 
                 DataType compareType = (getTypeSize(leftType) >= getTypeSize(rightType)) ? leftType : rightType;
-
-                switch (compareType)
-                {
-                case DataType::INT8:
-                    gen->m_output << "\tcmp al, bl\n";
-                    break;
-                case DataType::INT16:
-                    gen->m_output << "\tcmp ax, bx\n";
-                    break;
-                case DataType::INT32:
-                    gen->m_output << "\tcmp eax, ebx\n";
-                    break;
-                case DataType::INT64:
-                    gen->m_output << "\tcmp rax, rbx\n";
-                    break;
-                default:
-                    gen->m_output << "\tcmp rax, rbx\n";
-                    break;
-                }
+                std::string regA = getRegisterName(compareType, "rax");
+                std::string regB = getRegisterName(compareType, "rbx");
+                gen->m_output << "\tcmp " << regA << ", " << regB << "\n";
 
                 gen->m_output << "\tsetle al\n";      // Set AL to 1 if less or equal
                 gen->m_output << "\tmovzx rax, al\n"; // Zero-extend to full register
@@ -451,25 +390,9 @@ namespace Delta
                 gen->pop("rbx"); // right operand
 
                 DataType compareType = (getTypeSize(leftType) >= getTypeSize(rightType)) ? leftType : rightType;
-
-                switch (compareType)
-                {
-                case DataType::INT8:
-                    gen->m_output << "\tcmp al, bl\n";
-                    break;
-                case DataType::INT16:
-                    gen->m_output << "\tcmp ax, bx\n";
-                    break;
-                case DataType::INT32:
-                    gen->m_output << "\tcmp eax, ebx\n";
-                    break;
-                case DataType::INT64:
-                    gen->m_output << "\tcmp rax, rbx\n";
-                    break;
-                default:
-                    gen->m_output << "\tcmp rax, rbx\n";
-                    break;
-                }
+                std::string regA = getRegisterName(compareType, "rax");
+                std::string regB = getRegisterName(compareType, "rbx");
+                gen->m_output << "\tcmp " << regA << ", " << regB << "\n";
 
                 gen->m_output << "\tsete al\n";       // Set AL to 1 if equal
                 gen->m_output << "\tmovzx rax, al\n"; // Zero-extend to full register
@@ -1088,6 +1011,219 @@ namespace Delta
                 LOG_ERROR("Stack-passed arguments not yet fully implemented");
                 exit(EXIT_FAILURE);
             }
+        }
+    }
+
+    void Assembler::registerWindowsAPIFunctions()
+    {
+        // Kernel32 functions
+        addWindowsAPIFunction("ExitProcess", {DataType::INT32}, DataType::VOID, "kernel32", true);
+        addWindowsAPIFunction("GetStdHandle", {DataType::INT32}, DataType::INT64, "kernel32", true);
+        addWindowsAPIFunction("WriteConsoleA", {DataType::INT64, DataType::INT64, DataType::INT32, DataType::INT64, DataType::INT64}, DataType::INT32, "kernel32", true);
+        addWindowsAPIFunction("ReadConsoleA", {DataType::INT64, DataType::INT64, DataType::INT32, DataType::INT64, DataType::INT64}, DataType::INT32, "kernel32", true);
+        addWindowsAPIFunction("GetConsoleMode", {DataType::INT64, DataType::INT64}, DataType::INT32, "kernel32", true);
+        addWindowsAPIFunction("SetConsoleMode", {DataType::INT64, DataType::INT32}, DataType::INT32, "kernel32", true);
+        addWindowsAPIFunction("CloseHandle", {DataType::INT64}, DataType::INT32, "kernel32", true);
+        addWindowsAPIFunction("CreateFileA", {DataType::INT64, DataType::INT32, DataType::INT32, DataType::INT64, DataType::INT32, DataType::INT32, DataType::INT64}, DataType::INT64, "kernel32", true);
+        addWindowsAPIFunction("ReadFile", {DataType::INT64, DataType::INT64, DataType::INT32, DataType::INT64, DataType::INT64}, DataType::INT32, "kernel32", true);
+        addWindowsAPIFunction("WriteFile", {DataType::INT64, DataType::INT64, DataType::INT32, DataType::INT64, DataType::INT64}, DataType::INT32, "kernel32", true);
+        addWindowsAPIFunction("GetLastError", {}, DataType::INT32, "kernel32", true);
+        addWindowsAPIFunction("FormatMessageA", {DataType::INT32, DataType::INT64, DataType::INT32, DataType::INT32, DataType::INT64, DataType::INT32, DataType::INT64}, DataType::INT32, "kernel32", true);
+
+        // Memory management
+        addWindowsAPIFunction("VirtualAlloc", {DataType::INT64, DataType::INT64, DataType::INT32, DataType::INT32}, DataType::INT64, "kernel32", true);
+        addWindowsAPIFunction("VirtualFree", {DataType::INT64, DataType::INT64, DataType::INT32}, DataType::INT32, "kernel32", true);
+        addWindowsAPIFunction("HeapAlloc", {DataType::INT64, DataType::INT32, DataType::INT64}, DataType::INT64, "kernel32", true);
+        addWindowsAPIFunction("HeapFree", {DataType::INT64, DataType::INT32, DataType::INT64}, DataType::INT32, "kernel32", true);
+        addWindowsAPIFunction("GetProcessHeap", {}, DataType::INT64, "kernel32", true);
+
+        // Time functions
+        addWindowsAPIFunction("GetSystemTime", {DataType::INT64}, DataType::VOID, "kernel32", true);
+        addWindowsAPIFunction("GetLocalTime", {DataType::INT64}, DataType::VOID, "kernel32", true);
+        addWindowsAPIFunction("Sleep", {DataType::INT32}, DataType::VOID, "kernel32", true);
+
+        // MSVCRT functions (C runtime)
+        addWindowsAPIFunction("printf", {DataType::INT64}, DataType::INT32, "msvcrt", false); // Variadic, simplified
+        addWindowsAPIFunction("scanf", {DataType::INT64}, DataType::INT32, "msvcrt", false);  // Variadic, simplified
+        addWindowsAPIFunction("malloc", {DataType::INT64}, DataType::INT64, "msvcrt", false);
+        addWindowsAPIFunction("free", {DataType::INT64}, DataType::VOID, "msvcrt", false);
+        addWindowsAPIFunction("strlen", {DataType::INT64}, DataType::INT64, "msvcrt", false);
+        addWindowsAPIFunction("strcpy", {DataType::INT64, DataType::INT64}, DataType::INT64, "msvcrt", false);
+        addWindowsAPIFunction("strcmp", {DataType::INT64, DataType::INT64}, DataType::INT32, "msvcrt", false);
+        addWindowsAPIFunction("memcpy", {DataType::INT64, DataType::INT64, DataType::INT64}, DataType::INT64, "msvcrt", false);
+        addWindowsAPIFunction("memset", {DataType::INT64, DataType::INT32, DataType::INT64}, DataType::INT64, "msvcrt", false);
+    }
+
+    void Assembler::addWindowsAPIFunction(const std::string &name, const std::vector<DataType> &params,
+                                          DataType return_type, const std::string &library, bool stdcall)
+    {
+        WindowsAPIFunction func;
+        func.name = name;
+        func.parameter_types = params;
+        func.return_type = return_type;
+        func.library = library;
+        func.uses_stdcall = stdcall;
+
+        m_used_external_functions.insert(name);
+
+        m_windows_api_functions[name] = func;
+
+        // Also add to regular functions list for compatibility
+        Function regular_func(name, params, return_type, name, true, library);
+
+        // Check if function already exists to avoid duplicates
+        auto it = std::find_if(m_functions.begin(), m_functions.end(),
+                               [&name](const Function &func)
+                               { return func.name == name; });
+        if (it == m_functions.end())
+        {
+            m_functions.push_back(regular_func);
+        }
+    }
+
+    bool Assembler::isWindowsAPIFunction(const std::string &name)
+    {
+        return m_windows_api_functions.find(name) != m_windows_api_functions.end();
+    }
+
+    void Assembler::generateWindowsAPICall(const std::string &func_name, const std::vector<NodeExpression *> &arguments)
+    {
+        auto it = m_windows_api_functions.find(func_name);
+        if (it == m_windows_api_functions.end())
+        {
+            LOG_ERROR("Unknown Windows API function: {}", func_name);
+            exit(EXIT_FAILURE);
+        }
+
+        const WindowsAPIFunction &func = it->second;
+
+        m_output << "; Windows API call " << func_name << "\n";
+
+        // Validate arguments
+        if (arguments.size() != func.parameter_types.size())
+        {
+            LOG_ERROR("Function {} expects {} arguments but got {}",
+                      func_name, func.parameter_types.size(), arguments.size());
+            exit(EXIT_FAILURE);
+        }
+
+        // Pass arguments
+        passArgumentsToWindowsAPI(arguments, Function(func.name, func.parameter_types, func.return_type, func.name, true, func.library));
+
+        // Call the function with appropriate stack alignment
+        alignStackAndCall(func_name);
+
+        // Push return value if function returns something
+        if (func.return_type != DataType::VOID)
+        {
+            pushTyped("rax", func.return_type);
+        }
+
+        m_output << "; /Windows API call " << func_name << "\n";
+    }
+
+    void Assembler::generateExternDeclarations()
+    {
+        std::set<std::string> declared_libraries;
+
+        m_output << "; External function declarations\n";
+
+        for (const std::string &func_name : m_used_external_functions)
+        {
+            auto api_it = m_windows_api_functions.find(func_name);
+            if (api_it != m_windows_api_functions.end())
+            {
+                const WindowsAPIFunction &func = api_it->second;
+
+                // Declare the library import if not already done
+                if (declared_libraries.find(func.library) == declared_libraries.end())
+                {
+                    m_output << "; " << func.library << " imports\n";
+                    declared_libraries.insert(func.library);
+                }
+
+                m_output << "extern " << func_name << "\n";
+            }
+            else
+            {
+                // Regular external function
+                auto func_it = std::find_if(m_functions.begin(), m_functions.end(),
+                                            [&func_name](const Function &f)
+                                            { return f.name == func_name; });
+                if (func_it != m_functions.end() && func_it->is_external)
+                {
+                    m_output << "extern " << func_name << "\n";
+                }
+            }
+        }
+
+        m_output << "\n";
+    }
+
+    void Assembler::passArgumentsToWindowsAPI(const std::vector<NodeExpression *> &arguments, const Function &func)
+    {
+        auto api_it = m_windows_api_functions.find(func.name);
+        if (api_it == m_windows_api_functions.end())
+        {
+            // Fall back to regular argument passing
+            passArgumentsToFunction(arguments, func);
+            return;
+        }
+
+        const WindowsAPIFunction &api_func = api_it->second;
+        std::vector<std::string> arg_registers = getCallingConventionRegisters();
+
+        // Generate expressions for all arguments first (right to left for stack)
+        for (int i = arguments.size() - 1; i >= 0; i--)
+        {
+            generateExpression(arguments[i]);
+        }
+
+        if (api_func.uses_stdcall)
+        {
+            // Windows API (stdcall) - arguments in RCX, RDX, R8, R9, then stack
+            for (size_t i = 0; i < arguments.size(); i++)
+            {
+                if (i < arg_registers.size())
+                {
+                    // Pass via register
+                    pop(arg_registers[i]);
+                }
+                else
+                {
+                    // For stdcall, caller pushes additional args on stack
+                    // The callee will clean up the stack
+                    m_output << "; stdcall argument " << i << " passed on stack\n";
+                    // Arguments are already on the stack from generateExpression calls
+                }
+            }
+        }
+        else
+        {
+            // C runtime (cdecl) - same register convention but caller cleans stack
+            for (size_t i = 0; i < arguments.size(); i++)
+            {
+                if (i < arg_registers.size())
+                {
+                    pop(arg_registers[i]);
+                }
+                else
+                {
+                    m_output << "; cdecl argument " << i << " passed on stack\n";
+                    // For cdecl, we need to adjust stack after call
+                }
+            }
+        }
+
+        // Reserve shadow space for Windows x64 ABI (32 bytes minimum)
+        if (arguments.size() > 0)
+        {
+            size_t shadow_space = std::max(INT_MAX, int(arguments.size() * 8));
+            m_output << "\tsub rsp, " << shadow_space << " ; Reserve shadow space\n";
+
+            // The actual call will be made by alignStackAndCall
+            // After the call, we need to restore the shadow space
+            // This is handled in the modified alignStackAndCall or we add it here
         }
     }
 

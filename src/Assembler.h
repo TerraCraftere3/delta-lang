@@ -6,6 +6,7 @@
 #include <map>
 #include <vector>
 #include <string>
+#include <set>
 
 // not used by anything else except Assembler.cpp
 struct Var
@@ -32,10 +33,20 @@ struct Function
     Delta::DataType return_type;
     std::string label;
     bool is_external = false;
+    std::string library = ""; // Which library the function belongs to
 
     Function(const std::string &n, const std::vector<Delta::DataType> &params,
-             Delta::DataType ret_type, const std::string &lbl = "", bool external = false)
-        : name(n), parameter_types(params), return_type(ret_type), label(lbl), is_external(external) {}
+             Delta::DataType ret_type, const std::string &lbl = "", bool external = false, const std::string &lib = "")
+        : name(n), parameter_types(params), return_type(ret_type), label(lbl), is_external(external), library(lib) {}
+};
+
+struct WindowsAPIFunction
+{
+    std::string name;
+    std::vector<Delta::DataType> parameter_types;
+    Delta::DataType return_type;
+    std::string library;       // "kernel32" or "msvcrt"
+    bool uses_stdcall = false; // Most Win32 API uses stdcall, C runtime uses cdecl
 };
 
 namespace Delta
@@ -85,6 +96,15 @@ namespace Delta
         std::vector<std::string> getCallingConventionRegisters();
         void passArgumentsToFunction(const std::vector<NodeExpression *> &arguments, const Function &func);
 
+        // Windows API support
+        void registerWindowsAPIFunctions();
+        void addWindowsAPIFunction(const std::string &name, const std::vector<DataType> &params,
+                                   DataType return_type, const std::string &library, bool stdcall = false);
+        bool isWindowsAPIFunction(const std::string &name);
+        void generateWindowsAPICall(const std::string &func_name, const std::vector<NodeExpression *> &arguments);
+        void generateExternDeclarations();
+        void passArgumentsToWindowsAPI(const std::vector<NodeExpression *> &arguments, const Function &func);
+
     private:
         const NodeProgram m_program;
         std::stringstream m_output;
@@ -94,6 +114,8 @@ namespace Delta
         std::vector<Var> m_vars{};
         std::vector<size_t> m_scopes{};
         std::vector<Function> m_functions{};
+        std::map<std::string, WindowsAPIFunction> m_windows_api_functions{};
+        std::set<std::string> m_used_external_functions{}; // Track which external functions are actually used
 
         // Function context
         std::string m_current_function = "";

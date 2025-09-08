@@ -12,37 +12,39 @@ The Delta Programming Language
 ## Usage
 ### Variables
 ```
-int32 a = 42;
-int32 b = 3;
-int32 c = a + b;  // Setting Variable
-c = 2 * c;        // Updating Variable
+int a = 42; // Setting Variable
+short b = 3;
+long c = a + b;  
+c = 2 * c; // Updating Variable
 ```
 
 ### Maths 
 ```
-int32 d = a * (b + 2);
-int32 e = d - 128;
+int d = a * (b + 2);
+int e = d - 128;
 ```
 
 ### Exit
 ```
-int32 code = 0;
+int code = 0;
 exit(code); // or just exit(0)
 ```
 
 ### Scopes
 ```
-int32 a = 3;
+int a = 3;
 {
-    int32 b = 9;
+    int b = 9;
 }
-int32 b = 3; // Can redefine because scope is closed
+int b = 3; // Can redefine because scope is closed
 ```
 You cannot shadow variables that are outside scopes
 
 ### IF Statements
 ```
-if(true){
+if(statement_a){
+    ...
+}else if(statement_b){
     ...
 }else{
     exit(1);
@@ -53,7 +55,7 @@ You cannot shadow variables that are outside scopes
 ### Comments
 ```
 // This is an example comment
-int32 a = 3
+int a = 3
 
 // This is a multiline comment
 /*if(error) {
@@ -64,7 +66,7 @@ int32 a = 3
 ### Constants
 ```
 // Constant values cant be changed after declaration
-const int64 ZERO = 0;
+const long ZERO = 0;
 ```
 
 ### Types

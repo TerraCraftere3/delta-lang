@@ -45,7 +45,6 @@ namespace Delta
         }
         Tokenizer tokenizer(contents);
         std::vector<Token> tokens = tokenizer.tokenize();
-        LOG_TRACE("Tokenized {} tokens", tokens.size());
         Parser parser(tokens);
         auto parseTree = parser.parseProgram();
         std::string assembly = "";
