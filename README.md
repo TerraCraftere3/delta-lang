@@ -102,6 +102,46 @@ int32 main(){
 ```
 The return value of main() is used as the exit code of the program
 
+### External Functions
+```
+// Kernel32
+void ExitProcess(int);
+long GetStdHandle(int);
+int WriteConsoleA(long, long, int, long, long);
+int ReadConsoleA(long, long, int, long, long);
+int GetConsoleMode(long, long);
+int SetConsoleMode(long, int);
+int CloseHandle(long);
+long CreateFileA(long, int, int, long, int, int, long);
+int ReadFile(long, long, int, long, long);
+int WriteFile(long, long, int, long, long);
+int GetLastError(void);
+int FormatMessageA(int, long, int, int, long, int, long);
+
+// Memory management
+long VirtualAlloc(long, long, int, int);
+int VirtualFree(long, long, int);
+long HeapAlloc(long, int, long);
+int HeapFree(long, int, long);
+long GetProcessHeap(void);
+
+// Time functions
+void GetSystemTime(long);
+void GetLocalTime(long);
+void Sleep(int);
+
+// MSVCRT (C runtime)
+int printf(long);   // Variadic, simplified
+int scanf(long);    // Variadic, simplified
+long malloc(long);
+void free(long);
+long strlen(long);
+long strcpy(long, long);
+int strcmp(long, long);
+long memcpy(long, long, long);
+long memset(long, int, long);
+```
+
 ## Grammar
 $$
 \begin{align}
