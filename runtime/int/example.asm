@@ -37,18 +37,60 @@ extern strcmp
 extern strcpy
 extern strlen
 
+global fib
+global ifElseTest
 
 section .text
-main:
-; Begin Function main
+fib:
+; Begin Function fib
 	push rbp
 	mov rbp, rsp
+	push rcx
 ; Begin Scope 1
-; let int64 handle
-; call GetStdHandle
-	mov eax, 11
+; if
+	mov eax, 1
 	push rax
-	mov eax, 0
+	mov eax, DWORD [rsp+8]
+	push rax
+	pop rax
+	pop rbx
+	cmp eax, ebx
+	setle al
+	movzx rax, al
+	push rax
+	pop rax
+	test rax, rax
+	jz label0
+; Begin Scope 2
+; return
+	mov eax, DWORD [rsp+0]
+	push rax
+	pop rax
+	mov rsp, rbp
+	pop rbp
+	ret
+; /return
+; End Scope 2
+label0:
+; /if
+; return
+; call fib
+	mov eax, 2
+	push rax
+	mov eax, DWORD [rsp+8]
+	push rax
+	pop rax
+	pop rbx
+	sub eax, ebx
+	push rax
+	pop rcx
+	call fib
+	push rax
+; /call fib
+; call fib
+	mov eax, 1
+	push rax
+	mov eax, DWORD [rsp+16]
 	push rax
 	pop rax
 	pop rbx
@@ -56,14 +98,140 @@ main:
 	push rax
 	pop rcx
 	sub rsp, 8 ; Align stack for Windows ABI
-	call GetStdHandle
+	call fib
 	add rsp, 8 ; Restore stack after call
 	push rax
-; /call GetStdHandle
-; /let int64
-; return
+; /call fib
+	pop rax
+	pop rbx
+	add eax, ebx
+	push rax
+	pop rax
+	mov rsp, rbp
+	pop rbp
+	ret
+; /return
+; End Scope 1
+	mov rax, 0
+	mov rsp, rbp
+	pop rbp
+	ret
+	add rsp, 8 ; Clean up function variables
+; End Function
+
+ifElseTest:
+; Begin Function ifElseTest
+	push rbp
+	mov rbp, rsp
+; Begin Scope 1
+; let int32 value
 	mov eax, 0
 	push rax
+; /let int32
+; if
+	mov eax, 1
+	push rax
+	pop rax
+	test rax, rax
+	jz label1
+; Begin Scope 2
+; assign int32 value
+	mov eax, 1
+	push rax
+	pop rax
+	mov DWORD [rsp+0], eax
+; /assign int32
+; End Scope 2
+	jmp label2
+label1:
+	mov eax, 11
+	push rax
+; call fib
+	mov eax, 6
+	push rax
+	pop rcx
+	sub rsp, 8 ; Align stack for Windows ABI
+	call fib
+	add rsp, 8 ; Restore stack after call
+	push rax
+; /call fib
+	pop rax
+	pop rbx
+	cmp eax, ebx
+	setg al
+	movzx rax, al
+	push rax
+	pop rax
+	test rax, rax
+	jz label3
+; Begin Scope 2
+; assign int32 value
+	mov eax, 2
+	push rax
+	pop rax
+	mov DWORD [rsp+0], eax
+; /assign int32
+; exit
+	mov eax, 0
+	push rax
+	pop rcx
+	call ExitProcess
+; /exit
+; End Scope 2
+	jmp label2
+label3:
+; Begin Scope 2
+; assign int32 value
+	mov eax, 3
+	push rax
+	pop rax
+	mov DWORD [rsp+0], eax
+; /assign int32
+; let int16 test
+	mov eax, 42
+	push rax
+; /let int16
+	add rsp, 8 ; Clean up 1 variable (8 bytes)
+; End Scope 2
+label2:
+; /if
+; return
+	mov eax, DWORD [rsp+0]
+	push rax
+	pop rax
+	mov rsp, rbp
+	pop rbp
+	ret
+; /return
+	add rsp, 8 ; Clean up 1 variable (8 bytes)
+; End Scope 1
+	mov rax, 0
+	mov rsp, rbp
+	pop rbp
+	ret
+; End Function
+
+main:
+; Begin Function main
+	push rbp
+	mov rbp, rsp
+; Begin Scope 1
+; let int32 test
+; call ifElseTest
+	sub rsp, 8 ; Align stack for Windows ABI
+	call ifElseTest
+	add rsp, 8 ; Restore stack after call
+	push rax
+; /call ifElseTest
+; /let int32
+; return
+; call fib
+	mov eax, 10
+	push rax
+	pop rcx
+	call fib
+	push rax
+; /call fib
 	pop rax
 	mov rsp, rbp
 	pop rbp

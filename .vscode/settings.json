@@ -10,6 +10,7 @@
         ]
     },
     "files.associations": {
+        "*.asm": "asm-intel-x86-generic",
         "xstring": "cpp",
         "algorithm": "cpp",
         "array": "cpp",
@@ -100,6 +101,7 @@
         "xmemory": "cpp",
         "xtr1common": "cpp",
         "xtree": "cpp",
-        "xutility": "cpp"
+        "xutility": "cpp",
+        "any": "cpp"
     }
 }

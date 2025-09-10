@@ -5,6 +5,7 @@
 #include "Parser.h"
 #include "Assembler.h"
 #include "Error.h"
+#include "Debug.h"
 #include <fstream>
 
 namespace Delta
@@ -68,6 +69,15 @@ namespace Delta
                 return 1;
             }
         }
+        auto writeParseFile = [&](const std::string &parseFile, const std::string &content) -> bool
+        {
+            if (!Files::writeFile(parseFile, content))
+            {
+                LOG_ERROR("Failed to write intermediate file: {}", parseFile);
+                return false;
+            }
+            return true;
+        };
         auto writeAsmFile = [&](const std::string &asmFile) -> bool
         {
             if (!Files::writeFile(asmFile, assembly))
@@ -91,6 +101,7 @@ namespace Delta
 
         // Generate file paths
         std::string baseName = Files::getFileNameWithoutExtension(props.inputFile);
+        std::string parseFile = Files::joinPaths(intDir, baseName + ".ast.txt");
         std::string asmFile = Files::joinPaths(intDir, baseName + ".asm");
         std::string objFile = Files::joinPaths(intDir, baseName + ".obj");
 
@@ -102,6 +113,8 @@ namespace Delta
         assemblyPrefix += "; Nasm Arguments: " + nasmArguments + "\n";
         assemblyPrefix += "; Link Arguments: " + linkArguments + "\n";
         assembly = assemblyPrefix + assembly;
+
+        writeParseFile(parseFile, nodeDebugPrint(parseTree.value()));
 
         switch (props.compileType)
         {

@@ -38,6 +38,7 @@ namespace Delta
         NodeExpression *left;
         NodeExpression *right;
         const char *id = "Binary Expression Greater Equals";
+        const char *binaryName = "Greater or Equals";
     };
 
     struct NodeExpressionBinaryGreater
@@ -45,6 +46,7 @@ namespace Delta
         NodeExpression *left;
         NodeExpression *right;
         const char *id = "Binary Expression Greater ";
+        const char *binaryName = "Greater than";
     };
 
     struct NodeExpressionBinaryLessEquals
@@ -52,6 +54,7 @@ namespace Delta
         NodeExpression *left;
         NodeExpression *right;
         const char *id = "Binary Expression Less Equals";
+        const char *binaryName = "Less or Equals";
     };
 
     struct NodeExpressionBinaryLess
@@ -59,6 +62,7 @@ namespace Delta
         NodeExpression *left;
         NodeExpression *right;
         const char *id = "Binary Expression Less";
+        const char *binaryName = "Less than";
     };
 
     struct NodeExpressionBinaryEquals
@@ -66,6 +70,7 @@ namespace Delta
         NodeExpression *left;
         NodeExpression *right;
         const char *id = "Binary Expression Equals";
+        const char *binaryName = "Equals";
     };
 
     struct NodeExpressionBinaryAddition
@@ -73,6 +78,7 @@ namespace Delta
         NodeExpression *left;
         NodeExpression *right;
         const char *id = "Binary Expression Addition";
+        const char *binaryName = "Addition";
     };
 
     struct NodeExpressionBinarySubtraction
@@ -80,6 +86,7 @@ namespace Delta
         NodeExpression *left;
         NodeExpression *right;
         const char *id = "Binary Expression Subtraction";
+        const char *binaryName = "Subtraction";
     };
 
     struct NodeExpressionBinaryDivision
@@ -87,6 +94,7 @@ namespace Delta
         NodeExpression *left;
         NodeExpression *right;
         const char *id = "Binary Expression Division";
+        const char *binaryName = "Division";
     };
 
     struct NodeExpressionBinaryMultiplication
@@ -94,6 +102,7 @@ namespace Delta
         NodeExpression *left;
         NodeExpression *right;
         const char *id = "Binary Expression Multiplication";
+        const char *binaryName = "Multiplication";
     };
 
     struct NodeExpressionBinary
