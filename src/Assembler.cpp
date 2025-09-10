@@ -5,58 +5,53 @@
 
 namespace Delta
 {
-    Assembler::Assembler(NodeProgram root) : m_program(root)
+    Assembler::Assembler(NodeProgram root) : m_program(root), m_current_block_id(0), m_temp_counter(0)
     {
         registerBuiltinFunctions();
-        registerWindowsAPIFunctions();
+        registerExternalFunctions();
     }
 
     std::string Assembler::generate()
     {
-        m_output << "global _start\n";
-        m_output << "extern ExitProcess\n";
+        // LLVM IR module header
+        m_output << "; ModuleID = 'delta_program'\n";
+        m_output << "target datalayout = \"e-m:w-p270:32:32-p271:32:32-p272:64:64-i64:64-f80:128-n8:16:32:64-S128\"\n";
+        m_output << "target triple = \"x86_64-pc-windows-msvc\"\n\n";
+
+        // Forward declare all functions
+        // declareFunctions();
+
+        // Generate external function declarations
         generateExternDeclarations();
 
-        // Declare all user-defined functions
-        for (const NodeFunctionDeclaration *func : m_program.functions)
-        {
-            if (func->function_name.value.value() != "main")
-            {
-                m_output << "global " << func->function_name.value.value() << "\n";
-            }
-        }
-
-        m_output << "\n";
-        m_output << "section .text\n";
-
-        // Generate all function declarations first
+        // Generate all function definitions
         for (const NodeFunctionDeclaration *func : m_program.functions)
         {
             generateFunctionDeclaration(func);
         }
 
-        // Generate entry point
-        m_output << "_start:\n";
-
-        // Look for main function
-        Function *main_func = findFunction("main");
-        if (main_func)
-        {
-            alignStackAndCall("main");
-            m_output << "\tmov rcx, rax\n"; // Use main's return value as exit code
-        }
-        else
-        {
-            // No main function, execute global statements
-            for (const NodeStatement *statement : m_program.statements)
-            {
-                generateStatement(statement);
-            }
-            m_output << "\tmov rcx, 0\n";
-        }
-
-        alignStackAndCall("ExitProcess");
         return m_output.str();
+    }
+
+    void Assembler::declareFunctions()
+    {
+        m_output << "; Function declarations\n";
+
+        for (const NodeFunctionDeclaration *func : m_program.functions)
+        {
+            std::string return_type = dataTypeToLLVM(func->return_type);
+            m_output << "declare " << return_type << " @" << func->function_name.value.value() << "(";
+
+            for (size_t i = 0; i < func->parameters.size(); i++)
+            {
+                if (i > 0)
+                    m_output << ", ";
+                m_output << dataTypeToLLVM(func->parameters[i]->type);
+            }
+
+            m_output << ")\n";
+        }
+        m_output << "\n";
     }
 
     void Assembler::generateFunctionDeclaration(const NodeFunctionDeclaration *func_decl)
@@ -68,74 +63,80 @@ namespace Delta
             param_types.push_back(param->type);
         }
 
-        std::string func_label = func_decl->function_name.value.value();
         Function func(func_decl->function_name.value.value(), param_types,
-                      func_decl->return_type, func_label);
+                      func_decl->return_type, func_decl->function_name.value.value());
         m_functions.push_back(func);
 
-        // Generate function label
-        m_output << func_label << ":\n";
+        // Generate function definition
+        std::string return_type = dataTypeToLLVM(func_decl->return_type);
+        m_output << "define " << return_type << " @" << func_decl->function_name.value.value() << "(";
+
+        // Parameters
+        for (size_t i = 0; i < func_decl->parameters.size(); i++)
+        {
+            if (i > 0)
+                m_output << ", ";
+            const NodeParameter *param = func_decl->parameters[i];
+            m_output << dataTypeToLLVM(param->type) << " %" << param->ident.value.value();
+        }
+
+        m_output << ") {\n";
 
         // Setup function context
         begin_function(func_decl->function_name.value.value());
         m_current_function_return_type = func_decl->return_type;
+        m_current_block_id = 0;
+        m_temp_counter = 0;
 
-        setupFunctionPrologue();
+        // Entry block
+        m_output << "entry:\n";
 
-        // Add parameters as local variables (they're passed via registers/stack)
-        std::vector<std::string> arg_registers = getCallingConventionRegisters();
-
-        for (size_t i = 0; i < func_decl->parameters.size(); i++)
+        // Allocate space for parameters as local variables
+        for (const NodeParameter *param : func_decl->parameters)
         {
-            const NodeParameter *param = func_decl->parameters[i];
-            Var var(param->ident.value.value(), m_stack_size, param->type);
-            m_vars.push_back(var);
+            std::string alloca_temp = getNextTemp();
+            m_output << "  " << alloca_temp << " = alloca " << dataTypeToLLVM(param->type) << ", align " << getTypeAlignment(param->type) << "\n";
+            m_output << "  store " << dataTypeToLLVM(param->type) << " %" << param->ident.value.value() << ", "
+                     << dataTypeToLLVM(param->type) << "* " << alloca_temp << ", align " << getTypeAlignment(param->type) << "\n";
 
-            // Move parameter from register to stack
-            if (i < arg_registers.size())
-            {
-                std::string param_reg = getAppropriateRegister(param->type, arg_registers[i]);
-                pushTyped(arg_registers[i], param->type);
-            }
-            else
-            {
-                // Parameter passed on stack - need to handle this case
-                LOG_ERROR("Stack-passed parameters not yet implemented");
-                exit(EXIT_FAILURE);
-            }
+            Var var(param->ident.value.value(), 0, param->type);
+            var.llvm_alloca = alloca_temp;
+            m_vars.push_back(var);
         }
 
         // Generate function body
         generateScope(func_decl->body);
 
-        // If no explicit return and function has return type, add default return
-        if (func_decl->return_type != DataType::VOID)
+        // Add default return if none exists
+        if (func_decl->return_type == DataType::VOID)
         {
-            m_output << "\tmov rax, 0\n"; // Default return value
+            m_output << "  ret void\n";
+        }
+        else
+        {
+            // Add unreachable after last instruction if no explicit return
+            m_output << "  ret " << dataTypeToLLVM(func_decl->return_type) << " ";
+            generateDefaultValue(func_decl->return_type);
+            m_output << "\n";
         }
 
-        setupFunctionEpilogue();
         end_function();
-        m_output << "\n";
+        m_output << "}\n\n";
     }
 
-    void Assembler::generateTerm(const NodeExpressionTerm *term)
+    std::string Assembler::generateTerm(const NodeExpressionTerm *term)
     {
         struct TermVisitor
         {
             Assembler *gen;
             TermVisitor(Assembler *gen) : gen(gen) {}
 
-            void operator()(const NodeTermIntegerLiteral *term_int_lit) const
+            std::string operator()(const NodeTermIntegerLiteral *term_int_lit) const
             {
-                DataType literalType = DataType::INT32;
-                std::string reg = gen->getAppropriateRegister(literalType);
-
-                gen->m_output << "\tmov " << reg << ", " << term_int_lit->int_literal.value.value() << "\n";
-                gen->pushTyped("rax", literalType);
+                return term_int_lit->int_literal.value.value();
             }
 
-            void operator()(const NodeTermIdentifier *term_ident) const
+            std::string operator()(const NodeTermIdentifier *term_ident) const
             {
                 auto it = std::find_if(gen->m_vars.cbegin(), gen->m_vars.cend(), [&](const Var &var)
                                        { return var.name == term_ident->ident.value.value(); });
@@ -145,49 +146,29 @@ namespace Delta
                     exit(EXIT_FAILURE);
                 }
 
-                size_t offset = (gen->m_stack_size - (*it).stack_loc - 1) * 8;
-                DataType varType = (*it).type;
-
-                std::string reg = gen->getAppropriateRegister(varType);
-                gen->m_output << "\tmov " << reg << ", ";
-
-                switch (varType)
-                {
-                case DataType::INT8:
-                    gen->m_output << "BYTE [rsp+" << offset << "]\n";
-                    break;
-                case DataType::INT16:
-                    gen->m_output << "WORD [rsp+" << offset << "]\n";
-                    break;
-                case DataType::INT32:
-                    gen->m_output << "DWORD [rsp+" << offset << "]\n";
-                    break;
-                case DataType::INT64:
-                    gen->m_output << "QWORD [rsp+" << offset << "]\n";
-                    break;
-                default:
-                    gen->m_output << "QWORD [rsp+" << offset << "]\n";
-                    break;
-                }
-
-                gen->pushTyped("rax", varType);
+                std::string load_temp = gen->getNextTemp();
+                gen->m_output << "  " << load_temp << " = load " << gen->dataTypeToLLVM((*it).type)
+                              << ", " << gen->dataTypeToLLVM((*it).type) << "* " << (*it).llvm_alloca
+                              << ", align " << gen->getTypeAlignment((*it).type) << "\n";
+                return load_temp;
             }
 
-            void operator()(const NodeTermParen *term_paren) const
+            std::string operator()(const NodeTermParen *term_paren) const
             {
-                gen->generateExpression(term_paren->expr);
+                return gen->generateExpression(term_paren->expr);
             }
 
-            void operator()(const NodeTermFunctionCall *func_call) const
+            std::string operator()(const NodeTermFunctionCall *func_call) const
             {
-                gen->generateFunctionCall(func_call);
+                return gen->generateFunctionCall(func_call);
             }
         };
+
         TermVisitor visitor(this);
-        std::visit(visitor, term->var);
+        return std::visit(visitor, term->var);
     }
 
-    void Assembler::generateFunctionCall(const NodeTermFunctionCall *func_call)
+    std::string Assembler::generateFunctionCall(const NodeTermFunctionCall *func_call)
     {
         std::string func_name = func_call->function_name.value.value();
 
@@ -201,229 +182,235 @@ namespace Delta
             exit(EXIT_FAILURE);
         }
 
-        m_output << "; call " << func_name << "\n";
+        // Generate arguments
+        std::vector<std::string> arg_values;
+        std::vector<DataType> arg_types;
 
-        // Pass arguments according to calling convention
-        passArgumentsToFunction(func_call->arguments, *func);
-
-        // Align stack and call function
-        alignStackAndCall(func_name);
-
-        // Push return value onto expression stack if function returns something
-        if (func->return_type != DataType::VOID)
+        for (const NodeExpression *arg : func_call->arguments)
         {
-            pushTyped("rax", func->return_type);
+            std::string arg_val = generateExpression(arg);
+            DataType arg_type = inferExpressionType(arg);
+            arg_values.push_back(arg_val);
+            arg_types.push_back(arg_type);
         }
 
-        m_output << "; /call " << func_name << "\n";
+        // Generate call
+        if (func->return_type == DataType::VOID)
+        {
+            m_output << "  call void @" << func_name << "(";
+        }
+        else
+        {
+            std::string result_temp = getNextTemp();
+            m_output << "  " << result_temp << " = call " << dataTypeToLLVM(func->return_type) << " @" << func_name << "(";
+
+            // Add arguments
+            for (size_t i = 0; i < arg_values.size(); i++)
+            {
+                if (i > 0)
+                    m_output << ", ";
+                m_output << dataTypeToLLVM(arg_types[i]) << " " << arg_values[i];
+            }
+
+            m_output << ")\n";
+            return result_temp;
+        }
+
+        // Add arguments for void functions
+        for (size_t i = 0; i < arg_values.size(); i++)
+        {
+            if (i > 0)
+                m_output << ", ";
+            m_output << dataTypeToLLVM(arg_types[i]) << " " << arg_values[i];
+        }
+
+        m_output << ")\n";
+        return ""; // Void return
     }
 
-    void Assembler::generateBinaryExpression(const NodeExpressionBinary *bin_expr)
+    std::string Assembler::generateBinaryExpression(const NodeExpressionBinary *bin_expr)
     {
         struct BinaryExpressionVisitor
         {
             Assembler *gen;
             BinaryExpressionVisitor(Assembler *gen) : gen(gen) {}
 
-            void operator()(const NodeExpressionBinarySubtraction *sub) const
+            std::string operator()(const NodeExpressionBinaryAddition *add) const
             {
-                DataType rightType = gen->inferExpressionType(sub->right);
-                DataType leftType = gen->inferExpressionType(sub->left);
+                std::string left = gen->generateExpression(add->left);
+                std::string right = gen->generateExpression(add->right);
 
-                gen->generateExpression(sub->right);
-                gen->generateExpression(sub->left);
-
-                gen->generateTypedBinaryOp("sub", leftType, rightType);
-            }
-            void operator()(const NodeExpressionBinaryAddition *add) const
-            {
-                DataType rightType = gen->inferExpressionType(add->right);
                 DataType leftType = gen->inferExpressionType(add->left);
-
-                gen->generateExpression(add->right);
-                gen->generateExpression(add->left);
-
-                gen->generateTypedBinaryOp("add", leftType, rightType);
-            }
-            void operator()(const NodeExpressionBinaryMultiplication *mul) const
-            {
-                DataType rightType = gen->inferExpressionType(mul->right);
-                DataType leftType = gen->inferExpressionType(mul->left);
-
-                gen->generateExpression(mul->right);
-                gen->generateExpression(mul->left);
-
-                gen->generateTypedBinaryOp("imul", leftType, rightType);
-            }
-            void operator()(const NodeExpressionBinaryDivision *div) const
-            {
-                DataType rightType = gen->inferExpressionType(div->right);
-                DataType leftType = gen->inferExpressionType(div->left);
-
-                gen->generateExpression(div->right);
-                gen->generateExpression(div->left);
-
-                gen->pop("rax");
-                gen->pop("rbx");
-
-                switch (leftType)
-                {
-                case DataType::INT8:
-                    gen->m_output << "\tcbw\n";
-                    gen->m_output << "\tidiv bl\n";
-                    break;
-                case DataType::INT16:
-                    gen->m_output << "\tcwd\n";
-                    gen->m_output << "\tidiv bx\n";
-                    break;
-                case DataType::INT32:
-                    gen->m_output << "\tcdq\n";
-                    gen->m_output << "\tidiv ebx\n";
-                    break;
-                case DataType::INT64:
-                    gen->m_output << "\tcqo\n";
-                    gen->m_output << "\tidiv rbx\n";
-                    break;
-                default:
-                    gen->m_output << "\tcqo\n";
-                    gen->m_output << "\tidiv rbx\n";
-                    break;
-                }
-
+                DataType rightType = gen->inferExpressionType(add->right);
                 DataType resultType = (getTypeSize(leftType) >= getTypeSize(rightType)) ? leftType : rightType;
-                gen->pushTyped("rax", resultType);
+
+                std::string result_temp = gen->getNextTemp();
+                gen->m_output << "  " << result_temp << " = add " << gen->dataTypeToLLVM(resultType)
+                              << " " << left << ", " << right << "\n";
+                return result_temp;
             }
-            void operator()(const NodeExpressionBinaryGreater *gt) const
+
+            std::string operator()(const NodeExpressionBinarySubtraction *sub) const
             {
-                DataType rightType = gen->inferExpressionType(gt->right);
+                std::string left = gen->generateExpression(sub->left);
+                std::string right = gen->generateExpression(sub->right);
+
+                DataType leftType = gen->inferExpressionType(sub->left);
+                DataType rightType = gen->inferExpressionType(sub->right);
+                DataType resultType = (getTypeSize(leftType) >= getTypeSize(rightType)) ? leftType : rightType;
+
+                std::string result_temp = gen->getNextTemp();
+                gen->m_output << "  " << result_temp << " = sub " << gen->dataTypeToLLVM(resultType)
+                              << " " << left << ", " << right << "\n";
+                return result_temp;
+            }
+
+            std::string operator()(const NodeExpressionBinaryMultiplication *mul) const
+            {
+                std::string left = gen->generateExpression(mul->left);
+                std::string right = gen->generateExpression(mul->right);
+
+                DataType leftType = gen->inferExpressionType(mul->left);
+                DataType rightType = gen->inferExpressionType(mul->right);
+                DataType resultType = (getTypeSize(leftType) >= getTypeSize(rightType)) ? leftType : rightType;
+
+                std::string result_temp = gen->getNextTemp();
+                gen->m_output << "  " << result_temp << " = mul " << gen->dataTypeToLLVM(resultType)
+                              << " " << left << ", " << right << "\n";
+                return result_temp;
+            }
+
+            std::string operator()(const NodeExpressionBinaryDivision *div) const
+            {
+                std::string left = gen->generateExpression(div->left);
+                std::string right = gen->generateExpression(div->right);
+
+                DataType leftType = gen->inferExpressionType(div->left);
+                DataType rightType = gen->inferExpressionType(div->right);
+                DataType resultType = (getTypeSize(leftType) >= getTypeSize(rightType)) ? leftType : rightType;
+
+                std::string result_temp = gen->getNextTemp();
+                gen->m_output << "  " << result_temp << " = sdiv " << gen->dataTypeToLLVM(resultType)
+                              << " " << left << ", " << right << "\n";
+                return result_temp;
+            }
+
+            std::string operator()(const NodeExpressionBinaryGreater *gt) const
+            {
+                std::string left = gen->generateExpression(gt->left);
+                std::string right = gen->generateExpression(gt->right);
+
                 DataType leftType = gen->inferExpressionType(gt->left);
-
-                gen->generateExpression(gt->right);
-                gen->generateExpression(gt->left);
-
-                gen->pop("rax"); // left operand
-                gen->pop("rbx"); // right operand
-
-                // Compare left with right
+                DataType rightType = gen->inferExpressionType(gt->right);
                 DataType compareType = (getTypeSize(leftType) >= getTypeSize(rightType)) ? leftType : rightType;
-                std::string regA = getRegisterName(compareType, "rax");
-                std::string regB = getRegisterName(compareType, "rbx");
-                gen->m_output << "\tcmp " << regA << ", " << regB << "\n";
 
-                // Set result based on comparison (1 if true, 0 if false)
-                gen->m_output << "\tsetg al\n";         // Set AL to 1 if greater
-                gen->m_output << "\tmovzx rax, al\n";   // Zero-extend to full register
-                gen->pushTyped("rax", DataType::INT32); // Push boolean result as int
+                std::string result_temp = gen->getNextTemp();
+                gen->m_output << "  " << result_temp << " = icmp sgt " << gen->dataTypeToLLVM(compareType)
+                              << " " << left << ", " << right << "\n";
+
+                // Convert i1 to i32
+                std::string final_temp = gen->getNextTemp();
+                gen->m_output << "  " << final_temp << " = zext i1 " << result_temp << " to i32\n";
+                return final_temp;
             }
 
-            void operator()(const NodeExpressionBinaryGreaterEquals *gte) const
+            std::string operator()(const NodeExpressionBinaryGreaterEquals *gte) const
             {
-                DataType rightType = gen->inferExpressionType(gte->right);
+                std::string left = gen->generateExpression(gte->left);
+                std::string right = gen->generateExpression(gte->right);
+
                 DataType leftType = gen->inferExpressionType(gte->left);
-
-                gen->generateExpression(gte->right);
-                gen->generateExpression(gte->left);
-
-                gen->pop("rax"); // left operand
-                gen->pop("rbx"); // right operand
-
+                DataType rightType = gen->inferExpressionType(gte->right);
                 DataType compareType = (getTypeSize(leftType) >= getTypeSize(rightType)) ? leftType : rightType;
-                std::string regA = getRegisterName(compareType, "rax");
-                std::string regB = getRegisterName(compareType, "rbx");
-                gen->m_output << "\tcmp " << regA << ", " << regB << "\n";
 
-                gen->m_output << "\tsetge al\n";      // Set AL to 1 if greater or equal
-                gen->m_output << "\tmovzx rax, al\n"; // Zero-extend to full register
-                gen->pushTyped("rax", DataType::INT32);
+                std::string result_temp = gen->getNextTemp();
+                gen->m_output << "  " << result_temp << " = icmp sge " << gen->dataTypeToLLVM(compareType)
+                              << " " << left << ", " << right << "\n";
+
+                std::string final_temp = gen->getNextTemp();
+                gen->m_output << "  " << final_temp << " = zext i1 " << result_temp << " to i32\n";
+                return final_temp;
             }
 
-            void operator()(const NodeExpressionBinaryLess *lt) const
+            std::string operator()(const NodeExpressionBinaryLess *lt) const
             {
-                DataType rightType = gen->inferExpressionType(lt->right);
+                std::string left = gen->generateExpression(lt->left);
+                std::string right = gen->generateExpression(lt->right);
+
                 DataType leftType = gen->inferExpressionType(lt->left);
-
-                gen->generateExpression(lt->right);
-                gen->generateExpression(lt->left);
-
-                gen->pop("rax"); // left operand
-                gen->pop("rbx"); // right operand
-
+                DataType rightType = gen->inferExpressionType(lt->right);
                 DataType compareType = (getTypeSize(leftType) >= getTypeSize(rightType)) ? leftType : rightType;
-                std::string regA = getRegisterName(compareType, "rax");
-                std::string regB = getRegisterName(compareType, "rbx");
-                gen->m_output << "\tcmp " << regA << ", " << regB << "\n";
 
-                gen->m_output << "\tsetl al\n";       // Set AL to 1 if less
-                gen->m_output << "\tmovzx rax, al\n"; // Zero-extend to full register
-                gen->pushTyped("rax", DataType::INT32);
+                std::string result_temp = gen->getNextTemp();
+                gen->m_output << "  " << result_temp << " = icmp slt " << gen->dataTypeToLLVM(compareType)
+                              << " " << left << ", " << right << "\n";
+
+                std::string final_temp = gen->getNextTemp();
+                gen->m_output << "  " << final_temp << " = zext i1 " << result_temp << " to i32\n";
+                return final_temp;
             }
 
-            void operator()(const NodeExpressionBinaryLessEquals *lte) const
+            std::string operator()(const NodeExpressionBinaryLessEquals *lte) const
             {
-                DataType rightType = gen->inferExpressionType(lte->right);
+                std::string left = gen->generateExpression(lte->left);
+                std::string right = gen->generateExpression(lte->right);
+
                 DataType leftType = gen->inferExpressionType(lte->left);
-
-                gen->generateExpression(lte->right);
-                gen->generateExpression(lte->left);
-
-                gen->pop("rax"); // left operand
-                gen->pop("rbx"); // right operand
-
+                DataType rightType = gen->inferExpressionType(lte->right);
                 DataType compareType = (getTypeSize(leftType) >= getTypeSize(rightType)) ? leftType : rightType;
-                std::string regA = getRegisterName(compareType, "rax");
-                std::string regB = getRegisterName(compareType, "rbx");
-                gen->m_output << "\tcmp " << regA << ", " << regB << "\n";
 
-                gen->m_output << "\tsetle al\n";      // Set AL to 1 if less or equal
-                gen->m_output << "\tmovzx rax, al\n"; // Zero-extend to full register
-                gen->pushTyped("rax", DataType::INT32);
+                std::string result_temp = gen->getNextTemp();
+                gen->m_output << "  " << result_temp << " = icmp sle " << gen->dataTypeToLLVM(compareType)
+                              << " " << left << ", " << right << "\n";
+
+                std::string final_temp = gen->getNextTemp();
+                gen->m_output << "  " << final_temp << " = zext i1 " << result_temp << " to i32\n";
+                return final_temp;
             }
-            void operator()(const NodeExpressionBinaryEquals *eq) const
+
+            std::string operator()(const NodeExpressionBinaryEquals *eq) const
             {
-                DataType rightType = gen->inferExpressionType(eq->right);
+                std::string left = gen->generateExpression(eq->left);
+                std::string right = gen->generateExpression(eq->right);
+
                 DataType leftType = gen->inferExpressionType(eq->left);
-
-                gen->generateExpression(eq->right);
-                gen->generateExpression(eq->left);
-
-                gen->pop("rax"); // left operand
-                gen->pop("rbx"); // right operand
-
+                DataType rightType = gen->inferExpressionType(eq->right);
                 DataType compareType = (getTypeSize(leftType) >= getTypeSize(rightType)) ? leftType : rightType;
-                std::string regA = getRegisterName(compareType, "rax");
-                std::string regB = getRegisterName(compareType, "rbx");
-                gen->m_output << "\tcmp " << regA << ", " << regB << "\n";
 
-                gen->m_output << "\tsete al\n";       // Set AL to 1 if equal
-                gen->m_output << "\tmovzx rax, al\n"; // Zero-extend to full register
-                gen->pushTyped("rax", DataType::INT32);
+                std::string result_temp = gen->getNextTemp();
+                gen->m_output << "  " << result_temp << " = icmp eq " << gen->dataTypeToLLVM(compareType)
+                              << " " << left << ", " << right << "\n";
+
+                std::string final_temp = gen->getNextTemp();
+                gen->m_output << "  " << final_temp << " = zext i1 " << result_temp << " to i32\n";
+                return final_temp;
             }
         };
 
         BinaryExpressionVisitor visitor(this);
-        std::visit(visitor, bin_expr->var);
+        return std::visit(visitor, bin_expr->var);
     }
 
-    void Assembler::generateExpression(const NodeExpression *expression)
+    std::string Assembler::generateExpression(const NodeExpression *expression)
     {
         struct ExpressionVisitor
         {
             Assembler *gen;
             ExpressionVisitor(Assembler *gen) : gen(gen) {}
 
-            void operator()(const NodeExpressionTerm *expression_term) const
+            std::string operator()(const NodeExpressionTerm *expression_term) const
             {
-                gen->generateTerm(expression_term);
+                return gen->generateTerm(expression_term);
             }
-            void operator()(const NodeExpressionBinary *expression_binary) const
+            std::string operator()(const NodeExpressionBinary *expression_binary) const
             {
-                gen->generateBinaryExpression(expression_binary);
+                return gen->generateBinaryExpression(expression_binary);
             }
         };
 
         ExpressionVisitor visitor(this);
-        std::visit(visitor, expression->var);
-    };
+        return std::visit(visitor, expression->var);
+    }
 
     void Assembler::generateScope(const NodeScope *scope)
     {
@@ -433,45 +420,54 @@ namespace Delta
             generateStatement(statement);
         }
         end_scope();
-    };
+    }
 
-    void Assembler::generateIfPred(const NodeIfPred *pred, const std::string &end_label)
+    void Assembler::generateIfPred(const NodeIfPred *pred, const std::string &merge_label)
     {
         struct PredVisitor
         {
             Assembler *gen;
-            const std::string &end_label;
-            PredVisitor(Assembler *gen, const std::string &end_label) : gen(gen), end_label(end_label) {}
+            const std::string &merge_label;
+            PredVisitor(Assembler *gen, const std::string &merge_label) : gen(gen), merge_label(merge_label) {}
 
             void operator()(const NodeIfPredElif *pred_elif)
             {
-                gen->generateExpression(pred_elif->expr);
-                gen->pop("rax");
-                std::string label = gen->create_label();
-                gen->m_output << "\ttest rax, rax\n";
-                gen->m_output << "\tjz " << label << "\n";
+                std::string cond = gen->generateExpression(pred_elif->expr);
+                std::string true_label = gen->getNextLabel();
+                std::string false_label = gen->getNextLabel();
+
+                // Convert condition to i1 if needed
+                std::string bool_cond = gen->getNextTemp();
+                gen->m_output << "  " << bool_cond << " = icmp ne i32 " << cond << ", 0\n";
+                gen->m_output << "  br i1 " << bool_cond << ", label %" << true_label << ", label %" << false_label << "\n\n";
+
+                // True branch
+                gen->m_output << true_label << ":\n";
                 gen->generateScope(pred_elif->scope);
-                gen->m_output << "\tjmp " << end_label << "\n";
+                gen->m_output << "  br label %" << merge_label << "\n\n";
+
+                // False branch
+                gen->m_output << false_label << ":\n";
                 if (pred_elif->pred.has_value())
                 {
-                    gen->m_output << label << ":\n";
-                    gen->generateIfPred(pred_elif->pred.value(), end_label);
+                    gen->generateIfPred(pred_elif->pred.value(), merge_label);
                 }
                 else
                 {
-                    gen->m_output << label << ":\n";
+                    gen->m_output << "  br label %" << merge_label << "\n";
                 }
             }
 
             void operator()(const NodeIfPredElse *pred_else)
             {
                 gen->generateScope(pred_else->scope);
+                gen->m_output << "  br label %" << merge_label << "\n";
             }
         };
 
-        PredVisitor visitor(this, end_label);
+        PredVisitor visitor(this, merge_label);
         std::visit(visitor, pred->var);
-    };
+    }
 
     void Assembler::generateStatement(const NodeStatement *statement)
     {
@@ -482,17 +478,13 @@ namespace Delta
 
             void operator()(const NodeStatementExit *statement_exit)
             {
-                gen->m_output << "; exit\n";
-                gen->generateExpression(statement_exit->expression);
-                gen->pop("rcx");
-                gen->alignStackAndCall("ExitProcess");
-                gen->m_output << "; /exit\n";
+                std::string exit_code = gen->generateExpression(statement_exit->expression);
+                gen->m_output << "  call void @exit(i32 " << exit_code << ")\n";
+                gen->m_output << "  unreachable\n";
             }
 
             void operator()(const NodeStatementLet *statement_let)
             {
-                gen->m_output << "; let " << typeToString(statement_let->type) << " " << statement_let->ident.value.value() << "\n";
-
                 auto it = std::find_if(gen->m_vars.cbegin(), gen->m_vars.cend(), [&](const Var &var)
                                        { return var.name == statement_let->ident.value.value(); });
                 if (it != gen->m_vars.cend())
@@ -504,12 +496,21 @@ namespace Delta
                 DataType exprType = gen->inferExpressionType(statement_let->expression);
                 gen->validateTypeCompatibility(statement_let->type, exprType, "variable declaration");
 
-                Var var = Var(statement_let->ident.value.value(), gen->m_stack_size, statement_let->type);
-                var.setConstant(statement_let->isConst);
-                gen->m_vars.push_back(var);
-                gen->generateExpression(statement_let->expression);
+                // Allocate space for variable
+                std::string alloca_temp = gen->getNextTemp();
+                gen->m_output << "  " << alloca_temp << " = alloca " << gen->dataTypeToLLVM(statement_let->type)
+                              << ", align " << gen->getTypeAlignment(statement_let->type) << "\n";
 
-                gen->m_output << "; /let " << typeToString(statement_let->type) << "\n";
+                // Generate expression and store
+                std::string expr_value = gen->generateExpression(statement_let->expression);
+                gen->m_output << "  store " << gen->dataTypeToLLVM(statement_let->type) << " " << expr_value
+                              << ", " << gen->dataTypeToLLVM(statement_let->type) << "* " << alloca_temp
+                              << ", align " << gen->getTypeAlignment(statement_let->type) << "\n";
+
+                Var var = Var(statement_let->ident.value.value(), 0, statement_let->type);
+                var.setConstant(statement_let->isConst);
+                var.llvm_alloca = alloca_temp;
+                gen->m_vars.push_back(var);
             }
 
             void operator()(const NodeStatementAssign *assign)
@@ -528,36 +529,14 @@ namespace Delta
                     LOG_ERROR("Variable {} is constant", var.name);
                     exit(EXIT_FAILURE);
                 }
-                gen->m_output << "; assign " << typeToString(var.type) << " " << var.name << "\n";
 
                 DataType exprType = gen->inferExpressionType(assign->expression);
                 gen->validateTypeCompatibility(var.type, exprType, "assignment");
 
-                gen->generateExpression(assign->expression);
-                gen->pop("rax");
-
-                size_t offset = (gen->m_stack_size - var.stack_loc - 1) * 8;
-
-                switch (var.type)
-                {
-                case DataType::INT8:
-                    gen->m_output << "\tmov BYTE [rsp+" << offset << "], " << gen->getAppropriateRegister(var.type, "rax") << "\n";
-                    break;
-                case DataType::INT16:
-                    gen->m_output << "\tmov WORD [rsp+" << offset << "], " << gen->getAppropriateRegister(var.type, "rax") << "\n";
-                    break;
-                case DataType::INT32:
-                    gen->m_output << "\tmov DWORD [rsp+" << offset << "], " << gen->getAppropriateRegister(var.type, "rax") << "\n";
-                    break;
-                case DataType::INT64:
-                    gen->m_output << "\tmov QWORD [rsp+" << offset << "], rax\n";
-                    break;
-                default:
-                    gen->m_output << "\tmov [rsp+" << offset << "], rax\n";
-                    break;
-                }
-
-                gen->m_output << "; /assign " << typeToString(var.type) << "\n";
+                std::string expr_value = gen->generateExpression(assign->expression);
+                gen->m_output << "  store " << gen->dataTypeToLLVM(var.type) << " " << expr_value
+                              << ", " << gen->dataTypeToLLVM(var.type) << "* " << var.llvm_alloca
+                              << ", align " << gen->getTypeAlignment(var.type) << "\n";
             }
 
             void operator()(const NodeScope *scope)
@@ -567,31 +546,35 @@ namespace Delta
 
             void operator()(const NodeStatementIf *statement_if)
             {
-                gen->m_output << "; if\n";
-                gen->generateExpression(statement_if->expr);
-                gen->pop("rax");
-                std::string label = gen->create_label();
-                gen->m_output << "\ttest rax, rax\n";
-                gen->m_output << "\tjz " << label << "\n";
+                std::string cond = gen->generateExpression(statement_if->expr);
+                std::string true_label = gen->getNextLabel();
+                std::string merge_label = gen->getNextLabel();
+                std::string false_label = statement_if->pred.has_value() ? gen->getNextLabel() : merge_label;
+
+                // Convert condition to i1 if needed
+                std::string bool_cond = gen->getNextTemp();
+                gen->m_output << "  " << bool_cond << " = icmp ne i32 " << cond << ", 0\n";
+                gen->m_output << "  br i1 " << bool_cond << ", label %" << true_label << ", label %" << false_label << "\n\n";
+
+                // True branch
+                gen->m_output << true_label << ":\n";
                 gen->generateScope(statement_if->scope);
+                gen->m_output << "  br label %" << merge_label << "\n\n";
+
+                // False branch (elif/else)
                 if (statement_if->pred.has_value())
                 {
-                    std::string end_label = gen->create_label();
-                    gen->m_output << "\tjmp " << end_label << "\n";
-                    gen->m_output << label << ":\n";
-                    gen->generateIfPred(statement_if->pred.value(), end_label);
-                    gen->m_output << end_label << ":\n";
+                    gen->m_output << false_label << ":\n";
+                    gen->generateIfPred(statement_if->pred.value(), merge_label);
+                    gen->m_output << "\n";
                 }
-                else
-                {
-                    gen->m_output << label << ":\n";
-                }
-                gen->m_output << "; /if\n";
+
+                // Merge point
+                gen->m_output << merge_label << ":\n";
             }
 
             void operator()(const NodeStatementReturn *statement_return)
             {
-                gen->m_output << "; return\n";
                 if (statement_return->expression)
                 {
                     if (gen->m_current_function_return_type == DataType::VOID)
@@ -603,8 +586,9 @@ namespace Delta
                     DataType exprType = gen->inferExpressionType(statement_return->expression);
                     gen->validateTypeCompatibility(gen->m_current_function_return_type, exprType, "return statement");
 
-                    gen->generateExpression(statement_return->expression);
-                    gen->pop("rax"); // Return value goes in RAX
+                    std::string return_value = gen->generateExpression(statement_return->expression);
+                    gen->m_output << "  ret " << gen->dataTypeToLLVM(gen->m_current_function_return_type)
+                                  << " " << return_value << "\n";
                 }
                 else
                 {
@@ -613,10 +597,8 @@ namespace Delta
                         LOG_ERROR("Must return value from non-void function");
                         exit(EXIT_FAILURE);
                     }
+                    gen->m_output << "  ret void\n";
                 }
-
-                gen->setupFunctionEpilogue();
-                gen->m_output << "; /return\n";
             }
         };
 
@@ -624,81 +606,110 @@ namespace Delta
         std::visit(visitor, statement->var);
     }
 
-    // Implementation of helper methods...
+    // Helper methods
 
-    void Assembler::alignStackAndCall(const std::string &function)
+    std::string Assembler::getNextTemp()
     {
-        size_t current_stack_bytes = m_stack_size * 8;
-        size_t misalignment = current_stack_bytes % 16;
+        return "%t" + std::to_string(m_temp_counter++);
+    }
 
-        if (misalignment != 8)
+    std::string Assembler::getNextLabel()
+    {
+        return "bb" + std::to_string(m_current_block_id++);
+    }
+
+    std::string Assembler::dataTypeToLLVM(DataType type)
+    {
+        switch (type)
         {
-            size_t needed_adjustment = (misalignment == 0) ? 8 : (16 - misalignment + 8);
-            m_output << "\tsub rsp, " << needed_adjustment << " ; Align stack for Windows ABI\n";
-            m_output << "\tcall " << function << "\n";
-            m_output << "\tadd rsp, " << needed_adjustment << " ; Restore stack after call\n";
+        case DataType::INT8:
+            return "i8";
+        case DataType::INT16:
+            return "i16";
+        case DataType::INT32:
+            return "i32";
+        case DataType::INT64:
+            return "i64";
+        case DataType::VOID:
+            return "void";
+        default:
+            return "i32";
+        }
+    }
+
+    int Assembler::getTypeAlignment(DataType type)
+    {
+        switch (type)
+        {
+        case DataType::INT8:
+            return 1;
+        case DataType::INT16:
+            return 2;
+        case DataType::INT32:
+            return 4;
+        case DataType::INT64:
+            return 8;
+        default:
+            return 4;
+        }
+    }
+
+    void Assembler::generateDefaultValue(DataType type)
+    {
+        switch (type)
+        {
+        case DataType::INT8:
+        case DataType::INT16:
+        case DataType::INT32:
+        case DataType::INT64:
+            m_output << "0";
+            break;
+        case DataType::VOID:
+            // Should not happen
+            break;
+        default:
+            m_output << "0";
+            break;
+        }
+    }
+
+    void Assembler::generateTypeConversion(const std::string &value, DataType from, DataType to)
+    {
+        if (from == to)
+        {
+            m_output << value;
+            return;
+        }
+
+        int from_bits = getTypeSize(from) * 8;
+        int to_bits = getTypeSize(to) * 8;
+
+        if (from_bits < to_bits)
+        {
+            // Sign extend
+            m_output << "sext " << dataTypeToLLVM(from) << " " << value << " to " << dataTypeToLLVM(to);
+        }
+        else if (from_bits > to_bits)
+        {
+            // Truncate
+            m_output << "trunc " << dataTypeToLLVM(from) << " " << value << " to " << dataTypeToLLVM(to);
         }
         else
         {
-            m_output << "\tcall " << function << "\n";
+            // Same size, bitcast
+            m_output << "bitcast " << dataTypeToLLVM(from) << " " << value << " to " << dataTypeToLLVM(to);
         }
-    }
-
-    void Assembler::push(const std::string &reg)
-    {
-        m_output << "\tpush " << reg << "\n";
-        m_stack_size++;
-        m_stack_byte_size += 8;
-    }
-
-    void Assembler::pop(const std::string &reg)
-    {
-        m_output << "\tpop " << reg << "\n";
-        m_stack_size--;
-        m_stack_byte_size -= 8;
-    }
-
-    void Assembler::pushTyped(const std::string &reg, DataType type)
-    {
-        // Always push full 64-bit for stack alignment, but track the type
-        push(reg);
-    }
-
-    void Assembler::popTyped(const std::string &reg, DataType type)
-    {
-        // Always pop full 64-bit for stack alignment
-        pop(reg);
-    }
-
-    std::string Assembler::create_label()
-    {
-        std::string name = "label" + std::to_string(m_label_count);
-        m_label_count++;
-        return name;
-    }
-
-    std::string Assembler::create_function_label(const std::string &func_name)
-    {
-        return func_name;
     }
 
     void Assembler::begin_scope()
     {
         m_scopes.push_back(m_vars.size());
-        m_output << "; Begin Scope " << m_scopes.size() << "\n";
     }
 
     void Assembler::end_scope()
     {
-        size_t pop_count = m_vars.size() - m_scopes.back();
-        if (pop_count > 0)
-        {
-            m_output << "\tadd rsp, " << pop_count * 8 << " ; Clean up " << pop_count << " " + std::string(pop_count == 1 ? "variable" : "variables") + " (" << pop_count * 8 << " bytes)\n";
-            m_stack_size -= pop_count;
-            m_stack_byte_size -= pop_count * 8;
-        }
-        m_output << "; End Scope " << m_scopes.size() << "\n";
-        for (int i = 0; i < pop_count; i++)
+        size_t vars_to_remove = m_vars.size() - m_scopes.back();
+        for (size_t i = 0; i < vars_to_remove; i++)
         {
             m_vars.pop_back();
         }
@@ -709,87 +720,24 @@ namespace Delta
     {
         m_current_function = func_name;
         m_in_function = true;
-        m_function_param_count = 0;
-        m_output << "; Begin Function " << func_name << "\n";
     }
 
     void Assembler::end_function()
     {
-        // Clean up all function variables
+        // Clean up all scopes
         while (!m_scopes.empty())
         {
             end_scope();
         }
-
-        size_t vars_to_clean = m_vars.size();
-        if (vars_to_clean > 0)
-        {
-            m_output << "\tadd rsp, " << vars_to_clean * 8 << " ; Clean up function variables\n";
-            m_stack_size -= vars_to_clean;
-            m_stack_byte_size -= vars_to_clean * 8;
-            m_vars.clear();
-        }
-
+        m_vars.clear();
         m_current_function = "";
         m_in_function = false;
-        m_function_param_count = 0;
         m_current_function_return_type = DataType::VOID;
-        m_output << "; End Function\n";
     }
 
-    void Assembler::setupFunctionPrologue()
-    {
-        m_output << "\tpush rbp\n";
-        m_output << "\tmov rbp, rsp\n";
-    }
-
-    void Assembler::setupFunctionEpilogue()
-    {
-        m_output << "\tmov rsp, rbp\n";
-        m_output << "\tpop rbp\n";
-        m_output << "\tret\n";
-    }
-
-    std::string Assembler::getAppropriateRegister(DataType type, const std::string &base_reg)
-    {
-        return getRegisterName(type, base_reg);
-    }
-
-    void Assembler::generateTypedMove(const std::string &dest, const std::string &src, DataType type)
-    {
-        std::string dest_reg = getAppropriateRegister(type, dest);
-        std::string src_reg = getAppropriateRegister(type, src);
-        m_output << "\tmov " << dest_reg << ", " << src_reg << "\n";
-    }
-
-    void Assembler::generateTypedBinaryOp(const std::string &op, DataType leftType, DataType rightType)
-    {
-        // Determine result type (promote to larger type)
-        DataType resultType = (getTypeSize(leftType) >= getTypeSize(rightType)) ? leftType : rightType;
-
-        pop("rax"); // left operand
-        pop("rbx"); // right operand
-
-        // Get appropriate register names
-        std::string left_reg = getAppropriateRegister(resultType, "rax");
-        std::string right_reg = getAppropriateRegister(resultType, "rbx");
-
-        if (op == "imul")
-        {
-            // Multiplication has special syntax
-            m_output << "\t" << op << " " << left_reg << ", " << right_reg << "\n";
-        }
-        else
-        {
-            m_output << "\t" << op << " " << left_reg << ", " << right_reg << "\n";
-        }
-
-        pushTyped("rax", resultType);
-    }
-
+    // Type inference methods (reused from original)
     DataType Assembler::inferExpressionType(const NodeExpression *expression)
     {
-        // Check cache first
         auto it = m_expression_types.find(expression);
         if (it != m_expression_types.end())
         {
@@ -813,8 +761,6 @@ namespace Delta
 
         ExpressionTypeVisitor visitor(this);
         DataType type = std::visit(visitor, expression->var);
-
-        // Cache the result
         m_expression_types[expression] = type;
         return type;
     }
@@ -828,7 +774,6 @@ namespace Delta
 
             DataType operator()(const NodeTermIntegerLiteral *term_int_lit) const
             {
-                // Could infer based on literal value, but default to INT32
                 return DataType::INT32;
             }
             DataType operator()(const NodeTermIdentifier *term_ident) const
@@ -893,26 +838,23 @@ namespace Delta
                 DataType rightType = gen->inferExpressionType(div->right);
                 return (getTypeSize(leftType) >= getTypeSize(rightType)) ? leftType : rightType;
             }
-            DataType operator()(const NodeExpressionBinaryGreater *gt) const
+            DataType operator()(const NodeExpressionBinaryGreater *) const
             {
                 return DataType::INT32;
             }
-
-            DataType operator()(const NodeExpressionBinaryGreaterEquals *gte) const
+            DataType operator()(const NodeExpressionBinaryGreaterEquals *) const
             {
                 return DataType::INT32;
             }
-
-            DataType operator()(const NodeExpressionBinaryLess *lt) const
+            DataType operator()(const NodeExpressionBinaryLess *) const
             {
                 return DataType::INT32;
             }
-
-            DataType operator()(const NodeExpressionBinaryLessEquals *lte) const
+            DataType operator()(const NodeExpressionBinaryLessEquals *) const
             {
                 return DataType::INT32;
             }
-            DataType operator()(const NodeExpressionBinaryEquals *eq) const
+            DataType operator()(const NodeExpressionBinaryEquals *) const
             {
                 return DataType::INT32;
             }
@@ -942,11 +884,27 @@ namespace Delta
 
     void Assembler::registerBuiltinFunctions()
     {
-        // Register ExitProcess as external function
-        Function exitProcess("ExitProcess", {DataType::INT32}, DataType::VOID, "ExitProcess", true);
-        m_functions.push_back(exitProcess);
+        // Register common C library functions
+        Function exit_func("exit", {DataType::INT32}, DataType::VOID, "exit", true);
+        m_functions.push_back(exit_func);
 
-        // Add other built-in functions as needed
+        Function printf_func("printf", {DataType::INT64}, DataType::INT32, "printf", true);
+        m_functions.push_back(printf_func);
+
+        Function malloc_func("malloc", {DataType::INT64}, DataType::INT64, "malloc", true);
+        m_functions.push_back(malloc_func);
+
+        Function free_func("free", {DataType::INT64}, DataType::VOID, "free", true);
+        m_functions.push_back(free_func);
+    }
+
+    void Assembler::registerExternalFunctions()
+    {
+        // Mark external functions as used
+        m_used_external_functions.insert("exit");
+        m_used_external_functions.insert("printf");
+        m_used_external_functions.insert("malloc");
+        m_used_external_functions.insert("free");
     }
 
     void Assembler::validateFunctionCall(const std::string &func_name, const std::vector<NodeExpression *> &arguments)
@@ -980,251 +938,29 @@ namespace Delta
         }
     }
 
-    std::vector<std::string> Assembler::getCallingConventionRegisters()
-    {
-        // Windows x64 calling convention: RCX, RDX, R8, R9
-        return {"rcx", "rdx", "r8", "r9"};
-    }
-
-    void Assembler::passArgumentsToFunction(const std::vector<NodeExpression *> &arguments, const Function &func)
-    {
-        std::vector<std::string> arg_registers = getCallingConventionRegisters();
-
-        // Generate expressions for all arguments first (right to left for stack)
-        for (int i = arguments.size() - 1; i >= 0; i--)
-        {
-            generateExpression(arguments[i]);
-        }
-
-        // Now pop arguments into registers/stack (left to right)
-        for (size_t i = 0; i < arguments.size(); i++)
-        {
-            if (i < arg_registers.size())
-            {
-                // Pass via register
-                pop(arg_registers[i]);
-            }
-            else
-            {
-                // Pass via stack - arguments beyond the 4th go on the stack
-                // This is handled by the calling convention automatically
-                LOG_ERROR("Stack-passed arguments not yet fully implemented");
-                exit(EXIT_FAILURE);
-            }
-        }
-    }
-
-    void Assembler::registerWindowsAPIFunctions()
-    {
-        // Kernel32 functions
-        addWindowsAPIFunction("ExitProcess", {DataType::INT32}, DataType::VOID, "kernel32", true);
-        addWindowsAPIFunction("GetStdHandle", {DataType::INT32}, DataType::INT64, "kernel32", true);
-        addWindowsAPIFunction("WriteConsoleA", {DataType::INT64, DataType::INT64, DataType::INT32, DataType::INT64, DataType::INT64}, DataType::INT32, "kernel32", true);
-        addWindowsAPIFunction("ReadConsoleA", {DataType::INT64, DataType::INT64, DataType::INT32, DataType::INT64, DataType::INT64}, DataType::INT32, "kernel32", true);
-        addWindowsAPIFunction("GetConsoleMode", {DataType::INT64, DataType::INT64}, DataType::INT32, "kernel32", true);
-        addWindowsAPIFunction("SetConsoleMode", {DataType::INT64, DataType::INT32}, DataType::INT32, "kernel32", true);
-        addWindowsAPIFunction("CloseHandle", {DataType::INT64}, DataType::INT32, "kernel32", true);
-        addWindowsAPIFunction("CreateFileA", {DataType::INT64, DataType::INT32, DataType::INT32, DataType::INT64, DataType::INT32, DataType::INT32, DataType::INT64}, DataType::INT64, "kernel32", true);
-        addWindowsAPIFunction("ReadFile", {DataType::INT64, DataType::INT64, DataType::INT32, DataType::INT64, DataType::INT64}, DataType::INT32, "kernel32", true);
-        addWindowsAPIFunction("WriteFile", {DataType::INT64, DataType::INT64, DataType::INT32, DataType::INT64, DataType::INT64}, DataType::INT32, "kernel32", true);
-        addWindowsAPIFunction("GetLastError", {}, DataType::INT32, "kernel32", true);
-        addWindowsAPIFunction("FormatMessageA", {DataType::INT32, DataType::INT64, DataType::INT32, DataType::INT32, DataType::INT64, DataType::INT32, DataType::INT64}, DataType::INT32, "kernel32", true);
-
-        // Memory management
-        addWindowsAPIFunction("VirtualAlloc", {DataType::INT64, DataType::INT64, DataType::INT32, DataType::INT32}, DataType::INT64, "kernel32", true);
-        addWindowsAPIFunction("VirtualFree", {DataType::INT64, DataType::INT64, DataType::INT32}, DataType::INT32, "kernel32", true);
-        addWindowsAPIFunction("HeapAlloc", {DataType::INT64, DataType::INT32, DataType::INT64}, DataType::INT64, "kernel32", true);
-        addWindowsAPIFunction("HeapFree", {DataType::INT64, DataType::INT32, DataType::INT64}, DataType::INT32, "kernel32", true);
-        addWindowsAPIFunction("GetProcessHeap", {}, DataType::INT64, "kernel32", true);
-
-        // Time functions
-        addWindowsAPIFunction("GetSystemTime", {DataType::INT64}, DataType::VOID, "kernel32", true);
-        addWindowsAPIFunction("GetLocalTime", {DataType::INT64}, DataType::VOID, "kernel32", true);
-        addWindowsAPIFunction("Sleep", {DataType::INT32}, DataType::VOID, "kernel32", true);
-
-        // MSVCRT functions (C runtime)
-        addWindowsAPIFunction("printf", {DataType::INT64}, DataType::INT32, "msvcrt", false); // Variadic, simplified
-        addWindowsAPIFunction("scanf", {DataType::INT64}, DataType::INT32, "msvcrt", false);  // Variadic, simplified
-        addWindowsAPIFunction("malloc", {DataType::INT64}, DataType::INT64, "msvcrt", false);
-        addWindowsAPIFunction("free", {DataType::INT64}, DataType::VOID, "msvcrt", false);
-        addWindowsAPIFunction("strlen", {DataType::INT64}, DataType::INT64, "msvcrt", false);
-        addWindowsAPIFunction("strcpy", {DataType::INT64, DataType::INT64}, DataType::INT64, "msvcrt", false);
-        addWindowsAPIFunction("strcmp", {DataType::INT64, DataType::INT64}, DataType::INT32, "msvcrt", false);
-        addWindowsAPIFunction("memcpy", {DataType::INT64, DataType::INT64, DataType::INT64}, DataType::INT64, "msvcrt", false);
-        addWindowsAPIFunction("memset", {DataType::INT64, DataType::INT32, DataType::INT64}, DataType::INT64, "msvcrt", false);
-    }
-
-    void Assembler::addWindowsAPIFunction(const std::string &name, const std::vector<DataType> &params,
-                                          DataType return_type, const std::string &library, bool stdcall)
-    {
-        WindowsAPIFunction func;
-        func.name = name;
-        func.parameter_types = params;
-        func.return_type = return_type;
-        func.library = library;
-        func.uses_stdcall = stdcall;
-
-        m_used_external_functions.insert(name);
-
-        m_windows_api_functions[name] = func;
-
-        // Also add to regular functions list for compatibility
-        Function regular_func(name, params, return_type, name, true, library);
-
-        // Check if function already exists to avoid duplicates
-        auto it = std::find_if(m_functions.begin(), m_functions.end(),
-                               [&name](const Function &func)
-                               { return func.name == name; });
-        if (it == m_functions.end())
-        {
-            m_functions.push_back(regular_func);
-        }
-    }
-
-    bool Assembler::isWindowsAPIFunction(const std::string &name)
-    {
-        return m_windows_api_functions.find(name) != m_windows_api_functions.end();
-    }
-
-    void Assembler::generateWindowsAPICall(const std::string &func_name, const std::vector<NodeExpression *> &arguments)
-    {
-        auto it = m_windows_api_functions.find(func_name);
-        if (it == m_windows_api_functions.end())
-        {
-            LOG_ERROR("Unknown Windows API function: {}", func_name);
-            exit(EXIT_FAILURE);
-        }
-
-        const WindowsAPIFunction &func = it->second;
-
-        m_output << "; Windows API call " << func_name << "\n";
-
-        // Validate arguments
-        if (arguments.size() != func.parameter_types.size())
-        {
-            LOG_ERROR("Function {} expects {} arguments but got {}",
-                      func_name, func.parameter_types.size(), arguments.size());
-            exit(EXIT_FAILURE);
-        }
-
-        // Pass arguments
-        passArgumentsToWindowsAPI(arguments, Function(func.name, func.parameter_types, func.return_type, func.name, true, func.library));
-
-        // Call the function with appropriate stack alignment
-        alignStackAndCall(func_name);
-
-        // Push return value if function returns something
-        if (func.return_type != DataType::VOID)
-        {
-            pushTyped("rax", func.return_type);
-        }
-
-        m_output << "; /Windows API call " << func_name << "\n";
-    }
-
     void Assembler::generateExternDeclarations()
     {
-        std::set<std::string> declared_libraries;
-
         m_output << "; External function declarations\n";
 
         for (const std::string &func_name : m_used_external_functions)
         {
-            auto api_it = m_windows_api_functions.find(func_name);
-            if (api_it != m_windows_api_functions.end())
+            Function *func = findFunction(func_name);
+            if (func && func->is_external)
             {
-                const WindowsAPIFunction &func = api_it->second;
+                std::string return_type = dataTypeToLLVM(func->return_type);
+                m_output << "declare " << return_type << " @" << func_name << "(";
 
-                // Declare the library import if not already done
-                if (declared_libraries.find(func.library) == declared_libraries.end())
+                for (size_t i = 0; i < func->parameter_types.size(); i++)
                 {
-                    m_output << "; " << func.library << " imports\n";
-                    declared_libraries.insert(func.library);
+                    if (i > 0)
+                        m_output << ", ";
+                    m_output << dataTypeToLLVM(func->parameter_types[i]);
                 }
 
-                m_output << "extern " << func_name << "\n";
-            }
-            else
-            {
-                // Regular external function
-                auto func_it = std::find_if(m_functions.begin(), m_functions.end(),
-                                            [&func_name](const Function &f)
-                                            { return f.name == func_name; });
-                if (func_it != m_functions.end() && func_it->is_external)
-                {
-                    m_output << "extern " << func_name << "\n";
-                }
+                m_output << ")\n";
             }
         }
-
         m_output << "\n";
-    }
-
-    void Assembler::passArgumentsToWindowsAPI(const std::vector<NodeExpression *> &arguments, const Function &func)
-    {
-        auto api_it = m_windows_api_functions.find(func.name);
-        if (api_it == m_windows_api_functions.end())
-        {
-            // Fall back to regular argument passing
-            passArgumentsToFunction(arguments, func);
-            return;
-        }
-
-        const WindowsAPIFunction &api_func = api_it->second;
-        std::vector<std::string> arg_registers = getCallingConventionRegisters();
-
-        // Generate expressions for all arguments first (right to left for stack)
-        for (int i = arguments.size() - 1; i >= 0; i--)
-        {
-            generateExpression(arguments[i]);
-        }
-
-        if (api_func.uses_stdcall)
-        {
-            // Windows API (stdcall) - arguments in RCX, RDX, R8, R9, then stack
-            for (size_t i = 0; i < arguments.size(); i++)
-            {
-                if (i < arg_registers.size())
-                {
-                    // Pass via register
-                    pop(arg_registers[i]);
-                }
-                else
-                {
-                    // For stdcall, caller pushes additional args on stack
-                    // The callee will clean up the stack
-                    m_output << "; stdcall argument " << i << " passed on stack\n";
-                    // Arguments are already on the stack from generateExpression calls
-                }
-            }
-        }
-        else
-        {
-            // C runtime (cdecl) - same register convention but caller cleans stack
-            for (size_t i = 0; i < arguments.size(); i++)
-            {
-                if (i < arg_registers.size())
-                {
-                    pop(arg_registers[i]);
-                }
-                else
-                {
-                    m_output << "; cdecl argument " << i << " passed on stack\n";
-                    // For cdecl, we need to adjust stack after call
-                }
-            }
-        }
-
-        // Reserve shadow space for Windows x64 ABI (32 bytes minimum)
-        if (arguments.size() > 0)
-        {
-            size_t shadow_space = std::max(INT_MAX, int(arguments.size() * 8));
-            m_output << "\tsub rsp, " << shadow_space << " ; Reserve shadow space\n";
-
-            // The actual call will be made by alignStackAndCall
-            // After the call, we need to restore the shadow space
-            // This is handled in the modified alignStackAndCall or we add it here
-        }
     }
 
 } // namespace Delta
