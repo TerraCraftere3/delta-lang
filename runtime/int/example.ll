@@ -11,37 +11,77 @@ declare void @free(i64)
 declare i64 @malloc(i64)
 declare i32 @printf(i64)
 
-define i64 @fib(i32 %n) {
+define i32 @fib(i32 %n) {
 entry:
   %t0 = alloca i32, align 4
   store i32 %n, i32* %t0, align 4
-  %t1 = load i32, i32* %t0, align 4
-  %t2 = icmp sle i32 %t1, 1
+  %t1 = load i32, i32* %t0, align 4 ; Use Variable n
+  %t2 = icmp sle i32 %t1, 1; Less or Equals
   %t3 = zext i1 %t2 to i32
   %t4 = icmp ne i32 %t3, 0
-  br i1 %t4, label %bb0, label %bb1
+  br i1 %t4, label %bb0, label %bb1; If / Else Jump
 
 bb0:
-  %t5 = load i32, i32* %t0, align 4
-  ret i64 %t5
-  br label %bb1
+  %t5 = load i32, i32* %t0, align 4 ; Use Variable n
+  ret i32 %t5 ; Return
+  br label %bb1; Break
 
 bb1:
-  %t6 = load i32, i32* %t0, align 4
-  %t7 = sub i32 %t6, 1
-  %t8 = call i64 @fib(i32 %t7)
-  %t9 = load i32, i32* %t0, align 4
-  %t10 = sub i32 %t9, 2
-  %t11 = call i64 @fib(i32 %t10)
-  %t12 = add i64 %t8, %t11
-  ret i64 %t12
-  ret i64 0
+  %t6 = load i32, i32* %t0, align 4 ; Use Variable n
+  %t7 = sub i32 %t6, 1; Subtract
+  %t8 = call i32 @fib(i32 %t7) ; Call fib()
+  %t9 = load i32, i32* %t0, align 4 ; Use Variable n
+  %t10 = sub i32 %t9, 2; Subtract
+  %t11 = call i32 @fib(i32 %t10) ; Call fib()
+  %t12 = add i32 %t8, %t11; Add
+  ret i32 %t12 ; Return
+  ret i32 0
+}
+
+define i32 @test(i32 %n) {
+entry:
+  %t0 = alloca i32, align 4
+  store i32 %n, i32* %t0, align 4
+  %t1 = alloca i32, align 4; Allocate variable "ret"
+  store i32 0, i32* %t1, align 4; Set variable "ret"
+  %t2 = load i32, i32* %t0, align 4 ; Use Variable n
+  %t3 = icmp eq i32 %t2, 1
+  %t4 = zext i1 %t3 to i32
+  %t5 = icmp ne i32 %t4, 0
+  br i1 %t5, label %bb0, label %bb2; If / Else Jump
+
+bb0:
+  store i32 42, i32* %t1, align 4; Set variable "ret"
+  br label %bb1; Break
+
+bb2:
+  %t6 = load i32, i32* %t0, align 4 ; Use Variable n
+  %t7 = icmp eq i32 %t6, 64
+  %t8 = zext i1 %t7 to i32
+  %t9 = icmp ne i32 %t8, 0
+  br i1 %t9, label %bb3, label %bb4; Elif / Else Jump
+
+bb3:
+  store i32 1, i32* %t1, align 4; Set variable "ret"
+  br label %bb1; Break
+
+bb4:
+  store i32 100, i32* %t1, align 4; Set variable "ret"
+  br label %bb1; Break
+
+bb1:
+  %t10 = load i32, i32* %t1, align 4 ; Use Variable ret
+  ret i32 %t10 ; Return
+  ret i32 0
 }
 
 define i32 @main() {
 entry:
-  %t0 = call i64 @fib(i32 10)
-  ret i32 %t0
+  %t0 = alloca i32, align 4; Allocate variable "a"
+  %t1 = call i32 @test(i32 1) ; Call test()
+  store i32 %t1, i32* %t0, align 4; Set variable "a"
+  %t2 = call i32 @fib(i32 10) ; Call fib()
+  ret i32 %t2 ; Return
   ret i32 0
 }
 

@@ -149,7 +149,8 @@ namespace Delta
                 std::string load_temp = gen->getNextTemp();
                 gen->m_output << "  " << load_temp << " = load " << gen->dataTypeToLLVM((*it).type)
                               << ", " << gen->dataTypeToLLVM((*it).type) << "* " << (*it).llvm_alloca
-                              << ", align " << gen->getTypeAlignment((*it).type) << "\n";
+                              << ", align " << gen->getTypeAlignment((*it).type);
+                gen->m_output << " ; Use Variable " << term_ident->ident.value.value() << "\n";
                 return load_temp;
             }
 
@@ -212,7 +213,7 @@ namespace Delta
                 m_output << dataTypeToLLVM(arg_types[i]) << " " << arg_values[i];
             }
 
-            m_output << ")\n";
+            m_output << ") ; Call " << func_call->function_name.value.value() << "()\n";
             return result_temp;
         }
 
@@ -224,7 +225,7 @@ namespace Delta
             m_output << dataTypeToLLVM(arg_types[i]) << " " << arg_values[i];
         }
 
-        m_output << ")\n";
+        m_output << ") ; Call " << func_call->function_name.value.value() << "()\n";
         return ""; // Void return
     }
 
@@ -246,7 +247,7 @@ namespace Delta
 
                 std::string result_temp = gen->getNextTemp();
                 gen->m_output << "  " << result_temp << " = add " << gen->dataTypeToLLVM(resultType)
-                              << " " << left << ", " << right << "\n";
+                              << " " << left << ", " << right << "; Add\n";
                 return result_temp;
             }
 
@@ -261,7 +262,7 @@ namespace Delta
 
                 std::string result_temp = gen->getNextTemp();
                 gen->m_output << "  " << result_temp << " = sub " << gen->dataTypeToLLVM(resultType)
-                              << " " << left << ", " << right << "\n";
+                              << " " << left << ", " << right << "; Subtract\n";
                 return result_temp;
             }
 
@@ -276,7 +277,7 @@ namespace Delta
 
                 std::string result_temp = gen->getNextTemp();
                 gen->m_output << "  " << result_temp << " = mul " << gen->dataTypeToLLVM(resultType)
-                              << " " << left << ", " << right << "\n";
+                              << " " << left << ", " << right << "; Multiplicate\n";
                 return result_temp;
             }
 
@@ -291,7 +292,7 @@ namespace Delta
 
                 std::string result_temp = gen->getNextTemp();
                 gen->m_output << "  " << result_temp << " = sdiv " << gen->dataTypeToLLVM(resultType)
-                              << " " << left << ", " << right << "\n";
+                              << " " << left << ", " << right << "; Divide\n";
                 return result_temp;
             }
 
@@ -306,7 +307,7 @@ namespace Delta
 
                 std::string result_temp = gen->getNextTemp();
                 gen->m_output << "  " << result_temp << " = icmp sgt " << gen->dataTypeToLLVM(compareType)
-                              << " " << left << ", " << right << "\n";
+                              << " " << left << ", " << right << "; Greater Than\n";
 
                 // Convert i1 to i32
                 std::string final_temp = gen->getNextTemp();
@@ -325,7 +326,7 @@ namespace Delta
 
                 std::string result_temp = gen->getNextTemp();
                 gen->m_output << "  " << result_temp << " = icmp sge " << gen->dataTypeToLLVM(compareType)
-                              << " " << left << ", " << right << "\n";
+                              << " " << left << ", " << right << "; Greater or Equals\n";
 
                 std::string final_temp = gen->getNextTemp();
                 gen->m_output << "  " << final_temp << " = zext i1 " << result_temp << " to i32\n";
@@ -343,7 +344,7 @@ namespace Delta
 
                 std::string result_temp = gen->getNextTemp();
                 gen->m_output << "  " << result_temp << " = icmp slt " << gen->dataTypeToLLVM(compareType)
-                              << " " << left << ", " << right << "\n";
+                              << " " << left << ", " << right << "; Less Than\n";
 
                 std::string final_temp = gen->getNextTemp();
                 gen->m_output << "  " << final_temp << " = zext i1 " << result_temp << " to i32\n";
@@ -361,7 +362,7 @@ namespace Delta
 
                 std::string result_temp = gen->getNextTemp();
                 gen->m_output << "  " << result_temp << " = icmp sle " << gen->dataTypeToLLVM(compareType)
-                              << " " << left << ", " << right << "\n";
+                              << " " << left << ", " << right << "; Less or Equals\n";
 
                 std::string final_temp = gen->getNextTemp();
                 gen->m_output << "  " << final_temp << " = zext i1 " << result_temp << " to i32\n";
@@ -439,12 +440,12 @@ namespace Delta
                 // Convert condition to i1 if needed
                 std::string bool_cond = gen->getNextTemp();
                 gen->m_output << "  " << bool_cond << " = icmp ne i32 " << cond << ", 0\n";
-                gen->m_output << "  br i1 " << bool_cond << ", label %" << true_label << ", label %" << false_label << "\n\n";
+                gen->m_output << "  br i1 " << bool_cond << ", label %" << true_label << ", label %" << false_label << "; Elif / Else Jump\n\n";
 
                 // True branch
                 gen->m_output << true_label << ":\n";
                 gen->generateScope(pred_elif->scope);
-                gen->m_output << "  br label %" << merge_label << "\n\n";
+                gen->m_output << "  br label %" << merge_label << "; Break\n\n";
 
                 // False branch
                 gen->m_output << false_label << ":\n";
@@ -454,14 +455,14 @@ namespace Delta
                 }
                 else
                 {
-                    gen->m_output << "  br label %" << merge_label << "\n";
+                    gen->m_output << "  br label %" << merge_label << "; Break\n";
                 }
             }
 
             void operator()(const NodeIfPredElse *pred_else)
             {
                 gen->generateScope(pred_else->scope);
-                gen->m_output << "  br label %" << merge_label << "\n";
+                gen->m_output << "  br label %" << merge_label << "; Break\n";
             }
         };
 
@@ -499,13 +500,13 @@ namespace Delta
                 // Allocate space for variable
                 std::string alloca_temp = gen->getNextTemp();
                 gen->m_output << "  " << alloca_temp << " = alloca " << gen->dataTypeToLLVM(statement_let->type)
-                              << ", align " << gen->getTypeAlignment(statement_let->type) << "\n";
+                              << ", align " << gen->getTypeAlignment(statement_let->type) << "; Allocate variable \"" << statement_let->ident.value.value() << "\"\n";
 
                 // Generate expression and store
                 std::string expr_value = gen->generateExpression(statement_let->expression);
                 gen->m_output << "  store " << gen->dataTypeToLLVM(statement_let->type) << " " << expr_value
                               << ", " << gen->dataTypeToLLVM(statement_let->type) << "* " << alloca_temp
-                              << ", align " << gen->getTypeAlignment(statement_let->type) << "\n";
+                              << ", align " << gen->getTypeAlignment(statement_let->type) << "; Set variable \"" << statement_let->ident.value.value() << "\"\n";
 
                 Var var = Var(statement_let->ident.value.value(), 0, statement_let->type);
                 var.setConstant(statement_let->isConst);
@@ -536,7 +537,7 @@ namespace Delta
                 std::string expr_value = gen->generateExpression(assign->expression);
                 gen->m_output << "  store " << gen->dataTypeToLLVM(var.type) << " " << expr_value
                               << ", " << gen->dataTypeToLLVM(var.type) << "* " << var.llvm_alloca
-                              << ", align " << gen->getTypeAlignment(var.type) << "\n";
+                              << ", align " << gen->getTypeAlignment(var.type) << "; Set variable \"" << assign->ident.value.value() << "\"\n";
             }
 
             void operator()(const NodeScope *scope)
@@ -554,12 +555,12 @@ namespace Delta
                 // Convert condition to i1 if needed
                 std::string bool_cond = gen->getNextTemp();
                 gen->m_output << "  " << bool_cond << " = icmp ne i32 " << cond << ", 0\n";
-                gen->m_output << "  br i1 " << bool_cond << ", label %" << true_label << ", label %" << false_label << "\n\n";
+                gen->m_output << "  br i1 " << bool_cond << ", label %" << true_label << ", label %" << false_label << "; If / Else Jump\n\n";
 
                 // True branch
                 gen->m_output << true_label << ":\n";
                 gen->generateScope(statement_if->scope);
-                gen->m_output << "  br label %" << merge_label << "\n\n";
+                gen->m_output << "  br label %" << merge_label << "; Break\n\n";
 
                 // False branch (elif/else)
                 if (statement_if->pred.has_value())
@@ -588,7 +589,7 @@ namespace Delta
 
                     std::string return_value = gen->generateExpression(statement_return->expression);
                     gen->m_output << "  ret " << gen->dataTypeToLLVM(gen->m_current_function_return_type)
-                                  << " " << return_value << "\n";
+                                  << " " << return_value << " ; Return\n";
                 }
                 else
                 {
@@ -597,7 +598,7 @@ namespace Delta
                         LOG_ERROR("Must return value from non-void function");
                         exit(EXIT_FAILURE);
                     }
-                    gen->m_output << "  ret void\n";
+                    gen->m_output << "  ret void ; Return\n";
                 }
             }
         };

@@ -1,6 +1,6 @@
 - Node Program
 	- Functions
-		- Define "int64 fib(int32 n)"
+		- Define "int32 fib(int32 n)"
 			- If
 				- Expression
 					- Less or Equals
@@ -19,7 +19,35 @@
 						- Subtraction
 							- Variable "n"
 							- Literal 2
+		- Define "int32 test(int32 n)"
+			- Let "int32 ret"
+				- Literal 0
+			- If
+				- Expression
+					- Equals
+						- Variable "n"
+						- Literal 1
+				- Scope
+					- Assign "ret"
+						- Literal 42
+			- Elif
+				- Expression
+					- Equals
+						- Variable "n"
+						- Literal 64
+				- Scope
+					- Assign "ret"
+						- Literal 1
+			- Else
+				- Scope
+					- Assign "ret"
+						- Literal 100
+			- Return
+				- Variable "ret"
 		- Define "int32 main()"
+			- Let "int32 a"
+				- Call "test"
+					- Literal 1
 			- Return
 				- Call "fib"
 					- Literal 10

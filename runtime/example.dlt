@@ -5,6 +5,19 @@ int fib(int n) {
     return fib(n - 1) + fib(n - 2);
 }
 
+int test(int n) {
+    int ret = 0;
+    if(n == 1){
+        ret = 42;
+    }elif(n == 64){
+        ret = 1;
+    }else{
+        ret = 100;
+    }
+    return ret;
+}
+
 int main() {
+    int a = test(1);
     return fib(10);
 }
