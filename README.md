@@ -71,16 +71,9 @@ const long ZERO = 0;
 
 ### Types
 ```
-int64 a = 1;
-long b = 2; // same as int64
-int32 c = 3;
-int d = 4; // same as int32
-int16 e = 5;
-short f = 6; // same as int16
-int8 g = 7;
-
-// Any integer type is compatible with each other (for example assigning the value of an int64 to an int8)
-d = a;
+int a = 10;
+float b = 1.2345f;
+double pi = 3.14;
 ```
 Any integer type is compatible with another integer type, so are other types (like floats in the future).
 
@@ -91,6 +84,12 @@ int add(int a, int b) {
 }
 
 int result = add(3, 5);
+```
+
+### Casting
+```
+int a = 10;
+float b = (float) a;
 ```
 
 ### Main Function
@@ -216,6 +215,8 @@ $$
     [\text{Expr}]
     \\
     [\text{FuncCall}]
+    \\
+    ([\text{Type}])\space[\text{Expr}]
 \end{cases}
 \\
 [\text{Expr}] &\to 
@@ -227,17 +228,17 @@ $$
 \\
 [\text{Type}] &\to 
 \begin{cases}
-    \text{int8} & |\space \text{byte}
+    \text{int8} & | & \text{char}
     \\
-    \text{int16} & |\space  \text{short}
+    \text{int16} & | & \text{short}
     \\
-    \text{int32} & |\space  \text{int}
+    \text{int32} & | & \text{int}
     \\
-    \text{int64} & |\space  \text{long}
+    \text{int64} & | & \text{long}
     \\
-    \text{float32} & |\space  \text{float}
+    \text{float32} & | & \text{float}
     \\
-    \text{float64} & |\space  \text{double}
+    \text{float64} & | & \text{double}
 \end{cases}
 \end{align}
 $$

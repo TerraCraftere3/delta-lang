@@ -74,6 +74,8 @@ namespace Delta
     {
         if (s == "void")
             return DataType::VOID;
+        else if (s == "char")
+            return DataType::INT8;
         else if (s == "int8")
             return DataType::INT8;
         else if (s == "short")
