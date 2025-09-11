@@ -18,7 +18,10 @@ namespace Delta
     std::string nodeDebugPrint(NodeIfPredElse *node, int indention);
     std::string nodeDebugPrint(NodeTermParen *node, int indention);
     std::string nodeDebugPrint(NodeTermFunctionCall *node, int indention);
+    std::string nodeDebugPrint(NodeTermCast *node, int indention);
     std::string nodeDebugPrint(NodeTermIntegerLiteral *node, int indention);
+    std::string nodeDebugPrint(NodeTermFloatLiteral *node, int indention);
+    std::string nodeDebugPrint(NodeTermDoubleLiteral *node, int indention);
     std::string nodeDebugPrint(NodeTermIdentifier *node, int indention);
     std::string nodeDebugPrint(NodeExpressionBinary *node, int indention);
     std::string nodeDebugPrint(NodeExpressionTerm *node, int indention);

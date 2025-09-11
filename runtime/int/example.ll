@@ -82,15 +82,16 @@ entry:
   %t2 = sitofp i32 %t1 to float ; Int to Float
   store float %t2, float* %t0, align 4; Set variable "a"
   %t3 = alloca float, align 4; Allocate variable "b"
-  %t4 = fptrunc double 3.140000e+00 to float ; Float Truncate
-  store float %t4, float* %t3, align 4; Set variable "b"
-  %t5 = alloca float, align 4; Allocate variable "c"
-  %t6 = load float, float* %t0, align 4 ; Use Variable a
-  %t7 = load float, float* %t3, align 4 ; Use Variable b
-  %t8 = fadd float %t6, %t7; Float Add
-  store float %t8, float* %t5, align 4; Set variable "c"
+  store float 0x40091EB860000000, float* %t3, align 4; Set variable "b"
+  %t4 = alloca float, align 4; Allocate variable "c"
+  %t5 = load float, float* %t0, align 4 ; Use Variable a
+  %t6 = load float, float* %t3, align 4 ; Use Variable b
+  %t7 = fadd float %t5, %t6; Float Add
+  store float %t7, float* %t4, align 4; Set variable "c"
+  %t8 = alloca double, align 8; Allocate variable "d"
+  store double 0x40191EB851EB851F, double* %t8, align 8; Set variable "d"
   %t9 = alloca i32, align 4; Allocate variable "ret"
-  %t10 = load float, float* %t5, align 4 ; Use Variable c
+  %t10 = load float, float* %t4, align 4 ; Use Variable c
   %t11 = fptosi float %t10 to i32 ; Float to Int
   store i32 %t11, i32* %t9, align 4; Set variable "ret"
   %t12 = load i32, i32* %t9, align 4 ; Use Variable ret

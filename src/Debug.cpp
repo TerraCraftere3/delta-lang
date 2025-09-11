@@ -79,10 +79,34 @@ namespace Delta
         return output.str();
     }
 
+    std::string nodeDebugPrint(NodeTermCast *node, int indention)
+    {
+        std::stringstream output;
+        output << Indent(indention) << DEBUG_NODE_PREFIX << "Cast ";
+        output << typeToString(node->target_type);
+        output << "\n";
+        output << nodeDebugPrint(node->expr, indention + 1);
+        return output.str();
+    }
+
     std::string nodeDebugPrint(NodeTermIntegerLiteral *node, int indention)
     {
         std::stringstream output;
-        output << Indent(indention) << DEBUG_NODE_PREFIX << "Literal " << node->int_literal.value.value() << "\n";
+        output << Indent(indention) << DEBUG_NODE_PREFIX << "Int Literal " << node->int_literal.value.value() << "\n";
+        return output.str();
+    }
+
+    std::string nodeDebugPrint(NodeTermFloatLiteral *node, int indention)
+    {
+        std::stringstream output;
+        output << Indent(indention) << DEBUG_NODE_PREFIX << "Float Literal " << node->float_literal.value.value() << "\n";
+        return output.str();
+    }
+
+    std::string nodeDebugPrint(NodeTermDoubleLiteral *node, int indention)
+    {
+        std::stringstream output;
+        output << Indent(indention) << DEBUG_NODE_PREFIX << "Double Literal " << node->double_literal.value.value() << "\n";
         return output.str();
     }
 

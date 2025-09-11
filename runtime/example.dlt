@@ -19,8 +19,9 @@ int test(int n) {
 
 int main() {
     float a = (float) fib(10);
-    float b = (float) 3.14;
+    float b = 3.14f;
     float c = a + b;
+    double d = 6.28;
     int ret = (int) c;
     return ret;
 }

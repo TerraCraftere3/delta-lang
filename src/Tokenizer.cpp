@@ -85,7 +85,7 @@ namespace Delta
 
                     if (!peek().has_value() || !std::isdigit(peek().value()))
                     {
-                        LOG_ERROR("Malformed float literal on line {}", line_count);
+                        LOG_ERROR("Malformed float/double literal on line {}", line_count);
                         exit(EXIT_FAILURE);
                     }
 
@@ -94,7 +94,16 @@ namespace Delta
                         buf.push_back(consume());
                     }
 
-                    tokens.push_back({TokenType::float_literal, line_count, buf});
+                    // check suffix (f means float, else double)
+                    if (peek().has_value() && (peek().value() == 'f' || peek().value() == 'F'))
+                    {
+                        consume(); // eat the 'f'
+                        tokens.push_back({TokenType::float_literal, line_count, buf});
+                    }
+                    else
+                    {
+                        tokens.push_back({TokenType::double_literal, line_count, buf});
+                    }
                 }
                 else
                 {
@@ -103,6 +112,7 @@ namespace Delta
 
                 buf.clear();
             }
+
             else if (peek().value() == '/' && peek(2).has_value() && peek(2).value() == '/')
             {
                 consume();

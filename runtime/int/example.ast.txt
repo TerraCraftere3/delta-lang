@@ -5,7 +5,7 @@
 				- Expression
 					- Less or Equals
 						- Variable "n"
-						- Literal 1
+						- Int Literal 1
 				- Scope
 					- Return
 						- Variable "n"
@@ -14,47 +14,52 @@
 					- Call "fib"
 						- Subtraction
 							- Variable "n"
-							- Literal 1
+							- Int Literal 1
 					- Call "fib"
 						- Subtraction
 							- Variable "n"
-							- Literal 2
+							- Int Literal 2
 		- Define "int32 test(int32 n)"
 			- Let "int32 ret"
-				- Literal 0
+				- Int Literal 0
 			- If
 				- Expression
 					- Equals
 						- Variable "n"
-						- Literal 1
+						- Int Literal 1
 				- Scope
 					- Assign "ret"
-						- Literal 42
+						- Int Literal 42
 			- Elif
 				- Expression
 					- Equals
 						- Variable "n"
-						- Literal 64
+						- Int Literal 64
 				- Scope
 					- Assign "ret"
-						- Literal 1
+						- Int Literal 1
 			- Else
 				- Scope
 					- Assign "ret"
-						- Literal 100
+						- Int Literal 100
 			- Return
 				- Variable "ret"
 		- Define "int32 main()"
 			- Let "float32 a"
-				- [struct Delta::NodeTermCast * __ptr64] NODE NOT IMPLEMENTED
+				- Cast float32
+					- Call "fib"
+						- Int Literal 10
 			- Let "float32 b"
-				- [struct Delta::NodeTermCast * __ptr64] NODE NOT IMPLEMENTED
+				- Float Literal 3.14
 			- Let "float32 c"
 				- Addition
 					- Variable "a"
 					- Variable "b"
+			- Let "float32 d"
+				- Double Literal 6.28
 			- Let "int32 ret"
-				- [struct Delta::NodeTermCast * __ptr64] NODE NOT IMPLEMENTED
+				- Cast int32
+					- Variable "c"
 			- Return
 				- Variable "ret"
 	- Statements

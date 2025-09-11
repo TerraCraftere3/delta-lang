@@ -8,6 +8,11 @@
 namespace Delta
 {
     struct NodeExpression;
+    struct NodeTermDoubleLiteral
+    {
+        Token double_literal;
+        const char *id = "Double Literal";
+    };
 
     struct NodeTermFloatLiteral
     {
@@ -137,7 +142,7 @@ namespace Delta
 
     struct NodeExpressionTerm
     {
-        std::variant<NodeTermIntegerLiteral *, NodeTermFloatLiteral *, NodeTermIdentifier *, NodeTermParen *, NodeTermFunctionCall *, NodeTermCast *> var;
+        std::variant<NodeTermIntegerLiteral *, NodeTermFloatLiteral *, NodeTermDoubleLiteral *, NodeTermIdentifier *, NodeTermParen *, NodeTermFunctionCall *, NodeTermCast *> var;
         const char *id = "Term Expression";
     };
 

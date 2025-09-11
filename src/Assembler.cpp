@@ -124,11 +124,50 @@ namespace Delta
         m_output << "}\n\n";
     }
 
-    std::string floatToIEEEString(const std::string &input)
+    std::string float32ToLLVM(const std::string &input)
     {
         float value = std::stof(input);
+
+        if (std::isnan(value))
+        {
+            return "0x7FF8000000000000";
+        }
+        if (std::isinf(value))
+        {
+            return value > 0 ? "0x7FF0000000000000" : "0xFFF0000000000000";
+        }
+        double double_value = static_cast<double>(value);
+
         std::ostringstream oss;
-        oss << std::scientific << std::setprecision(6) << value;
+        oss << "0x" << std::hex << std::uppercase;
+
+        uint64_t bits;
+        std::memcpy(&bits, &double_value, sizeof(double));
+        oss << std::setw(16) << std::setfill('0') << bits;
+
+        return oss.str();
+    }
+
+    std::string float64ToLLVM(const std::string &input)
+    {
+        double value = std::stod(input);
+
+        if (std::isnan(value))
+        {
+            return "0x7FF8000000000000";
+        }
+        if (std::isinf(value))
+        {
+            return value > 0 ? "0x7FF0000000000000" : "0xFFF0000000000000";
+        }
+
+        std::ostringstream oss;
+        oss << "0x" << std::hex << std::uppercase;
+
+        uint64_t bits;
+        std::memcpy(&bits, &value, sizeof(double));
+        oss << std::setw(16) << std::setfill('0') << bits;
+
         return oss.str();
     }
 
@@ -146,7 +185,12 @@ namespace Delta
 
             std::string operator()(const NodeTermFloatLiteral *term_float_lit) const
             {
-                return floatToIEEEString(term_float_lit->float_literal.value.value());
+                return float32ToLLVM(term_float_lit->float_literal.value.value());
+            }
+
+            std::string operator()(const NodeTermDoubleLiteral *term_double_lit) const
+            {
+                return float64ToLLVM(term_double_lit->double_literal.value.value());
             }
 
             std::string operator()(const NodeTermIdentifier *term_ident) const
@@ -1095,7 +1139,12 @@ namespace Delta
 
             DataType operator()(const NodeTermFloatLiteral *term_float_lit) const
             {
-                return DataType::FLOAT64; // Default to double precision
+                return DataType::FLOAT32;
+            }
+
+            DataType operator()(const NodeTermDoubleLiteral *term_float_lit) const
+            {
+                return DataType::FLOAT64;
             }
 
             DataType operator()(const NodeTermIdentifier *term_ident) const

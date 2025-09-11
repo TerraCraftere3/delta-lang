@@ -498,13 +498,22 @@ namespace Delta
             node_term->var = term_int_lit;
             return node_term;
         }
-        // Float literal: 3.14
+        // Float literal: 3.14f
         else if (auto float_lit = try_consume(TokenType::float_literal))
         {
             auto term_float_lit = m_allocator.alloc<NodeTermFloatLiteral>();
             term_float_lit->float_literal = float_lit.value();
             auto node_term = m_allocator.alloc<NodeExpressionTerm>();
             node_term->var = term_float_lit;
+            return node_term;
+        }
+        // Double literal: 1.2345
+        else if (auto double_lit = try_consume(TokenType::double_literal))
+        {
+            auto term_double_lit = m_allocator.alloc<NodeTermDoubleLiteral>();
+            term_double_lit->double_literal = double_lit.value();
+            auto node_term = m_allocator.alloc<NodeExpressionTerm>();
+            node_term->var = term_double_lit;
             return node_term;
         }
         // Cast: (type) value
