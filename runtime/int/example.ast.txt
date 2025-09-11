@@ -1,18 +1,19 @@
 - Node Program
 	- Functions
-		- Define "void modifyInt(int32* ptr, int32 newValue)"
+		- Define "int32 main()"
+			- Let "int8* str"
+				- Call "malloc"
+					- Int Literal 16
 			- Pointer Assign
 				- Pointer Expression
 					- Dereference
-						- Variable "ptr"
+						- Variable "str"
 				- Value Expression
-					- Variable "newValue"
-		- Define "int32 main()"
-			- Let "int32 x"
-				- Int Literal 10
-			- Call "modifyInt"
-				- Address of "x"
-				- Int Literal 42
+					- Int Literal 72
+			- Call "printf"
+				- Variable "str"
+			- Call "free"
+				- Variable "str"
 			- Return
-				- Variable "x"
+				- Int Literal 0
 	- Statements

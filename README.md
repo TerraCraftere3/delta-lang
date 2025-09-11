@@ -144,7 +144,7 @@ long memset(long, int, long);
 ## Grammar
 $$
 \begin{align}
-[\text{Prog}] &\to [\text{FuncDecl}]^* \space [\text{Statement}]^*
+[\text{Prog}] &\to [\text{FuncDecl}]^* \space [\text{Statement}]^* \space\textit{List of Functions and Statements}
 \\
 [\text{FuncDecl}] &\to [\text{Type}] \space \text{Identifier}([\text{ParamList}]?)[\text{Scope}]
 \\
@@ -160,9 +160,9 @@ $$
 \begin{cases}
     exit([\text{Expr}]); 
     \\
-    [\text{const}|\epsilon]\space[\text{Type}] \space\text{Identifier} = [\text{Expr}];
+    [\text{const}|\epsilon]\space[\text{Type}] \space\text{Identifier} = [\text{Expr}]; & \textit{Let Variable}
     \\
-    \text{Identifier} = [\text{Expr}];
+    \text{Identifier} = [\text{Expr}]; & \textit{Assign to Variable}
     \\
     if([\text{Expr}])[\text{Scope}][\text{IfPred}]
     \\
@@ -210,13 +210,21 @@ $$
 \begin{cases}
     \text{Int Literal}
     \\
-    \text{Identifier}
+    \text{Float Literal}
+    \\
+    \text{Double Literal}
+    \\
+    \text{Identifier} & \textit{Variable}
     \\
     [\text{Expr}]
     \\
     [\text{FuncCall}]
     \\
-    ([\text{Type}])\space[\text{Expr}]
+    ([\text{Type}])\space[\text{Expr}] & \textit{Cast}
+    \\
+    \&\text{Identifier} & \textit{Address of pointer}
+    \\
+    *\text{Identifier} & \textit{Dereference pointer}
 \end{cases}
 \\
 [\text{Expr}] &\to 
@@ -242,4 +250,5 @@ $$
 \end{cases}
 \end{align}
 $$
+
 (LaTeX Expression might not render correctly in Github)
