@@ -17,7 +17,6 @@ namespace Delta
         {
             exit(EXIT_FAILURE);
         }
-
         // Exit statement: exit(expr);
         if (peek().value().type == TokenType::exit && peek(2).has_value() && peek(2).value().type == TokenType::open_paren)
         {
@@ -177,6 +176,14 @@ namespace Delta
             stmt_if->pred = parseIfPred();
             auto stmt = m_allocator.alloc<NodeStatement>();
             stmt->var = stmt_if;
+            statement = stmt;
+        }
+        // Expression: a + b, func(), etc
+        else if (auto expr = parseExpression())
+        {
+            try_consume(TokenType::semicolon, "';'", peek(0).value().line);
+            auto *stmt = m_allocator.alloc<NodeStatement>();
+            stmt->var = expr.value();
             statement = stmt;
         }
 

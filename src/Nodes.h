@@ -236,7 +236,7 @@ namespace Delta
 
     struct NodeStatement
     {
-        std::variant<NodeStatementExit *, NodeStatementLet *, NodeStatementAssign *, NodeStatementIf *, NodeScope *, NodeStatementReturn *> var;
+        std::variant<NodeStatementExit *, NodeStatementLet *, NodeStatementAssign *, NodeStatementIf *, NodeScope *, NodeStatementReturn *, NodeExpression *> var;
         const char *id = "Statement";
     };
 

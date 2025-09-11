@@ -88,14 +88,15 @@ entry:
   %t6 = load float, float* %t3, align 4 ; Use Variable b
   %t7 = fadd float %t5, %t6; Float Add
   store float %t7, float* %t4, align 4; Set variable "c"
-  %t8 = alloca double, align 8; Allocate variable "d"
-  store double 0x40191EB851EB851F, double* %t8, align 8; Set variable "d"
-  %t9 = alloca i32, align 4; Allocate variable "ret"
-  %t10 = load float, float* %t4, align 4 ; Use Variable c
-  %t11 = fptosi float %t10 to i32 ; Float to Int
-  store i32 %t11, i32* %t9, align 4; Set variable "ret"
-  %t12 = load i32, i32* %t9, align 4 ; Use Variable ret
-  ret i32 %t12 ; Return
+  %t8 = call i32 @fib(i32 5) ; Call fib()
+  %t9 = call i32 @fib(i32 7) ; Call fib()
+  %t10 = add i32 %t8, %t9; Add
+  %t11 = alloca i32, align 4; Allocate variable "ret"
+  %t12 = load float, float* %t4, align 4 ; Use Variable c
+  %t13 = fptosi float %t12 to i32 ; Float to Int
+  store i32 %t13, i32* %t11, align 4; Set variable "ret"
+  %t14 = load i32, i32* %t11, align 4 ; Use Variable ret
+  ret i32 %t14 ; Return
   ret i32 0
 }
 

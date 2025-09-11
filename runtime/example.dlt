@@ -18,10 +18,12 @@ int test(int n) {
 }
 
 int main() {
-    float a = (float) fib(10);
-    float b = 3.14f;
-    float c = a + b;
-    double d = 6.28;
-    int ret = (int) c;
+    float a = (float) fib(10); // Casting
+    float b = 3.14f; // Float Literal
+    float c = a + b; // Float Addition
+
+    fib(5) + fib(7); // Expression Statement Test
+
+    int ret = (int) c; // Casting
     return ret;
 }

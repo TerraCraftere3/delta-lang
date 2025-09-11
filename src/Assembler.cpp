@@ -712,6 +712,11 @@ namespace Delta
             Assembler *gen;
             StatementVisitor(Assembler *gen) : gen(gen) {}
 
+            void operator()(const NodeExpression *expression)
+            {
+                gen->generateExpression(expression);
+            }
+
             void operator()(const NodeStatementExit *statement_exit)
             {
                 std::string exit_code = gen->generateExpression(statement_exit->expression);
@@ -1271,7 +1276,6 @@ namespace Delta
 
     void Assembler::registerBuiltinFunctions()
     {
-        // Register common C library functions
         Function exit_func("exit", {DataType::INT32}, DataType::VOID, "exit", true);
         m_functions.push_back(exit_func);
 
@@ -1287,7 +1291,6 @@ namespace Delta
 
     void Assembler::registerExternalFunctions()
     {
-        // Mark external functions as used
         m_used_external_functions.insert("exit");
         m_used_external_functions.insert("printf");
         m_used_external_functions.insert("malloc");

@@ -55,8 +55,11 @@
 				- Addition
 					- Variable "a"
 					- Variable "b"
-			- Let "float32 d"
-				- Double Literal 6.28
+			- Addition
+				- Call "fib"
+					- Int Literal 5
+				- Call "fib"
+					- Int Literal 7
 			- Let "int32 ret"
 				- Cast int32
 					- Variable "c"

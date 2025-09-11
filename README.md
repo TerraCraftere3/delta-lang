@@ -168,6 +168,8 @@ $$
     if([\text{Expr}])[\text{Scope}][\text{IfPred}]
     \\
     [\text{Scope}]
+    \\
+    [\text{Expr}];
 \end{cases}
 \\
 [\text{Scope}] &\to
@@ -186,13 +188,23 @@ $$
 \\
 [\text{BinExpr}] &\to
 \begin{cases}
-    [\text{Expr}] / [\text{Expr}] & \text{prec}=1
+    [\text{Expr}] / [\text{Expr}] & \text{prec}=2
     \\
-    [\text{Expr}] * [\text{Expr}] & \text{prec}=1
+    [\text{Expr}] * [\text{Expr}] & \text{prec}=2
     \\
-    [\text{Expr}] - [\text{Expr}] & \text{prec}=0
+    [\text{Expr}] - [\text{Expr}] & \text{prec}=1
     \\
-    [\text{Expr}] + [\text{Expr}] & \text{prec}=0
+    [\text{Expr}] + [\text{Expr}] & \text{prec}=1
+    \\
+    [\text{Expr}] <= [\text{Expr}] & \text{prec}=0
+    \\
+    [\text{Expr}] < [\text{Expr}] & \text{prec}=0
+    \\
+    [\text{Expr}] == [\text{Expr}] & \text{prec}=0
+    \\
+    [\text{Expr}] >= [\text{Expr}] & \text{prec}=0
+    \\
+    [\text{Expr}] > [\text{Expr}] & \text{prec}=0
 \end{cases}
 \\
 [\text{Term}] &\to 
@@ -215,13 +227,17 @@ $$
 \\
 [\text{Type}] &\to 
 \begin{cases}
-    \text{int8}
+    \text{int8} & |\space \text{byte}
     \\
-    \text{int16}
+    \text{int16} & |\space  \text{short}
     \\
-    \text{int32}
+    \text{int32} & |\space  \text{int}
     \\
-    \text{int64}
+    \text{int64} & |\space  \text{long}
+    \\
+    \text{float32} & |\space  \text{float}
+    \\
+    \text{float64} & |\space  \text{double}
 \end{cases}
 \end{align}
 $$
