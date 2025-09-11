@@ -1,19 +1,8 @@
 - Node Program
 	- Functions
 		- Define "int32 main()"
-			- Let "int8* str"
-				- Call "malloc"
-					- Int Literal 16
-			- Pointer Assign
-				- Pointer Expression
-					- Dereference
-						- Variable "str"
-				- Value Expression
-					- Int Literal 72
-			- Call "printf"
-				- Variable "str"
-			- Call "free"
-				- Variable "str"
+			- Let "int8 x"
+				- Int Literal 72
 			- Return
-				- Int Literal 0
+				- Variable "x"
 	- Statements

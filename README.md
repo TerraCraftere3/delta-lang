@@ -142,6 +142,7 @@ long memset(long, int, long);
 ```
 
 ## Grammar
+(LaTeX Expression might not render correctly in Github)
 $$
 \begin{align}
 [\text{Prog}] &\to [\text{FuncDecl}]^* \space [\text{Statement}]^* \space\textit{List of Functions and Statements}
@@ -208,7 +209,7 @@ $$
 \\
 [\text{Term}] &\to 
 \begin{cases}
-    \text{Int Literal}
+    \text{Int} \space|\space  \text{Char Literal} & \textit{Char is just ASCII Value as Int}
     \\
     \text{Float Literal}
     \\
@@ -236,19 +237,28 @@ $$
 \\
 [\text{Type}] &\to 
 \begin{cases}
-    \text{int8} & | & \text{char}
+    \text{int8} & | & \text{char} & \textit{1 Byte Integer}
     \\
-    \text{int16} & | & \text{short}
+    \text{int16} & | & \text{short} & \textit{2 Byte Integer}
     \\
-    \text{int32} & | & \text{int}
+    \text{int32} & | & \text{int} & \textit{4 Byte Integer}
     \\
-    \text{int64} & | & \text{long}
+    \text{int64} & | & \text{long} & \textit{8 Byte Integer}
     \\
-    \text{float32} & | & \text{float}
+    \text{float32} & | & \text{float} & \textit{4 Byte Float}
     \\
-    \text{float64} & | & \text{double}
+    \text{float64} & | & \text{double} & \textit{8 Byte Float}
 \end{cases}
 \end{align}
 $$
 
-(LaTeX Expression might not render correctly in Github)
+### Grammar Rules
+- Nonterminals: $ [\text{Category / Element}] $ - Can continue to have subnodes
+- Terminals: $ \text{Element} $ - Can NOT have subnodes
+- Alternations: $ \text{float64} \space | \space \text{double} $ - Means that two values are the same
+- Comments: $ \textit{Example Comment} $ - Clarifies something about the element that came before
+- Cases: $ \begin{cases}
+    \text{Case 1} &
+    \\
+    \text{Case 2} &
+\end{cases} $ - Means that one thing can have multiple types of subnodes, etc.

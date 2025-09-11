@@ -180,6 +180,16 @@ namespace Delta
                 consume();
                 tokens.push_back({TokenType::semicolon, line_count});
             }
+            else if (peek().value() == '\'')
+            {
+                consume();
+                tokens.push_back({TokenType::apostrophe, line_count});
+            }
+            else if (peek().value() == '"')
+            {
+                consume();
+                tokens.push_back({TokenType::quotes, line_count});
+            }
             else if (peek().value() == '(')
             {
                 consume();

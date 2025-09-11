@@ -551,6 +551,28 @@ namespace Delta
             node_term->var = term_double_lit;
             return node_term;
         }
+        // Char literal: 'A'
+        else if (peek().has_value() && peek().value().type == TokenType::apostrophe &&
+                 peek(2).has_value() && peek(2).value().type == TokenType::identifier &&
+                 peek(3).has_value() && peek(3).value().type == TokenType::apostrophe)
+        {
+            consume();                           // '
+            auto char_literal_token = consume(); // Char
+            consume();                           // '
+            auto char_str = char_literal_token.value.value();
+            char c = char_str.at(0);
+            int asciivalue = (int)c; // Convert to ascii
+
+            Token int_lit;
+            int_lit.type = TokenType::int_literal;
+            int_lit.value = std::to_string(asciivalue);
+
+            auto term_int_lit = m_allocator.alloc<NodeTermIntegerLiteral>();
+            term_int_lit->int_literal = int_lit;
+            auto node_term = m_allocator.alloc<NodeExpressionTerm>();
+            node_term->var = term_int_lit;
+            return node_term;
+        }
         // Cast: (type) value
         else if (peek().has_value() && peek().value().type == TokenType::open_paren &&
                  peek(2).has_value() && peek(2).value().type == TokenType::data_type &&

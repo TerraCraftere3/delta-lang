@@ -16,6 +16,8 @@ namespace Delta
         int_literal,    // integer like 10, etc
         float_literal,  // floats (32bit) like 3.14f, etc
         double_literal, // doubles (64bit) like 3.14, etc
+        apostrophe,     // '
+        quotes,         // "
         semicolon,      // ;
         open_paren,     // (
         close_paren,    // )

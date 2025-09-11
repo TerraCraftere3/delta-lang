@@ -1,10 +1,5 @@
-void modifyInt(int* ptr, int newValue) {
-    *ptr = newValue;
-}
-
 int main() {
-    int x = 10;
-    modifyInt(&x, 42);
+    int8 x = 'H';
 
     return x;
 }

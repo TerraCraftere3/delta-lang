@@ -15,19 +15,11 @@ declare i64 @strlen(i8*)
 
 define i32 @main() {
 entry:
-  %t0 = alloca i8*, align 8; Allocate variable "str"
-  %t1 = sext i32 16 to i64 ; Int Sign Extend
-  %t2 = call i8* @malloc(i64 %t1) ; Call malloc()
-  store i8* %t2, i8** %t0, align 8; Set variable "str"
-  %t3 = load i8*, i8** %t0, align 8 ; Use Variable str
-  %t4 = trunc i32 72 to i8 ; Int Truncate
-  store i8 %t4, i8* %t3, align 1 ; Store through pointer
-  %t5 = load i8*, i8** %t0, align 8 ; Use Variable str
-  %t6 = call i32 @printf(i8* %t5) ; Call printf()
-  %t7 = load i8*, i8** %t0, align 8 ; Use Variable str
-  %t8 = bitcast i8* %t7 to i8* ; Pointer cast
-  call void @free(i8* %t8) ; Call free()
-  ret i32 0 ; Return
+  %t0 = alloca i8, align 1; Allocate variable "x"
+  store i8 72, i8* %t0, align 1; Set variable "x"
+  %t1 = load i8, i8* %t0, align 1 ; Use Variable x
+  %t2 = sext i8 %t1 to i32 ; Int Sign Extend
+  ret i32 %t2 ; Return
   ret i32 0
 }
 
