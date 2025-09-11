@@ -45,10 +45,16 @@
 			- Return
 				- Variable "ret"
 		- Define "int32 main()"
-			- Let "int32 a"
-				- Call "test"
-					- Literal 1
+			- Let "float32 a"
+				- [struct Delta::NodeTermCast * __ptr64] NODE NOT IMPLEMENTED
+			- Let "float32 b"
+				- [struct Delta::NodeTermCast * __ptr64] NODE NOT IMPLEMENTED
+			- Let "float32 c"
+				- Addition
+					- Variable "a"
+					- Variable "b"
+			- Let "int32 ret"
+				- [struct Delta::NodeTermCast * __ptr64] NODE NOT IMPLEMENTED
 			- Return
-				- Call "fib"
-					- Literal 10
+				- Variable "ret"
 	- Statements

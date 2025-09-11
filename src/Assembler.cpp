@@ -124,6 +124,14 @@ namespace Delta
         m_output << "}\n\n";
     }
 
+    std::string floatToIEEEString(const std::string &input)
+    {
+        float value = std::stof(input);
+        std::ostringstream oss;
+        oss << std::scientific << std::setprecision(6) << value;
+        return oss.str();
+    }
+
     std::string Assembler::generateTerm(const NodeExpressionTerm *term)
     {
         struct TermVisitor
@@ -134,6 +142,11 @@ namespace Delta
             std::string operator()(const NodeTermIntegerLiteral *term_int_lit) const
             {
                 return term_int_lit->int_literal.value.value();
+            }
+
+            std::string operator()(const NodeTermFloatLiteral *term_float_lit) const
+            {
+                return floatToIEEEString(term_float_lit->float_literal.value.value());
             }
 
             std::string operator()(const NodeTermIdentifier *term_ident) const
@@ -163,6 +176,15 @@ namespace Delta
             {
                 return gen->generateFunctionCall(func_call);
             }
+
+            std::string operator()(const NodeTermCast *term_cast) const
+            {
+                std::string value = gen->generateExpression(term_cast->expr);
+                DataType from_type = gen->inferExpressionType(term_cast->expr);
+                DataType to_type = term_cast->target_type;
+
+                return gen->generateTypeConversion(value, from_type, to_type);
+            }
         };
 
         TermVisitor visitor(this);
@@ -183,22 +205,40 @@ namespace Delta
             exit(EXIT_FAILURE);
         }
 
-        // Generate arguments
+        // Generate arguments with automatic type conversion
         std::vector<std::string> arg_values;
-        std::vector<DataType> arg_types;
 
-        for (const NodeExpression *arg : func_call->arguments)
+        for (size_t i = 0; i < func_call->arguments.size(); i++)
         {
+            const NodeExpression *arg = func_call->arguments[i];
             std::string arg_val = generateExpression(arg);
             DataType arg_type = inferExpressionType(arg);
+            DataType expected_type = func->parameter_types[i];
+
+            // Convert argument to expected type if needed
+            if (arg_type != expected_type)
+            {
+                arg_val = generateTypeConversion(arg_val, arg_type, expected_type);
+            }
+
             arg_values.push_back(arg_val);
-            arg_types.push_back(arg_type);
         }
 
         // Generate call
         if (func->return_type == DataType::VOID)
         {
             m_output << "  call void @" << func_name << "(";
+
+            // Add arguments for void functions
+            for (size_t i = 0; i < arg_values.size(); i++)
+            {
+                if (i > 0)
+                    m_output << ", ";
+                m_output << dataTypeToLLVM(func->parameter_types[i]) << " " << arg_values[i];
+            }
+
+            m_output << ") ; Call " << func_call->function_name.value.value() << "()\n";
+            return ""; // Void return
         }
         else
         {
@@ -210,23 +250,12 @@ namespace Delta
             {
                 if (i > 0)
                     m_output << ", ";
-                m_output << dataTypeToLLVM(arg_types[i]) << " " << arg_values[i];
+                m_output << dataTypeToLLVM(func->parameter_types[i]) << " " << arg_values[i];
             }
 
             m_output << ") ; Call " << func_call->function_name.value.value() << "()\n";
             return result_temp;
         }
-
-        // Add arguments for void functions
-        for (size_t i = 0; i < arg_values.size(); i++)
-        {
-            if (i > 0)
-                m_output << ", ";
-            m_output << dataTypeToLLVM(arg_types[i]) << " " << arg_values[i];
-        }
-
-        m_output << ") ; Call " << func_call->function_name.value.value() << "()\n";
-        return ""; // Void return
     }
 
     std::string Assembler::generateBinaryExpression(const NodeExpressionBinary *bin_expr)
@@ -243,11 +272,29 @@ namespace Delta
 
                 DataType leftType = gen->inferExpressionType(add->left);
                 DataType rightType = gen->inferExpressionType(add->right);
-                DataType resultType = (getTypeSize(leftType) >= getTypeSize(rightType)) ? leftType : rightType;
+                DataType resultType = gen->getCommonType(leftType, rightType);
+
+                // Convert operands to common type
+                if (leftType != resultType)
+                {
+                    left = gen->generateTypeConversion(left, leftType, resultType);
+                }
+                if (rightType != resultType)
+                {
+                    right = gen->generateTypeConversion(right, rightType, resultType);
+                }
 
                 std::string result_temp = gen->getNextTemp();
-                gen->m_output << "  " << result_temp << " = add " << gen->dataTypeToLLVM(resultType)
-                              << " " << left << ", " << right << "; Add\n";
+                if (isFloatType(resultType))
+                {
+                    gen->m_output << "  " << result_temp << " = fadd " << gen->dataTypeToLLVM(resultType)
+                                  << " " << left << ", " << right << "; Float Add\n";
+                }
+                else
+                {
+                    gen->m_output << "  " << result_temp << " = add " << gen->dataTypeToLLVM(resultType)
+                                  << " " << left << ", " << right << "; Add\n";
+                }
                 return result_temp;
             }
 
@@ -258,11 +305,29 @@ namespace Delta
 
                 DataType leftType = gen->inferExpressionType(sub->left);
                 DataType rightType = gen->inferExpressionType(sub->right);
-                DataType resultType = (getTypeSize(leftType) >= getTypeSize(rightType)) ? leftType : rightType;
+                DataType resultType = gen->getCommonType(leftType, rightType);
+
+                // Convert operands to common type
+                if (leftType != resultType)
+                {
+                    left = gen->generateTypeConversion(left, leftType, resultType);
+                }
+                if (rightType != resultType)
+                {
+                    right = gen->generateTypeConversion(right, rightType, resultType);
+                }
 
                 std::string result_temp = gen->getNextTemp();
-                gen->m_output << "  " << result_temp << " = sub " << gen->dataTypeToLLVM(resultType)
-                              << " " << left << ", " << right << "; Subtract\n";
+                if (isFloatType(resultType))
+                {
+                    gen->m_output << "  " << result_temp << " = fsub " << gen->dataTypeToLLVM(resultType)
+                                  << " " << left << ", " << right << "; Float Subtract\n";
+                }
+                else
+                {
+                    gen->m_output << "  " << result_temp << " = sub " << gen->dataTypeToLLVM(resultType)
+                                  << " " << left << ", " << right << "; Subtract\n";
+                }
                 return result_temp;
             }
 
@@ -273,11 +338,29 @@ namespace Delta
 
                 DataType leftType = gen->inferExpressionType(mul->left);
                 DataType rightType = gen->inferExpressionType(mul->right);
-                DataType resultType = (getTypeSize(leftType) >= getTypeSize(rightType)) ? leftType : rightType;
+                DataType resultType = gen->getCommonType(leftType, rightType);
+
+                // Convert operands to common type
+                if (leftType != resultType)
+                {
+                    left = gen->generateTypeConversion(left, leftType, resultType);
+                }
+                if (rightType != resultType)
+                {
+                    right = gen->generateTypeConversion(right, rightType, resultType);
+                }
 
                 std::string result_temp = gen->getNextTemp();
-                gen->m_output << "  " << result_temp << " = mul " << gen->dataTypeToLLVM(resultType)
-                              << " " << left << ", " << right << "; Multiplicate\n";
+                if (isFloatType(resultType))
+                {
+                    gen->m_output << "  " << result_temp << " = fmul " << gen->dataTypeToLLVM(resultType)
+                                  << " " << left << ", " << right << "; Float Multiply\n";
+                }
+                else
+                {
+                    gen->m_output << "  " << result_temp << " = mul " << gen->dataTypeToLLVM(resultType)
+                                  << " " << left << ", " << right << "; Multiply\n";
+                }
                 return result_temp;
             }
 
@@ -288,11 +371,29 @@ namespace Delta
 
                 DataType leftType = gen->inferExpressionType(div->left);
                 DataType rightType = gen->inferExpressionType(div->right);
-                DataType resultType = (getTypeSize(leftType) >= getTypeSize(rightType)) ? leftType : rightType;
+                DataType resultType = gen->getCommonType(leftType, rightType);
+
+                // Convert operands to common type
+                if (leftType != resultType)
+                {
+                    left = gen->generateTypeConversion(left, leftType, resultType);
+                }
+                if (rightType != resultType)
+                {
+                    right = gen->generateTypeConversion(right, rightType, resultType);
+                }
 
                 std::string result_temp = gen->getNextTemp();
-                gen->m_output << "  " << result_temp << " = sdiv " << gen->dataTypeToLLVM(resultType)
-                              << " " << left << ", " << right << "; Divide\n";
+                if (isFloatType(resultType))
+                {
+                    gen->m_output << "  " << result_temp << " = fdiv " << gen->dataTypeToLLVM(resultType)
+                                  << " " << left << ", " << right << "; Float Divide\n";
+                }
+                else
+                {
+                    gen->m_output << "  " << result_temp << " = sdiv " << gen->dataTypeToLLVM(resultType)
+                                  << " " << left << ", " << right << "; Divide\n";
+                }
                 return result_temp;
             }
 
@@ -303,11 +404,29 @@ namespace Delta
 
                 DataType leftType = gen->inferExpressionType(gt->left);
                 DataType rightType = gen->inferExpressionType(gt->right);
-                DataType compareType = (getTypeSize(leftType) >= getTypeSize(rightType)) ? leftType : rightType;
+                DataType compareType = gen->getCommonType(leftType, rightType);
+
+                // Convert operands to common type
+                if (leftType != compareType)
+                {
+                    left = gen->generateTypeConversion(left, leftType, compareType);
+                }
+                if (rightType != compareType)
+                {
+                    right = gen->generateTypeConversion(right, rightType, compareType);
+                }
 
                 std::string result_temp = gen->getNextTemp();
-                gen->m_output << "  " << result_temp << " = icmp sgt " << gen->dataTypeToLLVM(compareType)
-                              << " " << left << ", " << right << "; Greater Than\n";
+                if (isFloatType(compareType))
+                {
+                    gen->m_output << "  " << result_temp << " = fcmp ogt " << gen->dataTypeToLLVM(compareType)
+                                  << " " << left << ", " << right << "; Float Greater Than\n";
+                }
+                else
+                {
+                    gen->m_output << "  " << result_temp << " = icmp sgt " << gen->dataTypeToLLVM(compareType)
+                                  << " " << left << ", " << right << "; Greater Than\n";
+                }
 
                 // Convert i1 to i32
                 std::string final_temp = gen->getNextTemp();
@@ -322,11 +441,29 @@ namespace Delta
 
                 DataType leftType = gen->inferExpressionType(gte->left);
                 DataType rightType = gen->inferExpressionType(gte->right);
-                DataType compareType = (getTypeSize(leftType) >= getTypeSize(rightType)) ? leftType : rightType;
+                DataType compareType = gen->getCommonType(leftType, rightType);
+
+                // Convert operands to common type
+                if (leftType != compareType)
+                {
+                    left = gen->generateTypeConversion(left, leftType, compareType);
+                }
+                if (rightType != compareType)
+                {
+                    right = gen->generateTypeConversion(right, rightType, compareType);
+                }
 
                 std::string result_temp = gen->getNextTemp();
-                gen->m_output << "  " << result_temp << " = icmp sge " << gen->dataTypeToLLVM(compareType)
-                              << " " << left << ", " << right << "; Greater or Equals\n";
+                if (isFloatType(compareType))
+                {
+                    gen->m_output << "  " << result_temp << " = fcmp oge " << gen->dataTypeToLLVM(compareType)
+                                  << " " << left << ", " << right << "; Float Greater or Equals\n";
+                }
+                else
+                {
+                    gen->m_output << "  " << result_temp << " = icmp sge " << gen->dataTypeToLLVM(compareType)
+                                  << " " << left << ", " << right << "; Greater or Equals\n";
+                }
 
                 std::string final_temp = gen->getNextTemp();
                 gen->m_output << "  " << final_temp << " = zext i1 " << result_temp << " to i32\n";
@@ -340,11 +477,29 @@ namespace Delta
 
                 DataType leftType = gen->inferExpressionType(lt->left);
                 DataType rightType = gen->inferExpressionType(lt->right);
-                DataType compareType = (getTypeSize(leftType) >= getTypeSize(rightType)) ? leftType : rightType;
+                DataType compareType = gen->getCommonType(leftType, rightType);
+
+                // Convert operands to common type
+                if (leftType != compareType)
+                {
+                    left = gen->generateTypeConversion(left, leftType, compareType);
+                }
+                if (rightType != compareType)
+                {
+                    right = gen->generateTypeConversion(right, rightType, compareType);
+                }
 
                 std::string result_temp = gen->getNextTemp();
-                gen->m_output << "  " << result_temp << " = icmp slt " << gen->dataTypeToLLVM(compareType)
-                              << " " << left << ", " << right << "; Less Than\n";
+                if (isFloatType(compareType))
+                {
+                    gen->m_output << "  " << result_temp << " = fcmp olt " << gen->dataTypeToLLVM(compareType)
+                                  << " " << left << ", " << right << "; Float Less Than\n";
+                }
+                else
+                {
+                    gen->m_output << "  " << result_temp << " = icmp slt " << gen->dataTypeToLLVM(compareType)
+                                  << " " << left << ", " << right << "; Less Than\n";
+                }
 
                 std::string final_temp = gen->getNextTemp();
                 gen->m_output << "  " << final_temp << " = zext i1 " << result_temp << " to i32\n";
@@ -358,11 +513,29 @@ namespace Delta
 
                 DataType leftType = gen->inferExpressionType(lte->left);
                 DataType rightType = gen->inferExpressionType(lte->right);
-                DataType compareType = (getTypeSize(leftType) >= getTypeSize(rightType)) ? leftType : rightType;
+                DataType compareType = gen->getCommonType(leftType, rightType);
+
+                // Convert operands to common type
+                if (leftType != compareType)
+                {
+                    left = gen->generateTypeConversion(left, leftType, compareType);
+                }
+                if (rightType != compareType)
+                {
+                    right = gen->generateTypeConversion(right, rightType, compareType);
+                }
 
                 std::string result_temp = gen->getNextTemp();
-                gen->m_output << "  " << result_temp << " = icmp sle " << gen->dataTypeToLLVM(compareType)
-                              << " " << left << ", " << right << "; Less or Equals\n";
+                if (isFloatType(compareType))
+                {
+                    gen->m_output << "  " << result_temp << " = fcmp ole " << gen->dataTypeToLLVM(compareType)
+                                  << " " << left << ", " << right << "; Float Less or Equals\n";
+                }
+                else
+                {
+                    gen->m_output << "  " << result_temp << " = icmp sle " << gen->dataTypeToLLVM(compareType)
+                                  << " " << left << ", " << right << "; Less or Equals\n";
+                }
 
                 std::string final_temp = gen->getNextTemp();
                 gen->m_output << "  " << final_temp << " = zext i1 " << result_temp << " to i32\n";
@@ -376,11 +549,29 @@ namespace Delta
 
                 DataType leftType = gen->inferExpressionType(eq->left);
                 DataType rightType = gen->inferExpressionType(eq->right);
-                DataType compareType = (getTypeSize(leftType) >= getTypeSize(rightType)) ? leftType : rightType;
+                DataType compareType = gen->getCommonType(leftType, rightType);
+
+                // Convert operands to common type
+                if (leftType != compareType)
+                {
+                    left = gen->generateTypeConversion(left, leftType, compareType);
+                }
+                if (rightType != compareType)
+                {
+                    right = gen->generateTypeConversion(right, rightType, compareType);
+                }
 
                 std::string result_temp = gen->getNextTemp();
-                gen->m_output << "  " << result_temp << " = icmp eq " << gen->dataTypeToLLVM(compareType)
-                              << " " << left << ", " << right << "\n";
+                if (isFloatType(compareType))
+                {
+                    gen->m_output << "  " << result_temp << " = fcmp oeq " << gen->dataTypeToLLVM(compareType)
+                                  << " " << left << ", " << right << "; Float Equals\n";
+                }
+                else
+                {
+                    gen->m_output << "  " << result_temp << " = icmp eq " << gen->dataTypeToLLVM(compareType)
+                                  << " " << left << ", " << right << "; Equals\n";
+                }
 
                 std::string final_temp = gen->getNextTemp();
                 gen->m_output << "  " << final_temp << " = zext i1 " << result_temp << " to i32\n";
@@ -434,12 +625,12 @@ namespace Delta
             void operator()(const NodeIfPredElif *pred_elif)
             {
                 std::string cond = gen->generateExpression(pred_elif->expr);
+                DataType condType = gen->inferExpressionType(pred_elif->expr);
                 std::string true_label = gen->getNextLabel();
                 std::string false_label = gen->getNextLabel();
 
-                // Convert condition to i1 if needed
-                std::string bool_cond = gen->getNextTemp();
-                gen->m_output << "  " << bool_cond << " = icmp ne i32 " << cond << ", 0\n";
+                // Convert condition to i1
+                std::string bool_cond = gen->convertToBoolean(cond, condType);
                 gen->m_output << "  br i1 " << bool_cond << ", label %" << true_label << ", label %" << false_label << "; Elif / Else Jump\n\n";
 
                 // True branch
@@ -480,6 +671,14 @@ namespace Delta
             void operator()(const NodeStatementExit *statement_exit)
             {
                 std::string exit_code = gen->generateExpression(statement_exit->expression);
+                DataType exprType = gen->inferExpressionType(statement_exit->expression);
+
+                // Convert to int32 for exit code
+                if (exprType != DataType::INT32)
+                {
+                    exit_code = gen->generateTypeConversion(exit_code, exprType, DataType::INT32);
+                }
+
                 gen->m_output << "  call void @exit(i32 " << exit_code << ")\n";
                 gen->m_output << "  unreachable\n";
             }
@@ -494,15 +693,12 @@ namespace Delta
                     exit(EXIT_FAILURE);
                 }
 
-                DataType exprType = gen->inferExpressionType(statement_let->expression);
-                gen->validateTypeCompatibility(statement_let->type, exprType, "variable declaration");
-
                 // Allocate space for variable
                 std::string alloca_temp = gen->getNextTemp();
                 gen->m_output << "  " << alloca_temp << " = alloca " << gen->dataTypeToLLVM(statement_let->type)
                               << ", align " << gen->getTypeAlignment(statement_let->type) << "; Allocate variable \"" << statement_let->ident.value.value() << "\"\n";
 
-                // Generate expression and store
+                // Generate Expression
                 std::string expr_value = gen->generateExpression(statement_let->expression);
                 gen->m_output << "  store " << gen->dataTypeToLLVM(statement_let->type) << " " << expr_value
                               << ", " << gen->dataTypeToLLVM(statement_let->type) << "* " << alloca_temp
@@ -511,6 +707,7 @@ namespace Delta
                 Var var = Var(statement_let->ident.value.value(), 0, statement_let->type);
                 var.setConstant(statement_let->isConst);
                 var.llvm_alloca = alloca_temp;
+                var.type = statement_let->type;
                 gen->m_vars.push_back(var);
             }
 
@@ -531,10 +728,16 @@ namespace Delta
                     exit(EXIT_FAILURE);
                 }
 
-                DataType exprType = gen->inferExpressionType(assign->expression);
-                gen->validateTypeCompatibility(var.type, exprType, "assignment");
-
+                // Generate expression and convert to variable type if needed
                 std::string expr_value = gen->generateExpression(assign->expression);
+                DataType exprType = gen->inferExpressionType(assign->expression);
+
+                // Convert to variable type if needed
+                if (exprType != var.type)
+                {
+                    expr_value = gen->generateTypeConversion(expr_value, exprType, var.type);
+                }
+
                 gen->m_output << "  store " << gen->dataTypeToLLVM(var.type) << " " << expr_value
                               << ", " << gen->dataTypeToLLVM(var.type) << "* " << var.llvm_alloca
                               << ", align " << gen->getTypeAlignment(var.type) << "; Set variable \"" << assign->ident.value.value() << "\"\n";
@@ -548,13 +751,13 @@ namespace Delta
             void operator()(const NodeStatementIf *statement_if)
             {
                 std::string cond = gen->generateExpression(statement_if->expr);
+                DataType condType = gen->inferExpressionType(statement_if->expr);
                 std::string true_label = gen->getNextLabel();
                 std::string merge_label = gen->getNextLabel();
                 std::string false_label = statement_if->pred.has_value() ? gen->getNextLabel() : merge_label;
 
-                // Convert condition to i1 if needed
-                std::string bool_cond = gen->getNextTemp();
-                gen->m_output << "  " << bool_cond << " = icmp ne i32 " << cond << ", 0\n";
+                // Convert condition to i1
+                std::string bool_cond = gen->convertToBoolean(cond, condType);
                 gen->m_output << "  br i1 " << bool_cond << ", label %" << true_label << ", label %" << false_label << "; If / Else Jump\n\n";
 
                 // True branch
@@ -584,10 +787,15 @@ namespace Delta
                         exit(EXIT_FAILURE);
                     }
 
-                    DataType exprType = gen->inferExpressionType(statement_return->expression);
-                    gen->validateTypeCompatibility(gen->m_current_function_return_type, exprType, "return statement");
-
                     std::string return_value = gen->generateExpression(statement_return->expression);
+                    DataType exprType = gen->inferExpressionType(statement_return->expression);
+
+                    // Convert to function return type if needed
+                    if (exprType != gen->m_current_function_return_type)
+                    {
+                        return_value = gen->generateTypeConversion(return_value, exprType, gen->m_current_function_return_type);
+                    }
+
                     gen->m_output << "  ret " << gen->dataTypeToLLVM(gen->m_current_function_return_type)
                                   << " " << return_value << " ; Return\n";
                 }
@@ -609,7 +817,8 @@ namespace Delta
 
     // Helper methods
 
-    std::string Assembler::getNextTemp()
+    std::string
+    Assembler::getNextTemp()
     {
         return "%t" + std::to_string(m_temp_counter++);
     }
@@ -631,6 +840,10 @@ namespace Delta
             return "i32";
         case DataType::INT64:
             return "i64";
+        case DataType::FLOAT32:
+            return "float";
+        case DataType::FLOAT64:
+            return "double";
         case DataType::VOID:
             return "void";
         default:
@@ -650,6 +863,10 @@ namespace Delta
             return 4;
         case DataType::INT64:
             return 8;
+        case DataType::FLOAT32:
+            return 4;
+        case DataType::FLOAT64:
+            return 8;
         default:
             return 4;
         }
@@ -665,6 +882,12 @@ namespace Delta
         case DataType::INT64:
             m_output << "0";
             break;
+        case DataType::FLOAT32:
+            m_output << "0.0";
+            break;
+        case DataType::FLOAT64:
+            m_output << "0.0";
+            break;
         case DataType::VOID:
             // Should not happen
             break;
@@ -674,32 +897,124 @@ namespace Delta
         }
     }
 
-    void Assembler::generateTypeConversion(const std::string &value, DataType from, DataType to)
+    std::string Assembler::generateTypeConversion(const std::string &value, DataType from, DataType to)
     {
         if (from == to)
         {
-            m_output << value;
-            return;
+            return value;
         }
 
+        std::string result_temp = getNextTemp();
+
+        // Float to integer conversions
+        if (isFloatType(from) && !isFloatType(to))
+        {
+            m_output << "  " << result_temp << " = fptosi " << dataTypeToLLVM(from)
+                     << " " << value << " to " << dataTypeToLLVM(to) << " ; Float to Int\n";
+            return result_temp;
+        }
+
+        // Integer to float conversions
+        if (!isFloatType(from) && isFloatType(to))
+        {
+            m_output << "  " << result_temp << " = sitofp " << dataTypeToLLVM(from)
+                     << " " << value << " to " << dataTypeToLLVM(to) << " ; Int to Float\n";
+            return result_temp;
+        }
+
+        // Float to float conversions
+        if (isFloatType(from) && isFloatType(to))
+        {
+            int from_bits = getTypeSize(from) * 8;
+            int to_bits = getTypeSize(to) * 8;
+
+            if (from_bits < to_bits)
+            {
+                // Extend float precision
+                m_output << "  " << result_temp << " = fpext " << dataTypeToLLVM(from)
+                         << " " << value << " to " << dataTypeToLLVM(to) << " ; Float Extend\n";
+            }
+            else if (from_bits > to_bits)
+            {
+                // Truncate float precision
+                m_output << "  " << result_temp << " = fptrunc " << dataTypeToLLVM(from)
+                         << " " << value << " to " << dataTypeToLLVM(to) << " ; Float Truncate\n";
+            }
+            else
+            {
+                // Same size, should not happen
+                return value;
+            }
+            return result_temp;
+        }
+
+        // Integer to integer conversions
         int from_bits = getTypeSize(from) * 8;
         int to_bits = getTypeSize(to) * 8;
 
         if (from_bits < to_bits)
         {
             // Sign extend
-            m_output << "sext " << dataTypeToLLVM(from) << " " << value << " to " << dataTypeToLLVM(to);
+            m_output << "  " << result_temp << " = sext " << dataTypeToLLVM(from)
+                     << " " << value << " to " << dataTypeToLLVM(to) << " ; Int Sign Extend\n";
         }
         else if (from_bits > to_bits)
         {
             // Truncate
-            m_output << "trunc " << dataTypeToLLVM(from) << " " << value << " to " << dataTypeToLLVM(to);
+            m_output << "  " << result_temp << " = trunc " << dataTypeToLLVM(from)
+                     << " " << value << " to " << dataTypeToLLVM(to) << " ; Int Truncate\n";
         }
         else
         {
-            // Same size, bitcast
-            m_output << "bitcast " << dataTypeToLLVM(from) << " " << value << " to " << dataTypeToLLVM(to);
+            // Same size, bitcast (shouldn't happen for integers of same size but different signedness)
+            return value;
         }
+
+        return result_temp;
+    }
+
+    std::string Assembler::convertToBoolean(const std::string &value, DataType type)
+    {
+        std::string bool_temp = getNextTemp();
+
+        if (isFloatType(type))
+        {
+            // Compare float with 0.0
+            m_output << "  " << bool_temp << " = fcmp one " << dataTypeToLLVM(type)
+                     << " " << value << ", 0.0 ; Float to Boolean\n";
+        }
+        else
+        {
+            // Compare integer with 0
+            m_output << "  " << bool_temp << " = icmp ne " << dataTypeToLLVM(type)
+                     << " " << value << ", 0 ; Int to Boolean\n";
+        }
+
+        return bool_temp;
+    }
+
+    DataType Assembler::getCommonType(DataType left, DataType right)
+    {
+        // If either is float, promote to the larger float type
+        if (isFloatType(left) || isFloatType(right))
+        {
+            if (isFloatType(left) && isFloatType(right))
+            {
+                // Both are floats, return the larger one
+                return (getTypeSize(left) >= getTypeSize(right)) ? left : right;
+            }
+            else if (isFloatType(left))
+            {
+                return left;
+            }
+            else
+            {
+                return right;
+            }
+        }
+
+        // Both are integers, return the larger one
+        return (getTypeSize(left) >= getTypeSize(right)) ? left : right;
     }
 
     void Assembler::begin_scope()
@@ -736,7 +1051,7 @@ namespace Delta
         m_current_function_return_type = DataType::VOID;
     }
 
-    // Type inference methods (reused from original)
+    // Type inference methods (updated for float support)
     DataType Assembler::inferExpressionType(const NodeExpression *expression)
     {
         auto it = m_expression_types.find(expression);
@@ -777,6 +1092,12 @@ namespace Delta
             {
                 return DataType::INT32;
             }
+
+            DataType operator()(const NodeTermFloatLiteral *term_float_lit) const
+            {
+                return DataType::FLOAT64; // Default to double precision
+            }
+
             DataType operator()(const NodeTermIdentifier *term_ident) const
             {
                 auto it = std::find_if(gen->m_vars.cbegin(), gen->m_vars.cend(), [&](const Var &var)
@@ -788,10 +1109,12 @@ namespace Delta
                 }
                 return (*it).type;
             }
+
             DataType operator()(const NodeTermParen *term_paren) const
             {
                 return gen->inferExpressionType(term_paren->expr);
             }
+
             DataType operator()(const NodeTermFunctionCall *func_call) const
             {
                 Function *func = gen->findFunction(func_call->function_name.value.value());
@@ -801,6 +1124,11 @@ namespace Delta
                     exit(EXIT_FAILURE);
                 }
                 return func->return_type;
+            }
+
+            DataType operator()(const NodeTermCast *term_cast) const
+            {
+                return term_cast->target_type;
             }
         };
 
@@ -819,29 +1147,29 @@ namespace Delta
             {
                 DataType leftType = gen->inferExpressionType(sub->left);
                 DataType rightType = gen->inferExpressionType(sub->right);
-                return (getTypeSize(leftType) >= getTypeSize(rightType)) ? leftType : rightType;
+                return gen->getCommonType(leftType, rightType);
             }
             DataType operator()(const NodeExpressionBinaryAddition *add) const
             {
                 DataType leftType = gen->inferExpressionType(add->left);
                 DataType rightType = gen->inferExpressionType(add->right);
-                return (getTypeSize(leftType) >= getTypeSize(rightType)) ? leftType : rightType;
+                return gen->getCommonType(leftType, rightType);
             }
             DataType operator()(const NodeExpressionBinaryMultiplication *mul) const
             {
                 DataType leftType = gen->inferExpressionType(mul->left);
                 DataType rightType = gen->inferExpressionType(mul->right);
-                return (getTypeSize(leftType) >= getTypeSize(rightType)) ? leftType : rightType;
+                return gen->getCommonType(leftType, rightType);
             }
             DataType operator()(const NodeExpressionBinaryDivision *div) const
             {
                 DataType leftType = gen->inferExpressionType(div->left);
                 DataType rightType = gen->inferExpressionType(div->right);
-                return (getTypeSize(leftType) >= getTypeSize(rightType)) ? leftType : rightType;
+                return gen->getCommonType(leftType, rightType);
             }
             DataType operator()(const NodeExpressionBinaryGreater *) const
             {
-                return DataType::INT32;
+                return DataType::INT32; // Comparisons always return boolean (represented as int32)
             }
             DataType operator()(const NodeExpressionBinaryGreaterEquals *) const
             {
@@ -867,12 +1195,21 @@ namespace Delta
 
     void Assembler::validateTypeCompatibility(DataType expected, DataType actual, const std::string &context)
     {
-        if (!isTypeCompatible(expected, actual))
+        // With automatic type conversion, we're more lenient
+        // Only check for fundamentally incompatible types (e.g., void with non-void)
+        if (expected == DataType::VOID && actual != DataType::VOID)
         {
-            LOG_ERROR("Type mismatch in {}: expected {} but got {}",
-                      context, typeToString(expected), typeToString(actual));
+            LOG_ERROR("Type mismatch in {}: expected void but got {}",
+                      context, typeToString(actual));
             exit(EXIT_FAILURE);
         }
+        if (expected != DataType::VOID && actual == DataType::VOID)
+        {
+            LOG_ERROR("Type mismatch in {}: expected {} but got void",
+                      context, typeToString(expected));
+            exit(EXIT_FAILURE);
+        }
+        // All other numeric types are convertible
     }
 
     Function *Assembler::findFunction(const std::string &name)
@@ -924,16 +1261,17 @@ namespace Delta
             exit(EXIT_FAILURE);
         }
 
-        // Validate argument types
+        // With automatic type conversion, we don't need strict type validation
+        // Just ensure no void types are passed where they shouldn't be
         for (size_t i = 0; i < arguments.size(); i++)
         {
             DataType argType = inferExpressionType(arguments[i]);
             DataType expectedType = func->parameter_types[i];
 
-            if (!isTypeCompatible(expectedType, argType))
+            if (argType == DataType::VOID || expectedType == DataType::VOID)
             {
-                LOG_ERROR("Argument {} to function {} has wrong type: expected {} but got {}",
-                          i + 1, func_name, typeToString(expectedType), typeToString(argType));
+                LOG_ERROR("Void type not allowed in function argument {} to function {}",
+                          i + 1, func_name);
                 exit(EXIT_FAILURE);
             }
         }

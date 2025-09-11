@@ -11,11 +11,13 @@ namespace Delta
         INT16,
         INT32,
         INT64,
+        FLOAT32,
+        FLOAT64,
         VOID,
     };
 
+    bool isFloatType(DataType type);
     size_t getTypeSize(DataType type);
-    std::string getRegisterName(DataType type, const std::string &base_reg);
     bool isTypeCompatible(DataType declared, DataType actual);
     std::string typeToString(DataType type);
     DataType stringToType(std::string s);

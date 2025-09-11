@@ -76,7 +76,11 @@ namespace Delta
         std::string dataTypeToLLVM(DataType type); // Convert DataType to LLVM IR type
         int getTypeAlignment(DataType type);       // Get type alignment for LLVM
         void generateDefaultValue(DataType type);  // Generate default value for type
-        void generateTypeConversion(const std::string &value, DataType from, DataType to);
+
+        // NEW: Type conversion methods
+        std::string generateTypeConversion(const std::string &value, DataType from, DataType to);
+        std::string convertToBoolean(const std::string &value, DataType type);
+        DataType getCommonType(DataType left, DataType right);
 
         // Module structure
         void declareFunctions();

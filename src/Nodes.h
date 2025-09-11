@@ -7,6 +7,14 @@
 
 namespace Delta
 {
+    struct NodeExpression;
+
+    struct NodeTermFloatLiteral
+    {
+        Token float_literal;
+        const char *id = "Float Literal";
+    };
+
     struct NodeTermIntegerLiteral
     {
         Token int_literal;
@@ -19,11 +27,17 @@ namespace Delta
         const char *id = "Expression Identifier";
     };
 
-    struct NodeExpression;
-
     struct NodeTermParen
     {
         NodeExpression *expr;
+        const char *id = "()";
+    };
+
+    struct NodeTermCast
+    {
+        NodeExpression *expr;
+        DataType target_type;
+        const char *id = "Cast";
     };
 
     struct NodeTermFunctionCall
@@ -123,7 +137,7 @@ namespace Delta
 
     struct NodeExpressionTerm
     {
-        std::variant<NodeTermIntegerLiteral *, NodeTermIdentifier *, NodeTermParen *, NodeTermFunctionCall *> var;
+        std::variant<NodeTermIntegerLiteral *, NodeTermFloatLiteral *, NodeTermIdentifier *, NodeTermParen *, NodeTermFunctionCall *, NodeTermCast *> var;
         const char *id = "Term Expression";
     };
 

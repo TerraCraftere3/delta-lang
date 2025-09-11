@@ -14,6 +14,7 @@ namespace Delta
         data_type,      // int64, float32, bool, etc.
         equals,         // =
         int_literal,    // integer like 10, etc
+        float_literal,  // floats like 3.14, etc
         semicolon,      // ;
         open_paren,     // (
         close_paren,    // )

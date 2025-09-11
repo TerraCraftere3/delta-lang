@@ -18,7 +18,7 @@ entry:
   %t1 = load i32, i32* %t0, align 4 ; Use Variable n
   %t2 = icmp sle i32 %t1, 1; Less or Equals
   %t3 = zext i1 %t2 to i32
-  %t4 = icmp ne i32 %t3, 0
+  %t4 = icmp ne i32 %t3, 0 ; Int to Boolean
   br i1 %t4, label %bb0, label %bb1; If / Else Jump
 
 bb0:
@@ -45,9 +45,9 @@ entry:
   %t1 = alloca i32, align 4; Allocate variable "ret"
   store i32 0, i32* %t1, align 4; Set variable "ret"
   %t2 = load i32, i32* %t0, align 4 ; Use Variable n
-  %t3 = icmp eq i32 %t2, 1
+  %t3 = icmp eq i32 %t2, 1; Equals
   %t4 = zext i1 %t3 to i32
-  %t5 = icmp ne i32 %t4, 0
+  %t5 = icmp ne i32 %t4, 0 ; Int to Boolean
   br i1 %t5, label %bb0, label %bb2; If / Else Jump
 
 bb0:
@@ -56,9 +56,9 @@ bb0:
 
 bb2:
   %t6 = load i32, i32* %t0, align 4 ; Use Variable n
-  %t7 = icmp eq i32 %t6, 64
+  %t7 = icmp eq i32 %t6, 64; Equals
   %t8 = zext i1 %t7 to i32
-  %t9 = icmp ne i32 %t8, 0
+  %t9 = icmp ne i32 %t8, 0 ; Int to Boolean
   br i1 %t9, label %bb3, label %bb4; Elif / Else Jump
 
 bb3:
@@ -77,11 +77,24 @@ bb1:
 
 define i32 @main() {
 entry:
-  %t0 = alloca i32, align 4; Allocate variable "a"
-  %t1 = call i32 @test(i32 1) ; Call test()
-  store i32 %t1, i32* %t0, align 4; Set variable "a"
-  %t2 = call i32 @fib(i32 10) ; Call fib()
-  ret i32 %t2 ; Return
+  %t0 = alloca float, align 4; Allocate variable "a"
+  %t1 = call i32 @fib(i32 10) ; Call fib()
+  %t2 = sitofp i32 %t1 to float ; Int to Float
+  store float %t2, float* %t0, align 4; Set variable "a"
+  %t3 = alloca float, align 4; Allocate variable "b"
+  %t4 = fptrunc double 3.140000e+00 to float ; Float Truncate
+  store float %t4, float* %t3, align 4; Set variable "b"
+  %t5 = alloca float, align 4; Allocate variable "c"
+  %t6 = load float, float* %t0, align 4 ; Use Variable a
+  %t7 = load float, float* %t3, align 4 ; Use Variable b
+  %t8 = fadd float %t6, %t7; Float Add
+  store float %t8, float* %t5, align 4; Set variable "c"
+  %t9 = alloca i32, align 4; Allocate variable "ret"
+  %t10 = load float, float* %t5, align 4 ; Use Variable c
+  %t11 = fptosi float %t10 to i32 ; Float to Int
+  store i32 %t11, i32* %t9, align 4; Set variable "ret"
+  %t12 = load i32, i32* %t9, align 4 ; Use Variable ret
+  ret i32 %t12 ; Return
   ret i32 0
 }
 

@@ -489,13 +489,43 @@ namespace Delta
 
     std::optional<NodeExpressionTerm *> Parser::parseTerm()
     {
-        // Integer literal
+        // Integer literal: 42
         if (auto int_lit = try_consume(TokenType::int_literal))
         {
             auto term_int_lit = m_allocator.alloc<NodeTermIntegerLiteral>();
             term_int_lit->int_literal = int_lit.value();
             auto node_term = m_allocator.alloc<NodeExpressionTerm>();
             node_term->var = term_int_lit;
+            return node_term;
+        }
+        // Float literal: 3.14
+        else if (auto float_lit = try_consume(TokenType::float_literal))
+        {
+            auto term_float_lit = m_allocator.alloc<NodeTermFloatLiteral>();
+            term_float_lit->float_literal = float_lit.value();
+            auto node_term = m_allocator.alloc<NodeExpressionTerm>();
+            node_term->var = term_float_lit;
+            return node_term;
+        }
+        // Cast: (type) value
+        else if (peek().has_value() && peek().value().type == TokenType::open_paren &&
+                 peek(2).has_value() && peek(2).value().type == TokenType::data_type &&
+                 peek(3).has_value() && peek(3).value().type == TokenType::close_paren)
+        {
+            consume();                   // (
+            auto type_token = consume(); // type
+            consume();                   // )
+            auto term_cast = m_allocator.alloc<NodeTermCast>();
+            term_cast->target_type = stringToType(type_token.value.value());
+            auto expr = parseExpression();
+            if (!expr.has_value())
+            {
+                LOG_ERROR("Expected Expression after Cast");
+                exit(EXIT_FAILURE);
+            }
+            term_cast->expr = expr.value();
+            auto node_term = m_allocator.alloc<NodeExpressionTerm>();
+            node_term->var = term_cast;
             return node_term;
         }
         // Function call: identifier(args)
@@ -543,7 +573,7 @@ namespace Delta
             auto expr = parseExpression();
             if (!expr.has_value())
             {
-                LOG_ERROR("Expected Expression");
+                LOG_ERROR("Expected Expression after paren");
                 exit(EXIT_FAILURE);
             }
             try_consume(TokenType::close_paren, "')'", open_paren.value().line);
