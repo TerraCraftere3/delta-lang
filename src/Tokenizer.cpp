@@ -46,6 +46,11 @@ namespace Delta
                 }
                 else if (isValidDataType(buf))
                 {
+                    while (peek().has_value() && peek().value() == '*')
+                    {
+                        buf.push_back(consume());
+                    }
+
                     tokens.push_back({TokenType::data_type, line_count, buf});
                     buf.clear();
                 }
@@ -219,6 +224,11 @@ namespace Delta
             {
                 consume();
                 tokens.push_back({TokenType::close_curly, line_count});
+            }
+            else if (peek().value() == '&')
+            {
+                consume();
+                tokens.push_back({TokenType::and_, line_count});
             }
             else if (peek().value() == '\n')
             {

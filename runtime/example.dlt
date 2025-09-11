@@ -1,29 +1,10 @@
-int fib(int n) {
-    if (n <= 1) {
-        return n;
-    }
-    return fib(n - 1) + fib(n - 2);
-}
-
-int test(int n) {
-    int ret = 0;
-    if(n == 1){
-        ret = 42;
-    }elif(n == 64){
-        ret = 1;
-    }else{
-        ret = 100;
-    }
-    return ret;
+void modifyInt(int* ptr, int newValue) {
+    *ptr = newValue;
 }
 
 int main() {
-    float a = (float) fib(10); // Casting
-    float b = 3.14f; // Float Literal
-    float c = a + b; // Float Addition
+    int x = 10;
+    modifyInt(&x, 42);
 
-    fib(5) + fib(7); // Expression Statement Test
-
-    int ret = (int) c; // Casting
-    return ret;
+    return x;
 }

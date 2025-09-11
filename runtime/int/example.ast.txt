@@ -1,68 +1,18 @@
 - Node Program
 	- Functions
-		- Define "int32 fib(int32 n)"
-			- If
-				- Expression
-					- Less or Equals
-						- Variable "n"
-						- Int Literal 1
-				- Scope
-					- Return
-						- Variable "n"
-			- Return
-				- Addition
-					- Call "fib"
-						- Subtraction
-							- Variable "n"
-							- Int Literal 1
-					- Call "fib"
-						- Subtraction
-							- Variable "n"
-							- Int Literal 2
-		- Define "int32 test(int32 n)"
-			- Let "int32 ret"
-				- Int Literal 0
-			- If
-				- Expression
-					- Equals
-						- Variable "n"
-						- Int Literal 1
-				- Scope
-					- Assign "ret"
-						- Int Literal 42
-			- Elif
-				- Expression
-					- Equals
-						- Variable "n"
-						- Int Literal 64
-				- Scope
-					- Assign "ret"
-						- Int Literal 1
-			- Else
-				- Scope
-					- Assign "ret"
-						- Int Literal 100
-			- Return
-				- Variable "ret"
+		- Define "void modifyInt(int32* ptr, int32 newValue)"
+			- Pointer Assign
+				- Pointer Expression
+					- Dereference
+						- Variable "ptr"
+				- Value Expression
+					- Variable "newValue"
 		- Define "int32 main()"
-			- Let "float32 a"
-				- Cast float32
-					- Call "fib"
-						- Int Literal 10
-			- Let "float32 b"
-				- Float Literal 3.14
-			- Let "float32 c"
-				- Addition
-					- Variable "a"
-					- Variable "b"
-			- Addition
-				- Call "fib"
-					- Int Literal 5
-				- Call "fib"
-					- Int Literal 7
-			- Let "int32 ret"
-				- Cast int32
-					- Variable "c"
+			- Let "int32 x"
+				- Int Literal 10
+			- Call "modifyInt"
+				- Address of "x"
+				- Int Literal 42
 			- Return
-				- Variable "ret"
+				- Variable "x"
 	- Statements

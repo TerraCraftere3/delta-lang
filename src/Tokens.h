@@ -34,6 +34,7 @@ namespace Delta
         greater_equals, // >=
         less_equals,    // <=
         double_equals,  // ==
+        and_            // &
     };
 
     struct Token

@@ -44,21 +44,8 @@ namespace Delta
             LOG_ERROR("Failed to read input file or file is empty: {}", props.inputFile);
             return 1;
         }
-        Tokenizer tokenizer(contents);
-        std::vector<Token> tokens = tokenizer.tokenize();
-        Parser parser(tokens);
-        auto parseTree = parser.parseProgram();
+
         std::string assembly = "";
-        if (parseTree.has_value())
-        {
-            Assembler assembler(parseTree.value());
-            assembly = assembler.generate();
-        }
-        else
-        {
-            LOG_ERROR("Invalid Program");
-            return 1;
-        }
 
         std::string intDir = Files::joinPaths(Files::getDirectory(props.outputFile), "int");
         if (!Files::fileExists(intDir))
@@ -112,9 +99,23 @@ namespace Delta
         assemblyPrefix += "; Input File: " + std::string(props.inputFile) + "\n";
         assemblyPrefix += "; llc Arguments: " + llcArguments + "\n";
         // assemblyPrefix += "; Link Arguments: " + linkArguments + "\n"; // Currently no additional Arguments
-        assembly = assemblyPrefix + assembly;
 
-        writeParseFile(parseFile, nodeDebugPrint(parseTree.value()));
+        Tokenizer tokenizer(contents);
+        std::vector<Token> tokens = tokenizer.tokenize();
+        Parser parser(tokens);
+        auto parseTree = parser.parseProgram();
+        if (parseTree.has_value())
+        {
+            writeParseFile(parseFile, nodeDebugPrint(parseTree.value()));
+            Assembler assembler(parseTree.value());
+            assembly = assembler.generate();
+            assembly = assemblyPrefix + assembly;
+        }
+        else
+        {
+            LOG_ERROR("Invalid Program");
+            return 1;
+        }
 
         switch (props.compileType)
         {

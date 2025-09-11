@@ -59,6 +59,22 @@ namespace Delta
         return output.str();
     }
 
+    std::string nodeDebugPrint(NodeTermDereference *node, int indention)
+    {
+        std::stringstream output;
+        output << Indent(indention) << DEBUG_NODE_PREFIX << "Dereference\n";
+        output << nodeDebugPrint(node->expr, indention + 1);
+        return output.str();
+    }
+
+    std::string nodeDebugPrint(NodeTermAddressOf *node, int indention)
+    {
+        std::stringstream output;
+        output << Indent(indention) << DEBUG_NODE_PREFIX << "Address of \""
+               << node->ident.value.value() << "\"\n";
+        return output.str();
+    }
+
     std::string nodeDebugPrint(NodeTermParen *node, int indention)
     {
         std::stringstream output;
@@ -136,6 +152,17 @@ namespace Delta
         std::string output = std::visit([&](auto &obj)
                                         { return nodeDebugPrint(obj, indention); }, node->var);
         return output;
+    }
+
+    std::string nodeDebugPrint(NodeStatementPointerAssign *node, int indention)
+    {
+        std::stringstream output;
+        output << Indent(indention) << DEBUG_NODE_PREFIX << "Pointer Assign\n";
+        output << Indent(indention + 1) << DEBUG_NODE_PREFIX << "Pointer Expression\n";
+        output << nodeDebugPrint(node->ptr_expr, indention + 2);
+        output << Indent(indention + 1) << DEBUG_NODE_PREFIX << "Value Expression\n";
+        output << nodeDebugPrint(node->value_expr, indention + 2);
+        return output.str();
     }
 
     std::string nodeDebugPrint(NodeStatementExit *node, int indention)

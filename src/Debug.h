@@ -13,9 +13,13 @@ namespace Delta
 {
     std::string Indent(int level);
 
+    // If
     std::string nodeDebugPrint(NodeIfPred *node, int indention);
     std::string nodeDebugPrint(NodeIfPredElif *node, int indention);
     std::string nodeDebugPrint(NodeIfPredElse *node, int indention);
+    // Terms
+    std::string nodeDebugPrint(NodeTermDereference *node, int indention);
+    std::string nodeDebugPrint(NodeTermAddressOf *node, int indention);
     std::string nodeDebugPrint(NodeTermParen *node, int indention);
     std::string nodeDebugPrint(NodeTermFunctionCall *node, int indention);
     std::string nodeDebugPrint(NodeTermCast *node, int indention);
@@ -23,15 +27,19 @@ namespace Delta
     std::string nodeDebugPrint(NodeTermFloatLiteral *node, int indention);
     std::string nodeDebugPrint(NodeTermDoubleLiteral *node, int indention);
     std::string nodeDebugPrint(NodeTermIdentifier *node, int indention);
+    // Expressions
     std::string nodeDebugPrint(NodeExpressionBinary *node, int indention);
     std::string nodeDebugPrint(NodeExpressionTerm *node, int indention);
     std::string nodeDebugPrint(NodeExpression *node, int indention);
+    // Statements
+    std::string nodeDebugPrint(NodeStatementPointerAssign *node, int indention);
     std::string nodeDebugPrint(NodeStatementExit *node, int indention);
     std::string nodeDebugPrint(NodeStatementLet *node, int indention);
     std::string nodeDebugPrint(NodeStatementAssign *node, int indention);
     std::string nodeDebugPrint(NodeStatementReturn *node, int indention);
     std::string nodeDebugPrint(NodeStatementIf *node, int indention);
     std::string nodeDebugPrint(NodeStatement *node, int indention);
+    // General
     std::string nodeDebugPrint(NodeScope *node, int indention);
     std::string nodeDebugPrint(NodeFunctionDeclaration *node, int indention);
     std::string nodeDebugPrint(NodeProgram node, int indention = 0);

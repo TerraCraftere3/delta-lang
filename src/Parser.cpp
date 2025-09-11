@@ -92,7 +92,9 @@ namespace Delta
             try_consume(TokenType::semicolon, "';'", eq.line);
         }
         // Variable declaration: type identifier = expr;
-        else if (peek().value().type == TokenType::data_type && peek(2).has_value() && peek(2).value().type == TokenType::identifier && peek(3).has_value() && peek(3).value().type == TokenType::equals)
+        else if (peek().value().type == TokenType::data_type &&
+                 peek(2).has_value() && peek(2).value().type == TokenType::identifier &&
+                 peek(3).has_value() && peek(3).value().type == TokenType::equals)
         {
             auto data_type = consume();
             auto *statement_let = m_allocator.alloc<NodeStatementLet>();
@@ -178,13 +180,39 @@ namespace Delta
             stmt->var = stmt_if;
             statement = stmt;
         }
+        // Pointer Assign: *ptr = value
         // Expression: a + b, func(), etc
         else if (auto expr = parseExpression())
         {
-            try_consume(TokenType::semicolon, "';'", peek(0).value().line);
-            auto *stmt = m_allocator.alloc<NodeStatement>();
-            stmt->var = expr.value();
-            statement = stmt;
+            // Expression: a + b, func(), etc
+            if (auto semi = try_consume(TokenType::semicolon))
+            {
+                auto *stmt = m_allocator.alloc<NodeStatement>();
+                stmt->var = expr.value();
+                statement = stmt;
+            }
+            else if (auto equals = try_consume(TokenType::equals))
+            {
+                if (auto value_expr = parseExpression())
+                {
+                    auto *stmt_assign = m_allocator.alloc<NodeStatementPointerAssign>();
+                    stmt_assign->ptr_expr = expr.value();
+                    stmt_assign->value_expr = value_expr.value();
+                    auto *stmt = m_allocator.alloc<NodeStatement>();
+                    stmt->var = stmt_assign;
+                    statement = stmt;
+                    try_consume(TokenType::semicolon, "';'", peek(0).value().line);
+                }
+                else
+                {
+                    LOG_ERROR("Expected Expression");
+                    exit(EXIT_FAILURE);
+                }
+            }
+            else
+            {
+                Error::throwExpected("'=' or ';'", peek(0).value().line);
+            }
         }
 
         return statement;
@@ -598,6 +626,31 @@ namespace Delta
             auto node_term = m_allocator.alloc<NodeExpressionTerm>();
             node_term->var = node_term_paren;
             return node_term;
+        }
+        // Address of: &ident;
+        else if (peek().has_value() && peek().value().type == TokenType::and_ &&
+                 peek(2).has_value() && peek(2).value().type == TokenType::identifier)
+        {
+            consume();
+            auto ident = consume();
+            auto node_term_aof = m_allocator.alloc<NodeTermAddressOf>();
+            node_term_aof->ident = ident;
+            auto node_term = m_allocator.alloc<NodeExpressionTerm>();
+            node_term->var = node_term_aof;
+            return node_term;
+        }
+        // Dereference: *ptr;
+        else if (peek().has_value() && peek().value().type == TokenType::star)
+        {
+            consume();
+            if (auto expr = parseExpression())
+            {
+                auto node_term_deref = m_allocator.alloc<NodeTermDereference>();
+                node_term_deref->expr = expr.value();
+                auto node_term = m_allocator.alloc<NodeExpressionTerm>();
+                node_term->var = node_term_deref;
+                return node_term;
+            }
         }
         return std::nullopt;
     }

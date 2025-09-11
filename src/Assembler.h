@@ -74,7 +74,6 @@ namespace Delta
         std::string getNextTemp();                 // Generate next temporary (%t0, %t1, etc.)
         std::string getNextLabel();                // Generate next basic block label
         std::string dataTypeToLLVM(DataType type); // Convert DataType to LLVM IR type
-        int getTypeAlignment(DataType type);       // Get type alignment for LLVM
         void generateDefaultValue(DataType type);  // Generate default value for type
 
         // NEW: Type conversion methods

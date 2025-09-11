@@ -45,6 +45,18 @@ namespace Delta
         const char *id = "Cast";
     };
 
+    struct NodeTermAddressOf
+    {
+        Token ident;
+        const char *id = "Address Of";
+    };
+
+    struct NodeTermDereference
+    {
+        NodeExpression *expr;
+        const char *id = "Address Of";
+    };
+
     struct NodeTermFunctionCall
     {
         Token function_name;
@@ -142,7 +154,17 @@ namespace Delta
 
     struct NodeExpressionTerm
     {
-        std::variant<NodeTermIntegerLiteral *, NodeTermFloatLiteral *, NodeTermDoubleLiteral *, NodeTermIdentifier *, NodeTermParen *, NodeTermFunctionCall *, NodeTermCast *> var;
+        std::variant<
+            NodeTermIntegerLiteral *,
+            NodeTermFloatLiteral *,
+            NodeTermDoubleLiteral *,
+            NodeTermIdentifier *,
+            NodeTermParen *,
+            NodeTermFunctionCall *,
+            NodeTermCast *,
+            NodeTermAddressOf *,
+            NodeTermDereference *>
+            var;
         const char *id = "Term Expression";
     };
 
@@ -218,6 +240,12 @@ namespace Delta
         const char *id = "Statement Return";
     };
 
+    struct NodeStatementPointerAssign
+    {
+        NodeExpression *ptr_expr;
+        NodeExpression *value_expr;
+    };
+
     struct NodeParameter
     {
         Token ident;
@@ -236,7 +264,16 @@ namespace Delta
 
     struct NodeStatement
     {
-        std::variant<NodeStatementExit *, NodeStatementLet *, NodeStatementAssign *, NodeStatementIf *, NodeScope *, NodeStatementReturn *, NodeExpression *> var;
+        std::variant<
+            NodeStatementExit *,
+            NodeStatementLet *,
+            NodeStatementAssign *,
+            NodeStatementIf *,
+            NodeScope *,
+            NodeStatementReturn *,
+            NodeExpression *,
+            NodeStatementPointerAssign *>
+            var;
         const char *id = "Statement";
     };
 

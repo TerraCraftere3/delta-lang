@@ -206,7 +206,7 @@ namespace Delta
                 std::string load_temp = gen->getNextTemp();
                 gen->m_output << "  " << load_temp << " = load " << gen->dataTypeToLLVM((*it).type)
                               << ", " << gen->dataTypeToLLVM((*it).type) << "* " << (*it).llvm_alloca
-                              << ", align " << gen->getTypeAlignment((*it).type);
+                              << ", align " << getTypeAlignment((*it).type);
                 gen->m_output << " ; Use Variable " << term_ident->ident.value.value() << "\n";
                 return load_temp;
             }
@@ -228,6 +228,37 @@ namespace Delta
                 DataType to_type = term_cast->target_type;
 
                 return gen->generateTypeConversion(value, from_type, to_type);
+            }
+
+            std::string operator()(const NodeTermAddressOf *term_addr) const
+            {
+                // &variable - get address of variable
+                auto it = std::find_if(gen->m_vars.cbegin(), gen->m_vars.cend(),
+                                       [&](const Var &var)
+                                       {
+                                           return var.name == term_addr->ident.value.value();
+                                       });
+                if (it == gen->m_vars.cend())
+                {
+                    LOG_ERROR("Undeclared identifier {}", term_addr->ident.value.value());
+                    exit(EXIT_FAILURE);
+                }
+
+                return (*it).llvm_alloca;
+            }
+
+            std::string operator()(const NodeTermDereference *term_deref) const
+            {
+                std::string ptr_value = gen->generateExpression(term_deref->expr);
+                DataType ptr_type = gen->inferExpressionType(term_deref->expr);
+
+                if (!isPointerType(ptr_type))
+                {
+                    LOG_ERROR("Cannot dereference non-pointer type");
+                    exit(EXIT_FAILURE);
+                }
+
+                return ptr_value;
             }
         };
 
@@ -745,13 +776,13 @@ namespace Delta
                 // Allocate space for variable
                 std::string alloca_temp = gen->getNextTemp();
                 gen->m_output << "  " << alloca_temp << " = alloca " << gen->dataTypeToLLVM(statement_let->type)
-                              << ", align " << gen->getTypeAlignment(statement_let->type) << "; Allocate variable \"" << statement_let->ident.value.value() << "\"\n";
+                              << ", align " << getTypeAlignment(statement_let->type) << "; Allocate variable \"" << statement_let->ident.value.value() << "\"\n";
 
                 // Generate Expression
                 std::string expr_value = gen->generateExpression(statement_let->expression);
                 gen->m_output << "  store " << gen->dataTypeToLLVM(statement_let->type) << " " << expr_value
                               << ", " << gen->dataTypeToLLVM(statement_let->type) << "* " << alloca_temp
-                              << ", align " << gen->getTypeAlignment(statement_let->type) << "; Set variable \"" << statement_let->ident.value.value() << "\"\n";
+                              << ", align " << getTypeAlignment(statement_let->type) << "; Set variable \"" << statement_let->ident.value.value() << "\"\n";
 
                 Var var = Var(statement_let->ident.value.value(), 0, statement_let->type);
                 var.setConstant(statement_let->isConst);
@@ -789,7 +820,7 @@ namespace Delta
 
                 gen->m_output << "  store " << gen->dataTypeToLLVM(var.type) << " " << expr_value
                               << ", " << gen->dataTypeToLLVM(var.type) << "* " << var.llvm_alloca
-                              << ", align " << gen->getTypeAlignment(var.type) << "; Set variable \"" << assign->ident.value.value() << "\"\n";
+                              << ", align " << getTypeAlignment(var.type) << "; Set variable \"" << assign->ident.value.value() << "\"\n";
             }
 
             void operator()(const NodeScope *scope)
@@ -858,6 +889,24 @@ namespace Delta
                     gen->m_output << "  ret void ; Return\n";
                 }
             }
+            void operator()(const NodeStatementPointerAssign *ptr_assign)
+            {
+                std::string ptr_value = gen->generateExpression(ptr_assign->ptr_expr);
+                DataType pointee_type = gen->inferExpressionType(ptr_assign->ptr_expr);
+
+                std::string value = gen->generateExpression(ptr_assign->value_expr);
+                DataType value_type = gen->inferExpressionType(ptr_assign->value_expr);
+
+                if (value_type != pointee_type)
+                {
+                    value = gen->generateTypeConversion(value, value_type, pointee_type);
+                }
+
+                gen->m_output << "  store " << gen->dataTypeToLLVM(pointee_type) << " " << value
+                              << ", " << gen->dataTypeToLLVM(pointee_type) << "* " << ptr_value
+                              << ", align " << getTypeAlignment(pointee_type)
+                              << " ; Store through pointer\n";
+            }
         };
 
         StatementVisitor visitor(this);
@@ -869,12 +918,14 @@ namespace Delta
     std::string
     Assembler::getNextTemp()
     {
-        return "%t" + std::to_string(m_temp_counter++);
+        std::string temp = "%t" + std::to_string(m_temp_counter++);
+        return temp;
     }
 
     std::string Assembler::getNextLabel()
     {
-        return "bb" + std::to_string(m_current_block_id++);
+        std::string label = "bb" + std::to_string(m_current_block_id++);
+        return label;
     }
 
     std::string Assembler::dataTypeToLLVM(DataType type)
@@ -895,29 +946,23 @@ namespace Delta
             return "double";
         case DataType::VOID:
             return "void";
+        // Pointer types
+        case DataType::INT8_PTR:
+            return "i8*";
+        case DataType::INT16_PTR:
+            return "i16*";
+        case DataType::INT32_PTR:
+            return "i32*";
+        case DataType::INT64_PTR:
+            return "i64*";
+        case DataType::FLOAT32_PTR:
+            return "float*";
+        case DataType::FLOAT64_PTR:
+            return "double*";
+        case DataType::VOID_PTR:
+            return "i8*"; // void* == i8*
         default:
             return "i32";
-        }
-    }
-
-    int Assembler::getTypeAlignment(DataType type)
-    {
-        switch (type)
-        {
-        case DataType::INT8:
-            return 1;
-        case DataType::INT16:
-            return 2;
-        case DataType::INT32:
-            return 4;
-        case DataType::INT64:
-            return 8;
-        case DataType::FLOAT32:
-            return 4;
-        case DataType::FLOAT64:
-            return 8;
-        default:
-            return 4;
         }
     }
 
@@ -955,7 +1000,58 @@ namespace Delta
 
         std::string result_temp = getNextTemp();
 
-        // Float to integer conversions
+        // Pointer to pointer conversions (bitcast)
+        if (isPointerType(from) && isPointerType(to))
+        {
+            m_output << "  " << result_temp << " = bitcast " << dataTypeToLLVM(from)
+                     << " " << value << " to " << dataTypeToLLVM(to) << " ; Pointer cast\n";
+            return result_temp;
+        }
+
+        // Integer to pointer conversion (inttoptr)
+        if (!isPointerType(from) && isPointerType(to))
+        {
+            // First convert to i64 if not already
+            std::string int_value = value;
+            if (from != DataType::INT64)
+            {
+                std::string temp = getNextTemp();
+                if (isFloatType(from))
+                {
+                    m_output << "  " << temp << " = fptosi " << dataTypeToLLVM(from)
+                             << " " << value << " to i64 ; Float to Int64\n";
+                }
+                else
+                {
+                    m_output << "  " << temp << " = sext " << dataTypeToLLVM(from)
+                             << " " << value << " to i64 ; Int to Int64\n";
+                }
+                int_value = temp;
+            }
+
+            m_output << "  " << result_temp << " = inttoptr i64 " << int_value
+                     << " to " << dataTypeToLLVM(to) << " ; Int to Pointer\n";
+            return result_temp;
+        }
+
+        // Pointer to integer conversion (ptrtoint)
+        if (isPointerType(from) && !isPointerType(to))
+        {
+            std::string ptr_as_int = getNextTemp();
+            m_output << "  " << ptr_as_int << " = ptrtoint " << dataTypeToLLVM(from)
+                     << " " << value << " to i64 ; Pointer to Int64\n";
+
+            // Then convert i64 to target type if needed
+            if (to == DataType::INT64)
+            {
+                return ptr_as_int;
+            }
+            else
+            {
+                return generateTypeConversion(ptr_as_int, DataType::INT64, to);
+            }
+        }
+
         if (isFloatType(from) && !isFloatType(to))
         {
             m_output << "  " << result_temp << " = fptosi " << dataTypeToLLVM(from)
@@ -1044,12 +1140,28 @@ namespace Delta
 
     DataType Assembler::getCommonType(DataType left, DataType right)
     {
-        // If either is float, promote to the larger float type
+        if (isPointerType(left) && isPointerType(right))
+        {
+            if (left == right)
+                return left;
+            // void* is compatible with any pointer
+            if (left == DataType::VOID_PTR)
+                return right;
+            if (right == DataType::VOID_PTR)
+                return left;
+            // Otherwise, they're incompatible - this might need special handling
+            LOG_ERROR("Incompatible pointer types in expression");
+            exit(EXIT_FAILURE);
+        }
+
+        // If one is pointer and one is integer, keep existing behavior
+        // or add special handling as needed
+
+        // Existing float/integer logic...
         if (isFloatType(left) || isFloatType(right))
         {
             if (isFloatType(left) && isFloatType(right))
             {
-                // Both are floats, return the larger one
                 return (getTypeSize(left) >= getTypeSize(right)) ? left : right;
             }
             else if (isFloatType(left))
@@ -1062,7 +1174,6 @@ namespace Delta
             }
         }
 
-        // Both are integers, return the larger one
         return (getTypeSize(left) >= getTypeSize(right)) ? left : right;
     }
 
@@ -1136,6 +1247,31 @@ namespace Delta
         {
             Assembler *gen;
             TermTypeVisitor(Assembler *gen) : gen(gen) {}
+
+            // &value
+            DataType operator()(const NodeTermAddressOf *term_aof) const
+            {
+                auto it = std::find_if(gen->m_vars.cbegin(), gen->m_vars.cend(), [&](const Var &var)
+                                       { return var.name == term_aof->ident.value.value(); });
+                if (it == gen->m_vars.cend())
+                {
+                    LOG_ERROR("Undeclared identifier {}", term_aof->ident.value.value());
+                    exit(EXIT_FAILURE);
+                }
+                return getPointerType((*it).type);
+            }
+
+            // *ptr
+            DataType operator()(const NodeTermDereference *term_deref) const
+            {
+                auto ptrType = gen->inferExpressionType(term_deref->expr);
+                if (!isPointerType(ptrType))
+                {
+                    LOG_ERROR("Cannot dereference non-pointer type");
+                    exit(EXIT_FAILURE);
+                }
+                return getPointeeType(ptrType);
+            }
 
             DataType operator()(const NodeTermIntegerLiteral *term_int_lit) const
             {
@@ -1279,14 +1415,21 @@ namespace Delta
         Function exit_func("exit", {DataType::INT32}, DataType::VOID, "exit", true);
         m_functions.push_back(exit_func);
 
-        Function printf_func("printf", {DataType::INT64}, DataType::INT32, "printf", true);
+        Function printf_func("printf", {DataType::INT8_PTR}, DataType::INT32, "printf", true);
         m_functions.push_back(printf_func);
 
-        Function malloc_func("malloc", {DataType::INT64}, DataType::INT64, "malloc", true);
+        Function malloc_func("malloc", {DataType::INT64}, DataType::VOID_PTR, "malloc", true);
         m_functions.push_back(malloc_func);
 
-        Function free_func("free", {DataType::INT64}, DataType::VOID, "free", true);
+        Function free_func("free", {DataType::VOID_PTR}, DataType::VOID, "free", true);
         m_functions.push_back(free_func);
+
+        // String functions
+        Function strlen_func("strlen", {DataType::INT8_PTR}, DataType::INT64, "strlen", true);
+        m_functions.push_back(strlen_func);
+
+        Function strcpy_func("strcpy", {DataType::INT8_PTR, DataType::INT8_PTR}, DataType::INT8_PTR, "strcpy", true);
+        m_functions.push_back(strcpy_func);
     }
 
     void Assembler::registerExternalFunctions()
@@ -1295,6 +1438,8 @@ namespace Delta
         m_used_external_functions.insert("printf");
         m_used_external_functions.insert("malloc");
         m_used_external_functions.insert("free");
+        m_used_external_functions.insert("strlen");
+        m_used_external_functions.insert("strcpy");
     }
 
     void Assembler::validateFunctionCall(const std::string &func_name, const std::vector<NodeExpression *> &arguments)

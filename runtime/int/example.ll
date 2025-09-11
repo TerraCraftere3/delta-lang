@@ -7,96 +7,31 @@ target triple = "x86_64-pc-windows-msvc"
 
 ; External function declarations
 declare void @exit(i32)
-declare void @free(i64)
-declare i64 @malloc(i64)
-declare i32 @printf(i64)
+declare void @free(i8*)
+declare i8* @malloc(i64)
+declare i32 @printf(i8*)
+declare i8* @strcpy(i8*, i8*)
+declare i64 @strlen(i8*)
 
-define i32 @fib(i32 %n) {
+define void @modifyInt(i32* %ptr, i32 %newValue) {
 entry:
-  %t0 = alloca i32, align 4
-  store i32 %n, i32* %t0, align 4
-  %t1 = load i32, i32* %t0, align 4 ; Use Variable n
-  %t2 = icmp sle i32 %t1, 1; Less or Equals
-  %t3 = zext i1 %t2 to i32
-  %t4 = icmp ne i32 %t3, 0 ; Int to Boolean
-  br i1 %t4, label %bb0, label %bb1; If / Else Jump
-
-bb0:
-  %t5 = load i32, i32* %t0, align 4 ; Use Variable n
-  ret i32 %t5 ; Return
-  br label %bb1; Break
-
-bb1:
-  %t6 = load i32, i32* %t0, align 4 ; Use Variable n
-  %t7 = sub i32 %t6, 1; Subtract
-  %t8 = call i32 @fib(i32 %t7) ; Call fib()
-  %t9 = load i32, i32* %t0, align 4 ; Use Variable n
-  %t10 = sub i32 %t9, 2; Subtract
-  %t11 = call i32 @fib(i32 %t10) ; Call fib()
-  %t12 = add i32 %t8, %t11; Add
-  ret i32 %t12 ; Return
-  ret i32 0
-}
-
-define i32 @test(i32 %n) {
-entry:
-  %t0 = alloca i32, align 4
-  store i32 %n, i32* %t0, align 4
-  %t1 = alloca i32, align 4; Allocate variable "ret"
-  store i32 0, i32* %t1, align 4; Set variable "ret"
-  %t2 = load i32, i32* %t0, align 4 ; Use Variable n
-  %t3 = icmp eq i32 %t2, 1; Equals
-  %t4 = zext i1 %t3 to i32
-  %t5 = icmp ne i32 %t4, 0 ; Int to Boolean
-  br i1 %t5, label %bb0, label %bb2; If / Else Jump
-
-bb0:
-  store i32 42, i32* %t1, align 4; Set variable "ret"
-  br label %bb1; Break
-
-bb2:
-  %t6 = load i32, i32* %t0, align 4 ; Use Variable n
-  %t7 = icmp eq i32 %t6, 64; Equals
-  %t8 = zext i1 %t7 to i32
-  %t9 = icmp ne i32 %t8, 0 ; Int to Boolean
-  br i1 %t9, label %bb3, label %bb4; Elif / Else Jump
-
-bb3:
-  store i32 1, i32* %t1, align 4; Set variable "ret"
-  br label %bb1; Break
-
-bb4:
-  store i32 100, i32* %t1, align 4; Set variable "ret"
-  br label %bb1; Break
-
-bb1:
-  %t10 = load i32, i32* %t1, align 4 ; Use Variable ret
-  ret i32 %t10 ; Return
-  ret i32 0
+  %t0 = alloca i32*, align 8
+  store i32* %ptr, i32** %t0, align 8
+  %t1 = alloca i32, align 4
+  store i32 %newValue, i32* %t1, align 4
+  %t2 = load i32*, i32** %t0, align 8 ; Use Variable ptr
+  %t3 = load i32, i32* %t1, align 4 ; Use Variable newValue
+  store i32 %t3, i32* %t2, align 4 ; Store through pointer
+  ret void
 }
 
 define i32 @main() {
 entry:
-  %t0 = alloca float, align 4; Allocate variable "a"
-  %t1 = call i32 @fib(i32 10) ; Call fib()
-  %t2 = sitofp i32 %t1 to float ; Int to Float
-  store float %t2, float* %t0, align 4; Set variable "a"
-  %t3 = alloca float, align 4; Allocate variable "b"
-  store float 0x40091EB860000000, float* %t3, align 4; Set variable "b"
-  %t4 = alloca float, align 4; Allocate variable "c"
-  %t5 = load float, float* %t0, align 4 ; Use Variable a
-  %t6 = load float, float* %t3, align 4 ; Use Variable b
-  %t7 = fadd float %t5, %t6; Float Add
-  store float %t7, float* %t4, align 4; Set variable "c"
-  %t8 = call i32 @fib(i32 5) ; Call fib()
-  %t9 = call i32 @fib(i32 7) ; Call fib()
-  %t10 = add i32 %t8, %t9; Add
-  %t11 = alloca i32, align 4; Allocate variable "ret"
-  %t12 = load float, float* %t4, align 4 ; Use Variable c
-  %t13 = fptosi float %t12 to i32 ; Float to Int
-  store i32 %t13, i32* %t11, align 4; Set variable "ret"
-  %t14 = load i32, i32* %t11, align 4 ; Use Variable ret
-  ret i32 %t14 ; Return
+  %t0 = alloca i32, align 4; Allocate variable "x"
+  store i32 10, i32* %t0, align 4; Set variable "x"
+  call void @modifyInt(i32* %t0, i32 42) ; Call modifyInt()
+  %t1 = load i32, i32* %t0, align 4 ; Use Variable x
+  ret i32 %t1 ; Return
   ret i32 0
 }
 
