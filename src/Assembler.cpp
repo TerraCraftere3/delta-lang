@@ -1560,8 +1560,6 @@ namespace Delta
 
     void Assembler::validateTypeCompatibility(DataType expected, DataType actual, const std::string &context)
     {
-        // With automatic type conversion, we're more lenient
-        // Only check for fundamentally incompatible types (e.g., void with non-void)
         if (expected == DataType::VOID && actual != DataType::VOID)
         {
             LOG_ERROR("Type mismatch in {}: expected void but got {}",
@@ -1574,7 +1572,6 @@ namespace Delta
                       context, typeToString(expected));
             exit(EXIT_FAILURE);
         }
-        // All other numeric types are convertible
     }
 
     Function *Assembler::findFunction(const std::string &name)

@@ -11,7 +11,7 @@ namespace Delta
     class Log
     {
     public:
-        static void init();
+        static void init(std::string logFile = "log.txt");
         static void setVerbose(bool verbose);
 
     public:

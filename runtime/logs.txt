@@ -1,7 +1,0 @@
-[2025-09-12 20:38:42] [info] Compiling E:\Programs\delta-lang\example\example.dlt...
-[2025-09-12 20:38:42] [trace] Compile Type: Compile, Link and Run
-[2025-09-12 20:38:42] [trace] Running command: cmd /C "E:\Programs\delta-lang\runtime\llc.exe" -filetype=obj E:\Programs\delta-lang\example\int\example.ll -o E:\Programs\delta-lang\example\int\example.obj
-[2025-09-12 20:38:42] [trace] Running command: cmd /C "E:\Programs\delta-lang\runtime\clang.exe" E:\Programs\delta-lang\example\int\example.obj E:\Programs\delta-lang\runtime\stdlib.lib -o E:\Programs\delta-lang\example\example.exe -luser32 -lgdi32 -lkernel32
-[2025-09-12 20:38:43] [info] Running command: "E:\Programs\delta-lang\example\example.exe"
-[2025-09-12 20:38:44] [info] Program exited with code: 0
-[2025-09-12 20:38:44] [trace] Parser used 1.448 / 4.194.304 bytes

@@ -4,12 +4,12 @@ namespace Delta
 {
     std::shared_ptr<spdlog::logger> Log::s_Logger = nullptr;
 
-    void Log::init()
+    void Log::init(std::string logFile)
     {
         auto console_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
         console_sink->set_pattern("[%T] [%^%l%$] %v"); // [12:34:56] [INFO] message
 
-        auto file_sink = std::make_shared<spdlog::sinks::basic_file_sink_mt>("logs.txt", true);
+        auto file_sink = std::make_shared<spdlog::sinks::basic_file_sink_mt>(logFile, true);
         file_sink->set_pattern("[%Y-%m-%d %T] [%l] %v");
 
         std::vector<spdlog::sink_ptr> sinks{console_sink, file_sink};

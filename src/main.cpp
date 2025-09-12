@@ -6,7 +6,6 @@
 
 int main(int argc, char **argv)
 {
-    Delta::Log::init();
     std::string inputFile;
     std::string outputFile = "a.exe";
     bool verbose = true;
@@ -36,7 +35,7 @@ int main(int argc, char **argv)
             }
             else
             {
-                LOG_ERROR("Error: -i/--input requires a filename");
+                std::cerr << "Error: -i/--input requires a filename";
                 return 1;
             }
         }
@@ -48,7 +47,7 @@ int main(int argc, char **argv)
             }
             else
             {
-                LOG_ERROR("Error: -o/--output requires a filename");
+                std::cerr << "Error: -o/--output requires a filename";
                 return 1;
             }
         }
@@ -66,15 +65,16 @@ int main(int argc, char **argv)
         }
         else
         {
-            LOG_ERROR("Unknown argument: {}", arg);
+            std::cerr << "Unknown argument " << arg;
             return 1;
         }
     }
     if (inputFile.empty())
     {
-        LOG_ERROR("Error: No input file specified. Use -i or --input to specify an input file.");
+        std::cerr << "Error: No input file specified. Use -i or --input to specify an input file.";
         return 1;
     }
+    Delta::Log::init(inputFile + ".log");
     Delta::CompilerProperties props;
     props.inputFile = inputFile.c_str();
     props.outputFile = outputFile.c_str();

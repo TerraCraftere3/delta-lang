@@ -16,3 +16,4 @@ runtime/*.pdb
 example/int
 example/*.exe
 example/*.lib
+example/*.log
