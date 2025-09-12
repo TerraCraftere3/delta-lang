@@ -1,6 +1,0 @@
-int main() {
-    const char* msg = "Hello World";
-    int charCount = printf("Float: %f, Int: %d String: %s\n", 3.14f, 100, msg);
-
-    return charCount;
-}

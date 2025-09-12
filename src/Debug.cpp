@@ -1,4 +1,5 @@
 #include "Debug.h"
+#include "Strings.h"
 
 namespace Delta
 {
@@ -115,7 +116,7 @@ namespace Delta
     std::string nodeDebugPrint(NodeTermStringLiteral *node, int indention)
     {
         std::stringstream output;
-        output << Indent(indention) << DEBUG_NODE_PREFIX << "Literal: \"" << node->string_literal.value.value() << "\"\n";
+        output << Indent(indention) << DEBUG_NODE_PREFIX << "Literal: \"" << escape(node->string_literal.value.value()) << "\"\n";
         return output.str();
     }
 

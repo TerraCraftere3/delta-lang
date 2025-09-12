@@ -136,7 +136,7 @@ The return value of main() is used as the exit code of the program
 ```
 // MSVCRT (C runtime)
 void exit(int)
-int printf(char*);
+int printf(char*, ...);
 void* malloc(long);
 void free(void*);
 long strlen(long);
@@ -274,12 +274,12 @@ $$
 $$
 
 ### Grammar Rules
-- Nonterminals: $ [\text{Category / Element}] $ - Can continue to have subnodes
-- Terminals: $ \text{Element} $ - Can NOT have subnodes
-- Alternations: $ \text{float64} \space | \space \text{double} $ - Means that two values are the same
-- Comments: $ \textit{Example Comment} $ - Clarifies something about the element that came before
-- Cases: $ \begin{cases}
-    \text{Case 1} &
+- Nonterminals: $` [\text{Category / Element}] `$ - Can continue to have subnodes
+- Terminals: $` \text{Element} `$ - Can NOT have subnodes
+- Alternations: $` \text{float64} \space | \space \text{double} `$ - Means that two values are the same
+- Comments: $` \textit{Example Comment} `$ - Clarifies something about the element that came before
+- Cases: $` \begin{cases}
+    \text{Case 1}
     \\
-    \text{Case 2} &
-\end{cases} $ - Means that one thing can have multiple types of subnodes, etc.
+    \text{Case 2}
+\end{cases} `$ - Means that one thing can have multiple types of subnodes, etc.
