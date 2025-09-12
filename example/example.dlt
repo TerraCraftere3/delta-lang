@@ -1,4 +1,6 @@
 int main() {
-    helloWorld();
+    int win = stdOpenWindow("Hello World", 800, 600);
+    stdKeepWindowOpen(win);
+    stdDestroyWindow(win);
     return 0;
 }

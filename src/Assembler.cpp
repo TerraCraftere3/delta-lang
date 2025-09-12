@@ -1606,7 +1606,11 @@ namespace Delta
         addFunction("strcpy", {DataType::INT8_PTR, DataType::INT8_PTR}, DataType::INT8_PTR, true, false);
 
         // ---- Delta Standard ----
-        addFunction("helloWorld", {}, DataType::VOID, true, false);
+        addFunction("stdOpenWindow", {DataType::INT8_PTR, DataType::INT32, DataType::INT32}, DataType::INT32, true, false);
+        addFunction("stdIsWindowOpen", {DataType::INT32}, DataType::INT8, true, false);
+        addFunction("stdKeepWindowOpen", {DataType::INT32}, DataType::VOID, true, false);
+        addFunction("stdUpdateWindow", {DataType::INT32}, DataType::VOID, true, false);
+        addFunction("stdDestroyWindow", {DataType::INT32}, DataType::VOID, true, false);
     }
 
     void Assembler::registerExternalFunctions()
