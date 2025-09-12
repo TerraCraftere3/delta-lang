@@ -1152,7 +1152,7 @@ namespace Delta
             return value;
         }
 
-        LOG_TRACE("Converting from {} to {}. Value: {}", typeToString(from), typeToString(to), value);
+        // LOG_TRACE("Converting from {} to {}. Value: {}", typeToString(from), typeToString(to), value);
 
         std::string result_temp = getNextTemp();
 
@@ -1175,7 +1175,7 @@ namespace Delta
                          << " " << value << " to " << dataTypeToLLVM(to) << " ; Float Truncate\n";
             }
 
-            LOG_TRACE("Generated float conversion: {}", result_temp);
+            // LOG_TRACE("Generated float conversion: {}", result_temp);
             return result_temp;
         }
 

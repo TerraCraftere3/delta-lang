@@ -104,6 +104,43 @@ void stdUpdateWindow(int window) {
     }
 }
 
+void stdSetWindowTitle(int window, char *title) {
+    if (window < 0 || window >= MAX_WINDOWS) return;
+    if (!g_windows[window].open) return;
+
+    SetWindowText(g_windows[window].hwnd, title);
+}
+
+void stdSetWindowSize(int window, int width, int height) {
+    if (window < 0 || window >= MAX_WINDOWS) return;
+    if (!g_windows[window].open) return;
+
+    RECT rect;
+    HWND hwnd = g_windows[window].hwnd;
+
+    DWORD style = GetWindowLong(hwnd, GWL_STYLE);
+    RECT wr = {0, 0, width, height};
+    AdjustWindowRect(&wr, style, FALSE);
+
+    SetWindowPos(hwnd, NULL, 0, 0, wr.right - wr.left, wr.bottom - wr.top, SWP_NOMOVE | SWP_NOZORDER);
+}
+
+void stdGetWindowSize(int window, int* width, int* height) {
+    if (window < 0 || window >= MAX_WINDOWS) return;
+    if (!g_windows[window].open) {
+        *width = 0;
+        *height = 0;
+        return;
+    }
+
+    RECT rect;
+    HWND hwnd = g_windows[window].hwnd;
+    GetClientRect(hwnd, &rect);
+
+    *width = rect.right - rect.left;
+    *height = rect.bottom - rect.top;
+}
+
 void stdDestroyWindow(int window) {
     if (window < 0 || window >= MAX_WINDOWS) return;
     if (!g_windows[window].open) return;
@@ -111,5 +148,52 @@ void stdDestroyWindow(int window) {
     DestroyWindow(g_windows[window].hwnd);
     g_windows[window].hwnd = NULL;
     g_windows[window].open = false;
+}
+
+void stdCloseWindow(int window) {
+    if (window < 0 || window >= MAX_WINDOWS) return;
+    if (!g_windows[window].open) return;
+
+    PostMessage(g_windows[window].hwnd, WM_CLOSE, 0, 0);
+}
+
+void stdMaximizeWindow(int window) {
+    if (window < 0 || window >= MAX_WINDOWS) return;
+    if (!g_windows[window].open) return;
+
+    ShowWindow(g_windows[window].hwnd, SW_MAXIMIZE);
+}
+
+void stdMinimizeWindow(int window) {
+    if (window < 0 || window >= MAX_WINDOWS) return;
+    if (!g_windows[window].open) return;
+
+    ShowWindow(g_windows[window].hwnd, SW_MINIMIZE);
+}
+
+bool stdIsKeyPressed(int window, char ascii_code) {
+    if (window < 0 || window >= MAX_WINDOWS) return false;
+    if (!g_windows[window].open) return false;
+
+    SHORT state = GetAsyncKeyState((int)ascii_code);
+    return (state & 0x8000) != 0;
+}
+
+void stdClearWindow(int window, int r, int g, int b) {
+    if (window < 0 || window >= MAX_WINDOWS) return;
+    if (!g_windows[window].open) return;
+
+    HWND hwnd = g_windows[window].hwnd;
+    HDC hdc = GetDC(hwnd);
+    if (!hdc) return;
+
+    HBRUSH brush = CreateSolidBrush(RGB(r, g, b));
+
+    RECT rect;
+    GetClientRect(hwnd, &rect);
+    FillRect(hdc, &rect, brush);
+
+    DeleteObject(brush);
+    ReleaseDC(hwnd, hdc);
 }
 #endif
