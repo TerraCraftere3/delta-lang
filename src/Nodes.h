@@ -57,6 +57,13 @@ namespace Delta
         const char *id = "Address Of";
     };
 
+    struct NodeTermArrayAccess
+    {
+        NodeExpression *array_expr;
+        NodeExpression *index_expr;
+        const char *id = "Array Access";
+    };
+
     struct NodeTermFunctionCall
     {
         Token function_name;
@@ -163,7 +170,8 @@ namespace Delta
             NodeTermFunctionCall *,
             NodeTermCast *,
             NodeTermAddressOf *,
-            NodeTermDereference *>
+            NodeTermDereference *,
+            NodeTermArrayAccess *>
             var;
         const char *id = "Term Expression";
     };
@@ -244,6 +252,15 @@ namespace Delta
     {
         NodeExpression *ptr_expr;
         NodeExpression *value_expr;
+        const char *id = "Pointer Assign";
+    };
+
+    struct NodeStatementArrayAssign
+    {
+        NodeExpression *array_expr;
+        NodeExpression *index_expr;
+        NodeExpression *value_expr;
+        const char *id = "Array Assign";
     };
 
     struct NodeParameter
@@ -272,7 +289,8 @@ namespace Delta
             NodeScope *,
             NodeStatementReturn *,
             NodeExpression *,
-            NodeStatementPointerAssign *>
+            NodeStatementPointerAssign *,
+            NodeStatementArrayAssign *>
             var;
         const char *id = "Statement";
     };

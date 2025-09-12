@@ -260,6 +260,46 @@ namespace Delta
 
                 return ptr_value;
             }
+
+            std::string operator()(const NodeTermArrayAccess *array_access) const
+            {
+                std::string array_ptr = gen->generateExpression(array_access->array_expr);
+                std::string index = gen->generateExpression(array_access->index_expr);
+
+                DataType array_type = gen->inferExpressionType(array_access->array_expr);
+                DataType index_type = gen->inferExpressionType(array_access->index_expr);
+
+                if (index_type != DataType::INT64)
+                {
+                    index = gen->generateTypeConversion(index, index_type, DataType::INT64);
+                }
+
+                DataType element_type;
+                if (isPointerType(array_type))
+                {
+                    element_type = getPointeeType(array_type);
+                }
+                else
+                {
+                    LOG_ERROR("Cannot index non-pointer type");
+                    exit(EXIT_FAILURE);
+                }
+
+                std::string gep_temp = gen->getNextTemp();
+                gen->m_output << "  " << gep_temp << " = getelementptr "
+                              << gen->dataTypeToLLVM(element_type) << ", "
+                              << gen->dataTypeToLLVM(array_type) << " " << array_ptr
+                              << ", i64 " << index << " ; Array index\n";
+
+                std::string load_temp = gen->getNextTemp();
+                gen->m_output << "  " << load_temp << " = load "
+                              << gen->dataTypeToLLVM(element_type) << ", "
+                              << gen->dataTypeToLLVM(element_type) << "* " << gep_temp
+                              << ", align " << getTypeAlignment(element_type)
+                              << " ; Load array element\n";
+
+                return load_temp;
+            }
         };
 
         TermVisitor visitor(this);
@@ -907,6 +947,48 @@ namespace Delta
                               << ", align " << getTypeAlignment(pointee_type)
                               << " ; Store through pointer\n";
             }
+            void operator()(const NodeStatementArrayAssign *array_assign)
+            {
+                std::string array_ptr = gen->generateExpression(array_assign->array_expr);
+                std::string index = gen->generateExpression(array_assign->index_expr);
+                std::string value = gen->generateExpression(array_assign->value_expr);
+
+                DataType array_type = gen->inferExpressionType(array_assign->array_expr);
+                DataType index_type = gen->inferExpressionType(array_assign->index_expr);
+                DataType value_type = gen->inferExpressionType(array_assign->value_expr);
+
+                if (index_type != DataType::INT64)
+                {
+                    index = gen->generateTypeConversion(index, index_type, DataType::INT64);
+                }
+
+                DataType element_type;
+                if (isPointerType(array_type))
+                {
+                    element_type = getPointeeType(array_type);
+                }
+                else
+                {
+                    LOG_ERROR("Cannot index non-pointer type");
+                    exit(EXIT_FAILURE);
+                }
+
+                if (value_type != element_type)
+                {
+                    value = gen->generateTypeConversion(value, value_type, element_type);
+                }
+
+                std::string gep_temp = gen->getNextTemp();
+                gen->m_output << "  " << gep_temp << " = getelementptr "
+                              << gen->dataTypeToLLVM(element_type) << ", "
+                              << gen->dataTypeToLLVM(array_type) << " " << array_ptr
+                              << ", i64 " << index << " ; Array index\n";
+
+                gen->m_output << "  store " << gen->dataTypeToLLVM(element_type)
+                              << " " << value << ", " << gen->dataTypeToLLVM(element_type)
+                              << "* " << gep_temp << ", align " << getTypeAlignment(element_type)
+                              << " ; Store array element\n";
+            }
         };
 
         StatementVisitor visitor(this);
@@ -1271,6 +1353,18 @@ namespace Delta
                     exit(EXIT_FAILURE);
                 }
                 return getPointeeType(ptrType);
+            }
+
+            // ptr[expr]
+            DataType operator()(const NodeTermArrayAccess *array_access) const
+            {
+                DataType array_type = gen->inferExpressionType(array_access->array_expr);
+                if (!isPointerType(array_type))
+                {
+                    LOG_ERROR("Cannot index non-pointer type");
+                    exit(EXIT_FAILURE);
+                }
+                return getPointeeType(array_type);
             }
 
             DataType operator()(const NodeTermIntegerLiteral *term_int_lit) const

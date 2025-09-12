@@ -23,6 +23,8 @@ namespace Delta
         close_paren,    // )
         open_curly,     // {
         close_curly,    // }
+        open_square,    // [
+        close_square,   // ]
         identifier,     // ANY variable name, etc
         plus,           // +
         minus,          // -

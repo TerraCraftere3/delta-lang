@@ -116,7 +116,7 @@ namespace Delta
             }
             try_consume(TokenType::semicolon, "';'", eq.line);
         }
-        // Assignment: identifier = expr;
+        // Assignment: identifier = expr
         else if (peek().value().type == TokenType::identifier && peek(2).has_value() && peek(2).value().type == TokenType::equals)
         {
             auto assign = m_allocator.alloc<NodeStatementAssign>();
@@ -180,6 +180,7 @@ namespace Delta
             stmt->var = stmt_if;
             statement = stmt;
         }
+        // Array Assign: expr[expr] = expr
         // Pointer Assign: *ptr = value
         // Expression: a + b, func(), etc
         else if (auto expr = parseExpression())
@@ -191,6 +192,7 @@ namespace Delta
                 stmt->var = expr.value();
                 statement = stmt;
             }
+            // Pointer Assign: *ptr = value
             else if (auto equals = try_consume(TokenType::equals))
             {
                 if (auto value_expr = parseExpression())
@@ -209,9 +211,35 @@ namespace Delta
                     exit(EXIT_FAILURE);
                 }
             }
+            // Array Assign: expr[expr] = expr
+            else if (auto open_square = try_consume(TokenType::open_square))
+            {
+                auto index_expr = parseExpression();
+                if (!index_expr.has_value())
+                {
+                    LOG_ERROR("Expected Index Expression");
+                    exit(EXIT_FAILURE);
+                }
+                try_consume(TokenType::close_square, "']'", peek(0).value().line);
+                try_consume(TokenType::equals, "'='", peek(0).value().line);
+                auto value_expr = parseExpression();
+                if (!value_expr.has_value())
+                {
+                    LOG_ERROR("Expected Value Expression");
+                    exit(EXIT_FAILURE);
+                }
+                try_consume(TokenType::semicolon, "';'", peek(0).value().line);
+                auto *stmt_assign = m_allocator.alloc<NodeStatementArrayAssign>();
+                stmt_assign->array_expr = expr.value();       // ptr
+                stmt_assign->index_expr = index_expr.value(); // [index]
+                stmt_assign->value_expr = value_expr.value(); // = value
+                auto *stmt = m_allocator.alloc<NodeStatement>();
+                stmt->var = stmt_assign;
+                statement = stmt;
+            }
             else
             {
-                Error::throwExpected("'=' or ';'", peek(0).value().line);
+                Error::throwExpected("'=', ';' or Array Acecss", peek(0).value().line);
             }
         }
 
@@ -674,6 +702,25 @@ namespace Delta
                 return node_term;
             }
         }
+        // Array: Access expr[index]
+        /*else if (auto expr = parseExpression())
+        {
+            try_consume(TokenType::open_square, "'['", peek(0).value().line);
+            auto index_expr = parseExpression();
+            if (!index_expr.has_value())
+            {
+                LOG_ERROR("Expected Index Expression");
+                exit(EXIT_FAILURE);
+            }
+            try_consume(TokenType::close_square, "']'", peek(0).value().line);
+            auto node_term_access = m_allocator.alloc<NodeTermArrayAccess>();
+            node_term_access->array_expr = expr.value();
+            node_term_access->index_expr = index_expr.value();
+            auto node_term = m_allocator.alloc<NodeExpressionTerm>();
+            node_term->var = node_term_access;
+            return node_term;
+        }*/
+        // STACK OVERFLOW BECAUSE OF TO MUCH RECURSION
         return std::nullopt;
     }
 

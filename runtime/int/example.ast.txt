@@ -1,8 +1,27 @@
 - Node Program
 	- Functions
 		- Define "int32 main()"
-			- Let "int8 x"
-				- Int Literal 72
+			- Let "int8* str"
+				- Call "malloc"
+					- Int Literal 128
+			- [struct Delta::NodeStatementArrayAssign * __ptr64] NODE NOT IMPLEMENTED
+			- [struct Delta::NodeStatementArrayAssign * __ptr64] NODE NOT IMPLEMENTED
+			- [struct Delta::NodeStatementArrayAssign * __ptr64] NODE NOT IMPLEMENTED
+			- [struct Delta::NodeStatementArrayAssign * __ptr64] NODE NOT IMPLEMENTED
+			- [struct Delta::NodeStatementArrayAssign * __ptr64] NODE NOT IMPLEMENTED
+			- [struct Delta::NodeStatementArrayAssign * __ptr64] NODE NOT IMPLEMENTED
+			- [struct Delta::NodeStatementArrayAssign * __ptr64] NODE NOT IMPLEMENTED
+			- [struct Delta::NodeStatementArrayAssign * __ptr64] NODE NOT IMPLEMENTED
+			- [struct Delta::NodeStatementArrayAssign * __ptr64] NODE NOT IMPLEMENTED
+			- [struct Delta::NodeStatementArrayAssign * __ptr64] NODE NOT IMPLEMENTED
+			- [struct Delta::NodeStatementArrayAssign * __ptr64] NODE NOT IMPLEMENTED
+			- [struct Delta::NodeStatementArrayAssign * __ptr64] NODE NOT IMPLEMENTED
+			- [struct Delta::NodeStatementArrayAssign * __ptr64] NODE NOT IMPLEMENTED
+			- Let "int32 charCount"
+				- Call "printf"
+					- Variable "str"
+			- Call "free"
+				- Variable "str"
 			- Return
-				- Variable "x"
+				- Variable "charCount"
 	- Statements

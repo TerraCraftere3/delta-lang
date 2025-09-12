@@ -235,6 +235,16 @@ namespace Delta
                 consume();
                 tokens.push_back({TokenType::close_curly, line_count});
             }
+            else if (peek().value() == '[')
+            {
+                consume();
+                tokens.push_back({TokenType::open_square, line_count});
+            }
+            else if (peek().value() == ']')
+            {
+                consume();
+                tokens.push_back({TokenType::close_square, line_count});
+            }
             else if (peek().value() == '&')
             {
                 consume();
