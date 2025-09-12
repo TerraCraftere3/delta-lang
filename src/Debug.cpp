@@ -27,6 +27,20 @@ namespace Delta
         return output.str();
     }
 
+    std::string nodeDebugPrint(NodeStatementWhile *node, int indention)
+    {
+        std::stringstream output;
+        output << Indent(indention) << DEBUG_NODE_PREFIX << "While\n";
+
+        output << Indent(indention + 1) << DEBUG_NODE_PREFIX << "Expression\n";
+        output << nodeDebugPrint(node->expr, indention + 2);
+
+        output << Indent(indention + 1) << DEBUG_NODE_PREFIX << "Scope\n";
+        output << nodeDebugPrint(node->scope, indention + 2);
+
+        return output.str();
+    }
+
     std::string nodeDebugPrint(NodeIfPred *node, int indention)
     {
         std::string output = std::visit([&](auto &obj)

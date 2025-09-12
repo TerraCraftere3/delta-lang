@@ -15,13 +15,13 @@ namespace Delta
     std::string Assembler::generate()
     {
         // LLVM IR module header
-        m_output << "; ModuleID = 'delta_program'\n";
-        m_output << "target datalayout = \"e-m:w-p270:32:32-p271:32:32-p272:64:64-i64:64-f80:128-n8:16:32:64-S128\"\n";
-        m_output << "target triple = \"x86_64-pc-windows-msvc\"\n\n";
+        std::stringstream header;
+        header << "; ModuleID = 'delta_program'\n";
+        header << "target datalayout = \"e-m:w-p270:32:32-p271:32:32-p272:64:64-i64:64-f80:128-n8:16:32:64-S128\"\n";
+        header << "target triple = \"x86_64-pc-windows-msvc\"\n\n";
 
         collectStringLiterals();
         generateStringLiterals();
-        generateExternDeclarations();
 
         // Generate all function definitions
         for (const NodeFunctionDeclaration *func : m_program.functions)
@@ -29,7 +29,9 @@ namespace Delta
             generateFunctionDeclaration(func);
         }
 
-        return m_output.str();
+        std::string extern_decl = generateExternDeclarations();
+
+        return header.str() + extern_decl + m_output.str();
     }
 
     void Assembler::declareFunctions()
@@ -347,6 +349,11 @@ namespace Delta
         {
             LOG_ERROR("Unknown function: {}", func_name);
             exit(EXIT_FAILURE);
+        }
+
+        if (func->is_external && !m_used_external_functions.contains(func->name))
+        {
+            m_used_external_functions.insert(func->name);
         }
 
         std::vector<std::string> arg_values;
@@ -1610,7 +1617,6 @@ namespace Delta
     {
         Function func(name, param_types, ret_type, name, external, variadic);
         m_functions.emplace_back(func);
-        m_used_external_functions.insert(name);
     }
 
     void
@@ -1760,9 +1766,10 @@ namespace Delta
         return result;
     }
 
-    void Assembler::generateExternDeclarations()
+    std::string Assembler::generateExternDeclarations()
     {
-        m_output << "; External function declarations\n";
+        std::stringstream output;
+        output << "; External function declarations\n";
 
         for (const std::string &func_name : m_used_external_functions)
         {
@@ -1770,26 +1777,27 @@ namespace Delta
             if (func && func->is_external)
             {
                 std::string return_type = dataTypeToLLVM(func->return_type);
-                m_output << "declare " << return_type << " @" << func_name << "(";
+                output << "declare " << return_type << " @" << func_name << "(";
 
                 for (size_t i = 0; i < func->parameter_types.size(); i++)
                 {
                     if (i > 0)
-                        m_output << ", ";
-                    m_output << dataTypeToLLVM(func->parameter_types[i]);
+                        output << ", ";
+                    output << dataTypeToLLVM(func->parameter_types[i]);
                 }
 
                 if (func->is_variadic)
                 {
                     if (!func->parameter_types.empty())
-                        m_output << ", ";
-                    m_output << "...";
+                        output << ", ";
+                    output << "...";
                 }
 
-                m_output << ")\n";
+                output << ")\n";
             }
         }
-        m_output << "\n";
+        output << "\n";
+        return output.str();
     }
 
     void Assembler::collectStringLiterals()

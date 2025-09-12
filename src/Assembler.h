@@ -86,7 +86,7 @@ namespace Delta
         // Module structure
         void addFunction(const std::string &name, const std::vector<DataType> &param_types, DataType ret_type, bool external = false, bool variadic = false);
         void declareFunctions();
-        void generateExternDeclarations();
+        std::string generateExternDeclarations();
 
         // Strings
         void collectStringLiterals();

@@ -40,6 +40,7 @@ namespace Delta
     std::string nodeDebugPrint(NodeStatementAssign *node, int indention);
     std::string nodeDebugPrint(NodeStatementReturn *node, int indention);
     std::string nodeDebugPrint(NodeStatementIf *node, int indention);
+    std::string nodeDebugPrint(NodeStatementWhile *node, int indention);
     std::string nodeDebugPrint(NodeStatement *node, int indention);
     // General
     std::string nodeDebugPrint(NodeScope *node, int indention);
