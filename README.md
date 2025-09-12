@@ -145,6 +145,7 @@ long strcpy(long, long);
 
 ## Grammar
 (LaTeX Expression might not render correctly in Github)
+
 $$
 \begin{align}
 [\text{Prog}] &\to [\text{FuncDecl}]^* \space [\text{Statement}]^* \space\textit{List of Functions and Statements}

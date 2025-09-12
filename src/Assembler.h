@@ -32,13 +32,14 @@ struct Function
     std::string name;
     std::vector<Delta::DataType> parameter_types;
     Delta::DataType return_type;
-    std::string label;
-    bool is_external = false;
-    std::string library = ""; // Which library the function belongs to
+    std::string llvm_name;
+    bool is_external;
+    bool is_variadic; // any amount of variables, like printf(str, ...)
 
-    Function(const std::string &n, const std::vector<Delta::DataType> &params,
-             Delta::DataType ret_type, const std::string &lbl = "", bool external = false, const std::string &lib = "")
-        : name(n), parameter_types(params), return_type(ret_type), label(lbl), is_external(external), library(lib) {}
+    Function(const std::string &name, const std::vector<Delta::DataType> &param_types,
+             Delta::DataType ret_type, const std::string &llvm_name, bool external = false, bool variadic = false)
+        : name(name), parameter_types(param_types), return_type(ret_type),
+          llvm_name(llvm_name), is_external(external), is_variadic(variadic) {}
 };
 
 // Keep for potential future use or compatibility
@@ -112,6 +113,8 @@ namespace Delta
         void registerBuiltinFunctions();
         void registerExternalFunctions();
         void validateFunctionCall(const std::string &func_name, const std::vector<NodeExpression *> &arguments);
+        std::string applyDefaultPromotions(const std::string &value, DataType &type);
+        DataType getPromotedType(DataType type);
 
         std::string escapeString(const std::string &str);
 

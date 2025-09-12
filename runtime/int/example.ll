@@ -5,27 +5,30 @@
 target datalayout = "e-m:w-p270:32:32-p271:32:32-p272:64:64-i64:64-f80:128-n8:16:32:64-S128"
 target triple = "x86_64-pc-windows-msvc"
 
-@str.0 = private unnamed_addr constant [13 x i8] c"Hello World\0A\00"
+@str.0 = private unnamed_addr constant [12 x i8] c"Hello World\00"
+@str.1 = private unnamed_addr constant [31 x i8] c"Float: %f, Int: %d String: %s\0A\00"
 
 ; External function declarations
 declare void @exit(i32)
 declare void @free(i8*)
 declare i8* @malloc(i64)
-declare i32 @printf(i8*)
+declare i32 @printf(i8*, ...)
 declare i8* @strcpy(i8*, i8*)
 declare i64 @strlen(i8*)
 
 define i32 @main() {
 entry:
-  %t0 = alloca i8*, align 8; Allocate variable "str"
-  %t1 = getelementptr inbounds [13 x i8], [13 x i8]* @str.0, i64 0, i64 0 ; String literal
-  store i8* %t1, i8** %t0, align 8; Set variable "str"
+  %t0 = alloca i8*, align 8; Allocate variable "msg"
+  %t1 = getelementptr inbounds [12 x i8], [12 x i8]* @str.0, i64 0, i64 0 ; String literal
+  store i8* %t1, i8** %t0, align 8; Set variable "msg"
   %t2 = alloca i32, align 4; Allocate variable "charCount"
-  %t3 = load i8*, i8** %t0, align 8 ; Use Variable str
-  %t4 = call i32 @printf(i8* %t3) ; Call printf()
-  store i32 %t4, i32* %t2, align 4; Set variable "charCount"
-  %t5 = load i32, i32* %t2, align 4 ; Use Variable charCount
-  ret i32 %t5 ; Return
+  %t3 = getelementptr inbounds [31 x i8], [31 x i8]* @str.1, i64 0, i64 0 ; String literal
+  %t4 = fpext float 0x40091EB860000000 to double ; Float Extend
+  %t5 = load i8*, i8** %t0, align 8 ; Use Variable msg
+  %t6 = call i32 @printf(i8* %t3, double %t4, i32 100, i8* %t5) ; Call printf()
+  store i32 %t6, i32* %t2, align 4; Set variable "charCount"
+  %t7 = load i32, i32* %t2, align 4 ; Use Variable charCount
+  ret i32 %t7 ; Return
   ret i32 0
 }
 

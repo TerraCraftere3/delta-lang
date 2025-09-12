@@ -338,7 +338,6 @@ namespace Delta
     {
         std::string func_name = func_call->function_name.value.value();
 
-        // Validate function call
         validateFunctionCall(func_name, func_call->arguments);
 
         Function *func = findFunction(func_name);
@@ -348,52 +347,59 @@ namespace Delta
             exit(EXIT_FAILURE);
         }
 
-        // Generate arguments with automatic type conversion
         std::vector<std::string> arg_values;
+        std::vector<DataType> arg_types;
 
         for (size_t i = 0; i < func_call->arguments.size(); i++)
         {
             const NodeExpression *arg = func_call->arguments[i];
             std::string arg_val = generateExpression(arg);
             DataType arg_type = inferExpressionType(arg);
-            DataType expected_type = func->parameter_types[i];
 
-            // Convert argument to expected type if needed
-            if (arg_type != expected_type)
+            if (i < func->parameter_types.size())
             {
-                arg_val = generateTypeConversion(arg_val, arg_type, expected_type);
+                DataType expected_type = func->parameter_types[i];
+                if (arg_type != expected_type)
+                {
+                    arg_val = generateTypeConversion(arg_val, arg_type, expected_type);
+                    arg_type = expected_type;
+                }
+            }
+            else if (func->is_variadic)
+            {
+                arg_val = applyDefaultPromotions(arg_val, arg_type);
+                arg_type = getPromotedType(arg_type);
             }
 
             arg_values.push_back(arg_val);
+            arg_types.push_back(arg_type);
         }
 
-        // Generate call
         if (func->return_type == DataType::VOID)
         {
             m_output << "  call void @" << func_name << "(";
 
-            // Add arguments for void functions
             for (size_t i = 0; i < arg_values.size(); i++)
             {
                 if (i > 0)
                     m_output << ", ";
-                m_output << dataTypeToLLVM(func->parameter_types[i]) << " " << arg_values[i];
+                m_output << dataTypeToLLVM(arg_types[i]) << " " << arg_values[i];
             }
 
             m_output << ") ; Call " << func_call->function_name.value.value() << "()\n";
-            return ""; // Void return
+            return "";
         }
         else
         {
             std::string result_temp = getNextTemp();
-            m_output << "  " << result_temp << " = call " << dataTypeToLLVM(func->return_type) << " @" << func_name << "(";
+            m_output << "  " << result_temp << " = call " << dataTypeToLLVM(func->return_type)
+                     << " @" << func_name << "(";
 
-            // Add arguments
             for (size_t i = 0; i < arg_values.size(); i++)
             {
                 if (i > 0)
                     m_output << ", ";
-                m_output << dataTypeToLLVM(func->parameter_types[i]) << " " << arg_values[i];
+                m_output << dataTypeToLLVM(arg_types[i]) << " " << arg_values[i];
             }
 
             m_output << ") ; Call " << func_call->function_name.value.value() << "()\n";
@@ -1123,7 +1129,32 @@ namespace Delta
             return value;
         }
 
+        LOG_TRACE("Converting from {} to {}. Value: {}", typeToString(from), typeToString(to), value);
+
         std::string result_temp = getNextTemp();
+
+        // Float to float conversions
+        if (isFloatType(from) && isFloatType(to))
+        {
+            int from_bits = getTypeSize(from) * 8;
+            int to_bits = getTypeSize(to) * 8;
+
+            if (from_bits < to_bits)
+            {
+                // Extend float precision (float to double)
+                m_output << "  " << result_temp << " = fpext " << dataTypeToLLVM(from)
+                         << " " << value << " to " << dataTypeToLLVM(to) << " ; Float Extend\n";
+            }
+            else if (from_bits > to_bits)
+            {
+                // Truncate float precision
+                m_output << "  " << result_temp << " = fptrunc " << dataTypeToLLVM(from)
+                         << " " << value << " to " << dataTypeToLLVM(to) << " ; Float Truncate\n";
+            }
+
+            LOG_TRACE("Generated float conversion: {}", result_temp);
+            return result_temp;
+        }
 
         // Pointer to pointer conversions (bitcast)
         if (isPointerType(from) && isPointerType(to))
@@ -1554,23 +1585,23 @@ namespace Delta
 
     void Assembler::registerBuiltinFunctions()
     {
-        Function exit_func("exit", {DataType::INT32}, DataType::VOID, "exit", true);
+        Function exit_func("exit", {DataType::INT32}, DataType::VOID, "exit", true, false);
         m_functions.push_back(exit_func);
 
-        Function printf_func("printf", {DataType::INT8_PTR}, DataType::INT32, "printf", true);
+        // Printf is variadic - minimum one parameter (format string)
+        Function printf_func("printf", {DataType::INT8_PTR}, DataType::INT32, "printf", true, true);
         m_functions.push_back(printf_func);
 
-        Function malloc_func("malloc", {DataType::INT64}, DataType::VOID_PTR, "malloc", true);
+        Function malloc_func("malloc", {DataType::INT64}, DataType::VOID_PTR, "malloc", true, false);
         m_functions.push_back(malloc_func);
 
-        Function free_func("free", {DataType::VOID_PTR}, DataType::VOID, "free", true);
+        Function free_func("free", {DataType::VOID_PTR}, DataType::VOID, "free", true, false);
         m_functions.push_back(free_func);
 
-        // String functions
-        Function strlen_func("strlen", {DataType::INT8_PTR}, DataType::INT64, "strlen", true);
+        Function strlen_func("strlen", {DataType::INT8_PTR}, DataType::INT64, "strlen", true, false);
         m_functions.push_back(strlen_func);
 
-        Function strcpy_func("strcpy", {DataType::INT8_PTR, DataType::INT8_PTR}, DataType::INT8_PTR, "strcpy", true);
+        Function strcpy_func("strcpy", {DataType::INT8_PTR, DataType::INT8_PTR}, DataType::INT8_PTR, "strcpy", true, false);
         m_functions.push_back(strcpy_func);
     }
 
@@ -1593,16 +1624,26 @@ namespace Delta
             exit(EXIT_FAILURE);
         }
 
-        if (arguments.size() != func->parameter_types.size())
+        if (func->is_variadic)
         {
-            LOG_ERROR("Function {} expects {} arguments but got {}",
-                      func_name, func->parameter_types.size(), arguments.size());
-            exit(EXIT_FAILURE);
+            if (arguments.size() < func->parameter_types.size())
+            {
+                LOG_ERROR("Variadic function {} requires at least {} arguments but got {}",
+                          func_name, func->parameter_types.size(), arguments.size());
+                exit(EXIT_FAILURE);
+            }
+        }
+        else
+        {
+            if (arguments.size() != func->parameter_types.size())
+            {
+                LOG_ERROR("Function {} expects {} arguments but got {}",
+                          func_name, func->parameter_types.size(), arguments.size());
+                exit(EXIT_FAILURE);
+            }
         }
 
-        // With automatic type conversion, we don't need strict type validation
-        // Just ensure no void types are passed where they shouldn't be
-        for (size_t i = 0; i < arguments.size(); i++)
+        for (size_t i = 0; i < func->parameter_types.size(); i++)
         {
             DataType argType = inferExpressionType(arguments[i]);
             DataType expectedType = func->parameter_types[i];
@@ -1613,6 +1654,48 @@ namespace Delta
                           i + 1, func_name);
                 exit(EXIT_FAILURE);
             }
+        }
+
+        if (func->is_variadic)
+        {
+            for (size_t i = func->parameter_types.size(); i < arguments.size(); i++)
+            {
+                DataType argType = inferExpressionType(arguments[i]);
+                if (argType == DataType::VOID)
+                {
+                    LOG_ERROR("Void type not allowed in variadic argument {} to function {}",
+                              i + 1, func_name);
+                    exit(EXIT_FAILURE);
+                }
+            }
+        }
+    }
+
+    std::string Assembler::applyDefaultPromotions(const std::string &value, DataType &type)
+    {
+        DataType promoted_type = getPromotedType(type);
+
+        if (type != promoted_type)
+        {
+            std::string converted_value = generateTypeConversion(value, type, promoted_type);
+            type = promoted_type;
+            return converted_value;
+        }
+
+        return value;
+    }
+
+    DataType Assembler::getPromotedType(DataType type)
+    {
+        switch (type)
+        {
+        case DataType::INT8:
+        case DataType::INT16:
+            return DataType::INT32;
+        case DataType::FLOAT32:
+            return DataType::FLOAT64;
+        default:
+            return type;
         }
     }
 
@@ -1673,6 +1756,13 @@ namespace Delta
                     if (i > 0)
                         m_output << ", ";
                     m_output << dataTypeToLLVM(func->parameter_types[i]);
+                }
+
+                if (func->is_variadic)
+                {
+                    if (!func->parameter_types.empty())
+                        m_output << ", ";
+                    m_output << "...";
                 }
 
                 m_output << ")\n";
