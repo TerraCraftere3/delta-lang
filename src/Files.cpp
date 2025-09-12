@@ -105,3 +105,15 @@ std::string Delta::Files::joinPaths(const std::string &path1,
 {
     return (std::filesystem::path(path1) / path2).string();
 }
+
+std::string Delta::Files::getAbsolutePath(const std::string &path)
+{
+    try
+    {
+        return std::filesystem::weakly_canonical(std::filesystem::path(path)).string();
+    }
+    catch (const std::filesystem::filesystem_error &e)
+    {
+        return path;
+    }
+}

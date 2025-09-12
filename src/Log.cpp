@@ -1,12 +1,30 @@
 #include "Log.h"
 
-void Delta::Log::init()
+namespace Delta
 {
-    spdlog::set_pattern("[%Y-%m-%d %H:%M:%S] [%^%l%$] %v");
-    spdlog::set_level(spdlog::level::info);
-}
+    std::shared_ptr<spdlog::logger> Log::s_Logger = nullptr;
 
-void Delta::Log::setVerbose(bool verbose)
-{
-    spdlog::set_level(verbose ? spdlog::level::trace : spdlog::level::info);
+    void Log::init()
+    {
+        auto console_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
+        console_sink->set_pattern("[%T] [%^%l%$] %v"); // [12:34:56] [INFO] message
+
+        auto file_sink = std::make_shared<spdlog::sinks::basic_file_sink_mt>("logs.txt", true);
+        file_sink->set_pattern("[%Y-%m-%d %T] [%l] %v");
+
+        std::vector<spdlog::sink_ptr> sinks{console_sink, file_sink};
+        s_Logger = std::make_shared<spdlog::logger>("DeltaLogger", sinks.begin(), sinks.end());
+
+        s_Logger->set_level(spdlog::level::info);
+        s_Logger->flush_on(spdlog::level::trace);
+        spdlog::register_logger(s_Logger);
+    }
+
+    void Log::setVerbose(bool verbose)
+    {
+        if (verbose)
+            s_Logger->set_level(spdlog::level::trace); // more detail
+        else
+            s_Logger->set_level(spdlog::level::info); // default
+    }
 }

@@ -12,6 +12,7 @@ _deps
 CMakeUserPresets.json
 build
 runtime/delta.*
+runtime/*.pdb
 example/int
 example/*.exe
 example/*.lib

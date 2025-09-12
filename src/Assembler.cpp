@@ -38,7 +38,8 @@ namespace Delta
         for (const NodeFunctionDeclaration *func : m_program.functions)
         {
             std::string return_type = dataTypeToLLVM(func->return_type);
-            m_output << "declare " << return_type << " @" << func->function_name.value.value() << "(";
+            m_output << "declare " << return_type << " @"
+                     << func->function_name.value.value() << "(";
 
             for (size_t i = 0; i < func->parameters.size(); i++)
             {
@@ -1583,36 +1584,34 @@ namespace Delta
         return (it != m_functions.end()) ? &(*it) : nullptr;
     }
 
-    void Assembler::registerBuiltinFunctions()
+    void Assembler::addFunction(const std::string &name,
+                                const std::vector<DataType> &param_types,
+                                DataType ret_type, bool external,
+                                bool variadic)
     {
-        Function exit_func("exit", {DataType::INT32}, DataType::VOID, "exit", true, false);
-        m_functions.push_back(exit_func);
+        Function func(name, param_types, ret_type, name, external, variadic);
+        m_functions.emplace_back(func);
+        m_used_external_functions.insert(name);
+    }
 
-        // Printf is variadic - minimum one parameter (format string)
-        Function printf_func("printf", {DataType::INT8_PTR}, DataType::INT32, "printf", true, true);
-        m_functions.push_back(printf_func);
+    void
+    Assembler::registerBuiltinFunctions()
+    {
+        // ---- C Standard ----
+        addFunction("exit", {DataType::INT32}, DataType::VOID, true, false);
+        addFunction("printf", {DataType::INT8_PTR}, DataType::INT32, true, true);
+        addFunction("malloc", {DataType::INT64}, DataType::VOID_PTR, true, false);
+        addFunction("free", {DataType::VOID_PTR}, DataType::VOID, true, false);
+        addFunction("strlen", {DataType::INT8_PTR}, DataType::INT64, true, false);
+        addFunction("strcpy", {DataType::INT8_PTR, DataType::INT8_PTR}, DataType::INT8_PTR, true, false);
 
-        Function malloc_func("malloc", {DataType::INT64}, DataType::VOID_PTR, "malloc", true, false);
-        m_functions.push_back(malloc_func);
-
-        Function free_func("free", {DataType::VOID_PTR}, DataType::VOID, "free", true, false);
-        m_functions.push_back(free_func);
-
-        Function strlen_func("strlen", {DataType::INT8_PTR}, DataType::INT64, "strlen", true, false);
-        m_functions.push_back(strlen_func);
-
-        Function strcpy_func("strcpy", {DataType::INT8_PTR, DataType::INT8_PTR}, DataType::INT8_PTR, "strcpy", true, false);
-        m_functions.push_back(strcpy_func);
+        // ---- Delta Standard ----
+        addFunction("helloWorld", {}, DataType::VOID, true, false);
     }
 
     void Assembler::registerExternalFunctions()
     {
-        m_used_external_functions.insert("exit");
-        m_used_external_functions.insert("printf");
-        m_used_external_functions.insert("malloc");
-        m_used_external_functions.insert("free");
-        m_used_external_functions.insert("strlen");
-        m_used_external_functions.insert("strcpy");
+        // None for now
     }
 
     void Assembler::validateFunctionCall(const std::string &func_name, const std::vector<NodeExpression *> &arguments)
