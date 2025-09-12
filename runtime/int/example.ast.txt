@@ -1,7 +1,7 @@
 - Node Program
 	- Functions
 		- Define "int32 main()"
-			- Let "int8* str"
+			- Let const "int8* str"
 				- [struct Delta::NodeTermStringLiteral * __ptr64] NODE NOT IMPLEMENTED
 			- Let "int32 charCount"
 				- Call "printf"

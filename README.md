@@ -1,5 +1,11 @@
-# delta-lang [![CMake](https://github.com/TerraCraftere3/delta-lang/actions/workflows/cmake_windows.yml/badge.svg)](https://github.com/TerraCraftere3/delta-lang/actions/workflows/cmake_windows.yml)
-The Delta Programming Language
+# delta-lang
+[![CMake](https://github.com/TerraCraftere3/delta-lang/actions/workflows/cmake_windows.yml/badge.svg)](https://github.com/TerraCraftere3/delta-lang/actions/workflows/cmake_windows.yml) 
+![Top language](https://img.shields.io/github/languages/top/TerraCraftere3/delta-lang?color=yellow&logo=cplusplus)
+![Language count](https://img.shields.io/github/languages/count/TerraCraftere3/delta-lang?color=blue)
+![Repo size](https://img.shields.io/github/repo-size/TerraCraftere3/delta-lang?color=red&logo=gitlab)
+![GitHub License](https://img.shields.io/github/license/TerraCraftere3/delta-lang)
+
+Delta is a C Style Programming Language that is compiled to LLVM Intermediate Representation
 
 ## How to Build
 - Clone the repository using `git clone --recursive https://github.com/TerraCraftere3/delta-lang` into any folder you want
@@ -44,7 +50,7 @@ You cannot shadow variables that are outside scopes
 ```
 if(statement_a){
     ...
-}else if(statement_b){
+}elif(statement_b){
     ...
 }else{
     exit(1);
@@ -92,6 +98,31 @@ int a = 10;
 float b = (float) a;
 ```
 
+### Pointer
+```
+void modifyInt(int* ptr, int newValue) {
+    *ptr = newValue;
+}
+
+int x = 10;
+modifyInt(&x, 42); // sets the value of x to 42
+```
+
+### Strings
+```
+const char* str = "Hello World\n";
+printf(str);
+```
+
+### Arrays
+```
+int* array = malloc(8 * 4); // Allocates an array of 8 * int32
+array[0] = 4;
+array[1] = 16;
+...
+array[7] = 3;
+```
+
 ### Main Function
 
 ```
@@ -103,42 +134,13 @@ The return value of main() is used as the exit code of the program
 
 ### External Functions
 ```
-// Kernel32
-void ExitProcess(int);
-long GetStdHandle(int);
-int WriteConsoleA(long, long, int, long, long);
-int ReadConsoleA(long, long, int, long, long);
-int GetConsoleMode(long, long);
-int SetConsoleMode(long, int);
-int CloseHandle(long);
-long CreateFileA(long, int, int, long, int, int, long);
-int ReadFile(long, long, int, long, long);
-int WriteFile(long, long, int, long, long);
-int GetLastError(void);
-int FormatMessageA(int, long, int, int, long, int, long);
-
-// Memory management
-long VirtualAlloc(long, long, int, int);
-int VirtualFree(long, long, int);
-long HeapAlloc(long, int, long);
-int HeapFree(long, int, long);
-long GetProcessHeap(void);
-
-// Time functions
-void GetSystemTime(long);
-void GetLocalTime(long);
-void Sleep(int);
-
 // MSVCRT (C runtime)
-int printf(long);   // Variadic, simplified
-int scanf(long);    // Variadic, simplified
-long malloc(long);
-void free(long);
+void exit(int)
+int printf(char*);
+void* malloc(long);
+void free(void*);
 long strlen(long);
 long strcpy(long, long);
-int strcmp(long, long);
-long memcpy(long, long, long);
-long memset(long, int, long);
 ```
 
 ## Grammar
@@ -164,6 +166,10 @@ $$
     [\text{const}|\epsilon]\space[\text{Type}] \space\text{Identifier} = [\text{Expr}]; & \textit{Let Variable}
     \\
     \text{Identifier} = [\text{Expr}]; & \textit{Assign to Variable}
+    \\
+    *[\text{Expr}] = [\text{Expr}] & \textit{Assign to Pointer}
+    \\
+    [\text{Expr}][[\text{Expr}]] = [\text{Expr}] & \textit{Assign to Array}
     \\
     if([\text{Expr}])[\text{Scope}][\text{IfPred}]
     \\
@@ -215,6 +221,8 @@ $$
     \\
     \text{Double Literal}
     \\
+    \text{String Literal}  & \textit{Equals to const char*}
+    \\
     \text{Identifier} & \textit{Variable}
     \\
     [\text{Expr}]
@@ -248,6 +256,18 @@ $$
     \text{float32} & | & \text{float} & \textit{4 Byte Float}
     \\
     \text{float64} & | & \text{double} & \textit{8 Byte Float}
+    \\
+    \text{int8*} & | & \text{char*} & \textit{Can be used as String}
+    \\
+    \text{int16*} & | & \text{short*}
+    \\
+    \text{int32*} & | & \text{int*}
+    \\
+    \text{int64*} & | & \text{long*}
+    \\
+    \text{float32*} & | & \text{float*}
+    \\
+    \text{float64*} & | & \text{double*}
 \end{cases}
 \end{align}
 $$
