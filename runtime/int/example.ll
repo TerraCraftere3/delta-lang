@@ -5,6 +5,8 @@
 target datalayout = "e-m:w-p270:32:32-p271:32:32-p272:64:64-i64:64-f80:128-n8:16:32:64-S128"
 target triple = "x86_64-pc-windows-msvc"
 
+@str.0 = private unnamed_addr constant [13 x i8] c"Hello World\0A\00"
+
 ; External function declarations
 declare void @exit(i32)
 declare void @free(i8*)
@@ -16,83 +18,14 @@ declare i64 @strlen(i8*)
 define i32 @main() {
 entry:
   %t0 = alloca i8*, align 8; Allocate variable "str"
-  %t1 = sext i32 128 to i64 ; Int Sign Extend
-  %t2 = call i8* @malloc(i64 %t1) ; Call malloc()
-  store i8* %t2, i8** %t0, align 8; Set variable "str"
+  %t1 = getelementptr inbounds [13 x i8], [13 x i8]* @str.0, i64 0, i64 0 ; String literal
+  store i8* %t1, i8** %t0, align 8; Set variable "str"
+  %t2 = alloca i32, align 4; Allocate variable "charCount"
   %t3 = load i8*, i8** %t0, align 8 ; Use Variable str
-  %t4 = sext i32 0 to i64 ; Int Sign Extend
-  %t5 = trunc i32 72 to i8 ; Int Truncate
-  %t6 = getelementptr i8, i8* %t3, i64 %t4 ; Array index
-  store i8 %t5, i8* %t6, align 1 ; Store array element
-  %t7 = load i8*, i8** %t0, align 8 ; Use Variable str
-  %t8 = sext i32 1 to i64 ; Int Sign Extend
-  %t9 = trunc i32 101 to i8 ; Int Truncate
-  %t10 = getelementptr i8, i8* %t7, i64 %t8 ; Array index
-  store i8 %t9, i8* %t10, align 1 ; Store array element
-  %t11 = load i8*, i8** %t0, align 8 ; Use Variable str
-  %t12 = sext i32 2 to i64 ; Int Sign Extend
-  %t13 = trunc i32 108 to i8 ; Int Truncate
-  %t14 = getelementptr i8, i8* %t11, i64 %t12 ; Array index
-  store i8 %t13, i8* %t14, align 1 ; Store array element
-  %t15 = load i8*, i8** %t0, align 8 ; Use Variable str
-  %t16 = sext i32 3 to i64 ; Int Sign Extend
-  %t17 = trunc i32 108 to i8 ; Int Truncate
-  %t18 = getelementptr i8, i8* %t15, i64 %t16 ; Array index
-  store i8 %t17, i8* %t18, align 1 ; Store array element
-  %t19 = load i8*, i8** %t0, align 8 ; Use Variable str
-  %t20 = sext i32 4 to i64 ; Int Sign Extend
-  %t21 = trunc i32 111 to i8 ; Int Truncate
-  %t22 = getelementptr i8, i8* %t19, i64 %t20 ; Array index
-  store i8 %t21, i8* %t22, align 1 ; Store array element
-  %t23 = load i8*, i8** %t0, align 8 ; Use Variable str
-  %t24 = sext i32 5 to i64 ; Int Sign Extend
-  %t25 = trunc i32 32 to i8 ; Int Truncate
-  %t26 = getelementptr i8, i8* %t23, i64 %t24 ; Array index
-  store i8 %t25, i8* %t26, align 1 ; Store array element
-  %t27 = load i8*, i8** %t0, align 8 ; Use Variable str
-  %t28 = sext i32 6 to i64 ; Int Sign Extend
-  %t29 = trunc i32 87 to i8 ; Int Truncate
-  %t30 = getelementptr i8, i8* %t27, i64 %t28 ; Array index
-  store i8 %t29, i8* %t30, align 1 ; Store array element
-  %t31 = load i8*, i8** %t0, align 8 ; Use Variable str
-  %t32 = sext i32 7 to i64 ; Int Sign Extend
-  %t33 = trunc i32 111 to i8 ; Int Truncate
-  %t34 = getelementptr i8, i8* %t31, i64 %t32 ; Array index
-  store i8 %t33, i8* %t34, align 1 ; Store array element
-  %t35 = load i8*, i8** %t0, align 8 ; Use Variable str
-  %t36 = sext i32 8 to i64 ; Int Sign Extend
-  %t37 = trunc i32 114 to i8 ; Int Truncate
-  %t38 = getelementptr i8, i8* %t35, i64 %t36 ; Array index
-  store i8 %t37, i8* %t38, align 1 ; Store array element
-  %t39 = load i8*, i8** %t0, align 8 ; Use Variable str
-  %t40 = sext i32 9 to i64 ; Int Sign Extend
-  %t41 = trunc i32 108 to i8 ; Int Truncate
-  %t42 = getelementptr i8, i8* %t39, i64 %t40 ; Array index
-  store i8 %t41, i8* %t42, align 1 ; Store array element
-  %t43 = load i8*, i8** %t0, align 8 ; Use Variable str
-  %t44 = sext i32 10 to i64 ; Int Sign Extend
-  %t45 = trunc i32 100 to i8 ; Int Truncate
-  %t46 = getelementptr i8, i8* %t43, i64 %t44 ; Array index
-  store i8 %t45, i8* %t46, align 1 ; Store array element
-  %t47 = load i8*, i8** %t0, align 8 ; Use Variable str
-  %t48 = sext i32 11 to i64 ; Int Sign Extend
-  %t49 = trunc i32 10 to i8 ; Int Truncate
-  %t50 = getelementptr i8, i8* %t47, i64 %t48 ; Array index
-  store i8 %t49, i8* %t50, align 1 ; Store array element
-  %t51 = load i8*, i8** %t0, align 8 ; Use Variable str
-  %t52 = sext i32 12 to i64 ; Int Sign Extend
-  %t53 = trunc i32 0 to i8 ; Int Truncate
-  %t54 = getelementptr i8, i8* %t51, i64 %t52 ; Array index
-  store i8 %t53, i8* %t54, align 1 ; Store array element
-  %t55 = alloca i32, align 4; Allocate variable "charCount"
-  %t56 = load i8*, i8** %t0, align 8 ; Use Variable str
-  %t57 = call i32 @printf(i8* %t56) ; Call printf()
-  store i32 %t57, i32* %t55, align 4; Set variable "charCount"
-  %t58 = load i8*, i8** %t0, align 8 ; Use Variable str
-  %t59 = bitcast i8* %t58 to i8* ; Pointer cast
-  call void @free(i8* %t59) ; Call free()
-  %t60 = load i32, i32* %t55, align 4 ; Use Variable charCount
-  ret i32 %t60 ; Return
+  %t4 = call i32 @printf(i8* %t3) ; Call printf()
+  store i32 %t4, i32* %t2, align 4; Set variable "charCount"
+  %t5 = load i32, i32* %t2, align 4 ; Use Variable charCount
+  ret i32 %t5 ; Return
   ret i32 0
 }
 

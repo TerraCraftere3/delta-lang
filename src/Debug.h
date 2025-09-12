@@ -32,6 +32,7 @@ namespace Delta
     std::string nodeDebugPrint(NodeExpressionTerm *node, int indention);
     std::string nodeDebugPrint(NodeExpression *node, int indention);
     // Statements
+    std::string nodeDebugPrint(NodeStatementArrayAssign *node, int indention);
     std::string nodeDebugPrint(NodeStatementPointerAssign *node, int indention);
     std::string nodeDebugPrint(NodeStatementExit *node, int indention);
     std::string nodeDebugPrint(NodeStatementLet *node, int indention);

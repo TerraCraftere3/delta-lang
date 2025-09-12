@@ -1,21 +1,7 @@
 int main() {
-    char* str = malloc(128);
-    str[0] = 'H';
-    str[1] = 'e';
-    str[2] = 'l';
-    str[3] = 'l';
-    str[4] = 'o';
-    str[5] = 32; // space
-    str[6] = 'W';
-    str[7] = 'o';
-    str[8] = 'r';
-    str[9] = 'l';
-    str[10] = 'd';
-    str[11] = 10; // newline
-    str[12] = 0;  // null terminator
+    char* str = "Hello World\n";
 
     int charCount = printf(str);
-    free(str);
 
     return charCount;
 }

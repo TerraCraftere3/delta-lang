@@ -16,6 +16,7 @@ namespace Delta
         int_literal,    // integer like 10, etc
         float_literal,  // floats (32bit) like 3.14f, etc
         double_literal, // doubles (64bit) like 3.14, etc
+        string_literal, // strings like "hello world"
         apostrophe,     // '
         quotes,         // "
         semicolon,      // ;

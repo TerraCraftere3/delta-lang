@@ -154,13 +154,32 @@ namespace Delta
         return output;
     }
 
-    std::string nodeDebugPrint(NodeStatementPointerAssign *node, int indention)
+    std::string nodeDebugPrint(NodeStatementArrayAssign *node, int indention)
     {
         std::stringstream output;
         output << Indent(indention) << DEBUG_NODE_PREFIX << "Pointer Assign\n";
-        output << Indent(indention + 1) << DEBUG_NODE_PREFIX << "Pointer Expression\n";
+        output << Indent(indention + 1) << DEBUG_NODE_PREFIX
+               << "Array Expression\n";
+        output << nodeDebugPrint(node->array_expr, indention + 2);
+        output << Indent(indention + 1) << DEBUG_NODE_PREFIX
+               << "Index Expression\n";
+        output << nodeDebugPrint(node->index_expr, indention + 2);
+        output << Indent(indention + 1) << DEBUG_NODE_PREFIX
+               << "Value Expression\n";
+        output << nodeDebugPrint(node->value_expr, indention + 2);
+        return output.str();
+    }
+
+    std::string nodeDebugPrint(NodeStatementPointerAssign *node,
+                               int indention)
+    {
+        std::stringstream output;
+        output << Indent(indention) << DEBUG_NODE_PREFIX << "Pointer Assign\n";
+        output << Indent(indention + 1) << DEBUG_NODE_PREFIX
+               << "Pointer Expression\n";
         output << nodeDebugPrint(node->ptr_expr, indention + 2);
-        output << Indent(indention + 1) << DEBUG_NODE_PREFIX << "Value Expression\n";
+        output << Indent(indention + 1) << DEBUG_NODE_PREFIX
+               << "Value Expression\n";
         output << nodeDebugPrint(node->value_expr, indention + 2);
         return output.str();
     }

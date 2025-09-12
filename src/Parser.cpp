@@ -579,6 +579,15 @@ namespace Delta
             node_term->var = term_double_lit;
             return node_term;
         }
+        // String literal: "Hello World"
+        else if (auto string_lit = try_consume(TokenType::string_literal))
+        {
+            auto term_string_lit = m_allocator.alloc<NodeTermStringLiteral>();
+            term_string_lit->string_literal = string_lit.value();
+            auto node_term = m_allocator.alloc<NodeExpressionTerm>();
+            node_term->var = term_string_lit;
+            return node_term;
+        }
         // Char literal: 'A'
         else if (peek().has_value() && peek().value().type == TokenType::apostrophe &&
                  peek(2).has_value() && peek(2).value().type == TokenType::identifier &&

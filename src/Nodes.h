@@ -26,6 +26,12 @@ namespace Delta
         const char *id = "Integer Literal";
     };
 
+    struct NodeTermStringLiteral
+    {
+        Token string_literal;
+        const char *id = "String Literal";
+    };
+
     struct NodeTermIdentifier
     {
         Token ident;
@@ -165,6 +171,7 @@ namespace Delta
             NodeTermIntegerLiteral *,
             NodeTermFloatLiteral *,
             NodeTermDoubleLiteral *,
+            NodeTermStringLiteral *,
             NodeTermIdentifier *,
             NodeTermParen *,
             NodeTermFunctionCall *,

@@ -66,6 +66,7 @@ namespace Delta
         void generateScope(const NodeScope *scope);
         void generateIfPred(const NodeIfPred *pred, const std::string &merge_label);
         void generateStatement(const NodeStatement *statement);
+        void generateStringLiterals();
         std::string generateFunctionCall(const NodeTermFunctionCall *func_call);
         void generateFunctionDeclaration(const NodeFunctionDeclaration *func_decl);
 
@@ -76,7 +77,7 @@ namespace Delta
         std::string dataTypeToLLVM(DataType type); // Convert DataType to LLVM IR type
         void generateDefaultValue(DataType type);  // Generate default value for type
 
-        // NEW: Type conversion methods
+        // Type conversion methods
         std::string generateTypeConversion(const std::string &value, DataType from, DataType to);
         std::string convertToBoolean(const std::string &value, DataType type);
         DataType getCommonType(DataType left, DataType right);
@@ -84,6 +85,15 @@ namespace Delta
         // Module structure
         void declareFunctions();
         void generateExternDeclarations();
+
+        // Strings
+        void collectStringLiterals();
+        void collectStringLiteralsFromScope(const NodeScope *scope);
+        void collectStringLiteralsFromStatement(const NodeStatement *statement);
+        void collectStringLiteralsFromExpression(const NodeExpression *expression);
+        void collectStringLiteralsFromTerm(const NodeExpressionTerm *term);
+        void collectStringLiteralsFromBinaryExpression(const NodeExpressionBinary *bin_expr);
+        void collectStringLiteralsFromIfPred(const NodeIfPred *pred);
 
         // Scope and function management (simplified for LLVM)
         void begin_scope();
@@ -103,6 +113,8 @@ namespace Delta
         void registerExternalFunctions();
         void validateFunctionCall(const std::string &func_name, const std::vector<NodeExpression *> &arguments);
 
+        std::string escapeString(const std::string &str);
+
     private:
         const NodeProgram m_program;
         std::stringstream m_output;
@@ -115,6 +127,7 @@ namespace Delta
         std::vector<size_t> m_scopes{};
         std::vector<Function> m_functions{};
         std::set<std::string> m_used_external_functions{}; // Track which external functions are used
+        std::vector<std::string> m_string_literals;
 
         // Function context
         std::string m_current_function = "";

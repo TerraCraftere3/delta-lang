@@ -18,10 +18,8 @@ namespace Delta
         m_output << "target datalayout = \"e-m:w-p270:32:32-p271:32:32-p272:64:64-i64:64-f80:128-n8:16:32:64-S128\"\n";
         m_output << "target triple = \"x86_64-pc-windows-msvc\"\n\n";
 
-        // Forward declare all functions
-        // declareFunctions();
-
-        // Generate external function declarations
+        collectStringLiterals();
+        generateStringLiterals();
         generateExternDeclarations();
 
         // Generate all function definitions
@@ -191,6 +189,36 @@ namespace Delta
             std::string operator()(const NodeTermDoubleLiteral *term_double_lit) const
             {
                 return float64ToLLVM(term_double_lit->double_literal.value.value());
+            }
+
+            std::string operator()(const NodeTermStringLiteral *term_str_lit) const
+            {
+                std::string str_value = term_str_lit->string_literal.value.value();
+
+                // Find or add string to global list
+                auto it = std::find(gen->m_string_literals.begin(),
+                                    gen->m_string_literals.end(), str_value);
+                size_t index;
+
+                if (it == gen->m_string_literals.end())
+                {
+                    index = gen->m_string_literals.size();
+                    gen->m_string_literals.push_back(str_value);
+                }
+                else
+                {
+                    index = std::distance(gen->m_string_literals.begin(), it);
+                }
+
+                // Generate getelementptr to get i8* pointer to string
+                std::string result_temp = gen->getNextTemp();
+                size_t length = str_value.length() + 1;
+
+                gen->m_output << "  " << result_temp << " = getelementptr inbounds ["
+                              << length << " x i8], [" << length << " x i8]* @str."
+                              << index << ", i64 0, i64 0 ; String literal\n";
+
+                return result_temp;
             }
 
             std::string operator()(const NodeTermIdentifier *term_ident) const
@@ -995,6 +1023,21 @@ namespace Delta
         std::visit(visitor, statement->var);
     }
 
+    void Assembler::generateStringLiterals()
+    {
+        for (size_t i = 0; i < m_string_literals.size(); i++)
+        {
+            const std::string &str = m_string_literals[i];
+
+            std::string escaped = escapeString(str);
+            size_t length = str.length() + 1; // +1 for null terminator
+
+            m_output << "@str." << i << " = private unnamed_addr constant ["
+                     << length << " x i8] c\"" << escaped << "\\00\"\n";
+        }
+        m_output << "\n";
+    }
+
     // Helper methods
 
     std::string
@@ -1367,6 +1410,11 @@ namespace Delta
                 return getPointeeType(array_type);
             }
 
+            DataType operator()(const NodeTermStringLiteral *term_str_lit) const
+            {
+                return DataType::INT8_PTR;
+            }
+
             DataType operator()(const NodeTermIntegerLiteral *term_int_lit) const
             {
                 return DataType::INT32;
@@ -1568,6 +1616,46 @@ namespace Delta
         }
     }
 
+    std::string Assembler::escapeString(const std::string &str)
+    {
+        std::string result;
+        for (char c : str)
+        {
+            switch (c)
+            {
+            case '\n':
+                result += "\\0A";
+                break;
+            case '\t':
+                result += "\\09";
+                break;
+            case '\r':
+                result += "\\0D";
+                break;
+            case '\\':
+                result += "\\\\";
+                break;
+            case '"':
+                result += "\\22";
+                break;
+            default:
+                if (c >= 32 && c <= 126)
+                {
+                    result += c;
+                }
+                else
+                {
+                    result += "\\";
+                    result += std::to_string((unsigned char)c / 64);
+                    result += std::to_string(((unsigned char)c / 8) % 8);
+                    result += std::to_string((unsigned char)c % 8);
+                }
+                break;
+            }
+        }
+        return result;
+    }
+
     void Assembler::generateExternDeclarations()
     {
         m_output << "; External function declarations\n";
@@ -1591,6 +1679,268 @@ namespace Delta
             }
         }
         m_output << "\n";
+    }
+
+    void Assembler::collectStringLiterals()
+    {
+        for (const NodeFunctionDeclaration *func : m_program.functions)
+        {
+            collectStringLiteralsFromScope(func->body);
+        }
+    }
+
+    void Assembler::collectStringLiteralsFromScope(const NodeScope *scope)
+    {
+        for (const NodeStatement *stmt : scope->statements)
+        {
+            collectStringLiteralsFromStatement(stmt);
+        }
+    }
+
+    void Assembler::collectStringLiteralsFromStatement(const NodeStatement *statement)
+    {
+        struct StringCollectionStatementVisitor
+        {
+            Assembler *gen;
+            StringCollectionStatementVisitor(Assembler *gen) : gen(gen) {}
+
+            void operator()(const NodeExpression *expression)
+            {
+                gen->collectStringLiteralsFromExpression(expression);
+            }
+
+            void operator()(const NodeStatementExit *statement_exit)
+            {
+                gen->collectStringLiteralsFromExpression(statement_exit->expression);
+            }
+
+            void operator()(const NodeStatementLet *statement_let)
+            {
+                gen->collectStringLiteralsFromExpression(statement_let->expression);
+            }
+
+            void operator()(const NodeStatementAssign *assign)
+            {
+                gen->collectStringLiteralsFromExpression(assign->expression);
+            }
+
+            void operator()(const NodeScope *scope)
+            {
+                gen->collectStringLiteralsFromScope(scope);
+            }
+
+            void operator()(const NodeStatementIf *statement_if)
+            {
+                gen->collectStringLiteralsFromExpression(statement_if->expr);
+                gen->collectStringLiteralsFromScope(statement_if->scope);
+
+                if (statement_if->pred.has_value())
+                {
+                    gen->collectStringLiteralsFromIfPred(statement_if->pred.value());
+                }
+            }
+
+            void operator()(const NodeStatementReturn *statement_return)
+            {
+                if (statement_return->expression)
+                {
+                    gen->collectStringLiteralsFromExpression(statement_return->expression);
+                }
+            }
+
+            void operator()(const NodeStatementPointerAssign *ptr_assign)
+            {
+                gen->collectStringLiteralsFromExpression(ptr_assign->ptr_expr);
+                gen->collectStringLiteralsFromExpression(ptr_assign->value_expr);
+            }
+
+            void operator()(const NodeStatementArrayAssign *array_assign)
+            {
+                gen->collectStringLiteralsFromExpression(array_assign->array_expr);
+                gen->collectStringLiteralsFromExpression(array_assign->index_expr);
+                gen->collectStringLiteralsFromExpression(array_assign->value_expr);
+            }
+        };
+
+        StringCollectionStatementVisitor visitor(this);
+        std::visit(visitor, statement->var);
+    }
+
+    void Assembler::collectStringLiteralsFromExpression(const NodeExpression *expression)
+    {
+        struct StringCollectionExpressionVisitor
+        {
+            Assembler *gen;
+            StringCollectionExpressionVisitor(Assembler *gen) : gen(gen) {}
+
+            void operator()(const NodeExpressionTerm *expression_term)
+            {
+                gen->collectStringLiteralsFromTerm(expression_term);
+            }
+
+            void operator()(const NodeExpressionBinary *expression_binary)
+            {
+                gen->collectStringLiteralsFromBinaryExpression(expression_binary);
+            }
+        };
+
+        StringCollectionExpressionVisitor visitor(this);
+        std::visit(visitor, expression->var);
+    }
+
+    void Assembler::collectStringLiteralsFromTerm(const NodeExpressionTerm *term)
+    {
+        struct StringCollectionTermVisitor
+        {
+            Assembler *gen;
+            StringCollectionTermVisitor(Assembler *gen) : gen(gen) {}
+
+            void operator()(const NodeTermStringLiteral *term_str_lit)
+            {
+                std::string str_value = term_str_lit->string_literal.value.value();
+
+                // Add to collection if not already present
+                auto it = std::find(gen->m_string_literals.begin(),
+                                    gen->m_string_literals.end(), str_value);
+                if (it == gen->m_string_literals.end())
+                {
+                    gen->m_string_literals.push_back(str_value);
+                }
+            }
+
+            void operator()(const NodeTermIntegerLiteral *) { /* No strings here */ }
+            void operator()(const NodeTermFloatLiteral *) { /* No strings here */ }
+            void operator()(const NodeTermDoubleLiteral *) { /* No strings here */ }
+            void operator()(const NodeTermIdentifier *) { /* No strings here */ }
+
+            void operator()(const NodeTermParen *term_paren)
+            {
+                gen->collectStringLiteralsFromExpression(term_paren->expr);
+            }
+
+            void operator()(const NodeTermFunctionCall *func_call)
+            {
+                for (const NodeExpression *arg : func_call->arguments)
+                {
+                    gen->collectStringLiteralsFromExpression(arg);
+                }
+            }
+
+            void operator()(const NodeTermCast *term_cast)
+            {
+                gen->collectStringLiteralsFromExpression(term_cast->expr);
+            }
+
+            void operator()(const NodeTermAddressOf *) { /* No strings here */ }
+
+            void operator()(const NodeTermDereference *term_deref)
+            {
+                gen->collectStringLiteralsFromExpression(term_deref->expr);
+            }
+
+            void operator()(const NodeTermArrayAccess *array_access)
+            {
+                gen->collectStringLiteralsFromExpression(array_access->array_expr);
+                gen->collectStringLiteralsFromExpression(array_access->index_expr);
+            }
+        };
+
+        StringCollectionTermVisitor visitor(this);
+        std::visit(visitor, term->var);
+    }
+
+    void Assembler::collectStringLiteralsFromBinaryExpression(const NodeExpressionBinary *bin_expr)
+    {
+        struct StringCollectionBinaryVisitor
+        {
+            Assembler *gen;
+            StringCollectionBinaryVisitor(Assembler *gen) : gen(gen) {}
+
+            void operator()(const NodeExpressionBinaryAddition *add)
+            {
+                gen->collectStringLiteralsFromExpression(add->left);
+                gen->collectStringLiteralsFromExpression(add->right);
+            }
+
+            void operator()(const NodeExpressionBinarySubtraction *sub)
+            {
+                gen->collectStringLiteralsFromExpression(sub->left);
+                gen->collectStringLiteralsFromExpression(sub->right);
+            }
+
+            void operator()(const NodeExpressionBinaryMultiplication *mul)
+            {
+                gen->collectStringLiteralsFromExpression(mul->left);
+                gen->collectStringLiteralsFromExpression(mul->right);
+            }
+
+            void operator()(const NodeExpressionBinaryDivision *div)
+            {
+                gen->collectStringLiteralsFromExpression(div->left);
+                gen->collectStringLiteralsFromExpression(div->right);
+            }
+
+            void operator()(const NodeExpressionBinaryGreater *gt)
+            {
+                gen->collectStringLiteralsFromExpression(gt->left);
+                gen->collectStringLiteralsFromExpression(gt->right);
+            }
+
+            void operator()(const NodeExpressionBinaryGreaterEquals *gte)
+            {
+                gen->collectStringLiteralsFromExpression(gte->left);
+                gen->collectStringLiteralsFromExpression(gte->right);
+            }
+
+            void operator()(const NodeExpressionBinaryLess *lt)
+            {
+                gen->collectStringLiteralsFromExpression(lt->left);
+                gen->collectStringLiteralsFromExpression(lt->right);
+            }
+
+            void operator()(const NodeExpressionBinaryLessEquals *lte)
+            {
+                gen->collectStringLiteralsFromExpression(lte->left);
+                gen->collectStringLiteralsFromExpression(lte->right);
+            }
+
+            void operator()(const NodeExpressionBinaryEquals *eq)
+            {
+                gen->collectStringLiteralsFromExpression(eq->left);
+                gen->collectStringLiteralsFromExpression(eq->right);
+            }
+        };
+
+        StringCollectionBinaryVisitor visitor(this);
+        std::visit(visitor, bin_expr->var);
+    }
+
+    void Assembler::collectStringLiteralsFromIfPred(const NodeIfPred *pred)
+    {
+        struct StringCollectionPredVisitor
+        {
+            Assembler *gen;
+            StringCollectionPredVisitor(Assembler *gen) : gen(gen) {}
+
+            void operator()(const NodeIfPredElif *pred_elif)
+            {
+                gen->collectStringLiteralsFromExpression(pred_elif->expr);
+                gen->collectStringLiteralsFromScope(pred_elif->scope);
+
+                if (pred_elif->pred.has_value())
+                {
+                    gen->collectStringLiteralsFromIfPred(pred_elif->pred.value());
+                }
+            }
+
+            void operator()(const NodeIfPredElse *pred_else)
+            {
+                gen->collectStringLiteralsFromScope(pred_else->scope);
+            }
+        };
+
+        StringCollectionPredVisitor visitor(this);
+        std::visit(visitor, pred->var);
     }
 
 } // namespace Delta

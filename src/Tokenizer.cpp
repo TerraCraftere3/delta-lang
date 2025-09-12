@@ -188,8 +188,65 @@ namespace Delta
             else if (peek().value() == '"')
             {
                 consume();
-                tokens.push_back({TokenType::quotes, line_count});
+                buf.clear();
+
+                while (peek().has_value() && peek().value() != '"')
+                {
+                    if (peek().value() == '\n')
+                    {
+                        LOG_ERROR("Unterminated string literal on line {}", line_count);
+                        exit(EXIT_FAILURE);
+                    }
+
+                    if (peek().value() == '\\')
+                    {
+                        consume();
+                        if (!peek().has_value())
+                        {
+                            LOG_ERROR("Unterminated escape sequence in string literal on line {}", line_count);
+                            exit(EXIT_FAILURE);
+                        }
+
+                        char esc = consume();
+                        switch (esc)
+                        {
+                        case 'n':
+                            buf.push_back('\n');
+                            break;
+                        case 't':
+                            buf.push_back('\t');
+                            break;
+                        case 'r':
+                            buf.push_back('\r');
+                            break;
+                        case '"':
+                            buf.push_back('"');
+                            break;
+                        case '\\':
+                            buf.push_back('\\');
+                            break;
+                        default:
+                            LOG_ERROR("Unknown escape sequence \\{} in string literal on line {}", esc, line_count);
+                            exit(EXIT_FAILURE);
+                        }
+                    }
+                    else
+                    {
+                        buf.push_back(consume());
+                    }
+                }
+
+                if (!peek().has_value())
+                {
+                    LOG_ERROR("Unterminated string literal at end of file (line {})", line_count);
+                    exit(EXIT_FAILURE);
+                }
+
+                consume(); // eat closing quote
+                tokens.push_back({TokenType::string_literal, line_count, buf});
+                buf.clear();
             }
+
             else if (peek().value() == '(')
             {
                 consume();
