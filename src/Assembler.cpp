@@ -933,6 +933,27 @@ namespace Delta
                 gen->m_output << merge_label << ":\n";
             }
 
+            void operator()(const NodeStatementWhile *statement_while)
+            {
+                std::string cond_label = gen->getNextLabel();  // Label to evaluate condition
+                std::string loop_label = gen->getNextLabel();  // Label for the loop body
+                std::string merge_label = gen->getNextLabel(); // Exit label
+
+                gen->m_output << "  br label %" << cond_label << ";\n\n";
+
+                gen->m_output << cond_label << ":\n";
+                std::string cond = gen->generateExpression(statement_while->expr);
+                DataType condType = gen->inferExpressionType(statement_while->expr);
+                std::string bool_cond = gen->convertToBoolean(cond, condType);
+                gen->m_output << "  br i1 " << bool_cond << ", label %" << loop_label << ", label %" << merge_label << "; While Jump\n\n";
+
+                gen->m_output << loop_label << ":\n";
+                gen->generateScope(statement_while->scope);
+                gen->m_output << "  br label %" << cond_label << "; Loop back\n\n";
+
+                gen->m_output << merge_label << ":\n";
+            }
+
             void operator()(const NodeStatementReturn *statement_return)
             {
                 if (statement_return->expression)
@@ -1828,6 +1849,12 @@ namespace Delta
                 {
                     gen->collectStringLiteralsFromIfPred(statement_if->pred.value());
                 }
+            }
+
+            void operator()(const NodeStatementWhile *statement_while)
+            {
+                gen->collectStringLiteralsFromExpression(statement_while->expr);
+                gen->collectStringLiteralsFromScope(statement_while->scope);
             }
 
             void operator()(const NodeStatementReturn *statement_return)

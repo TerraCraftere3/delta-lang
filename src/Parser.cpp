@@ -38,6 +38,31 @@ namespace Delta
             try_consume(TokenType::close_paren, "')'", open_paren.line);
             try_consume(TokenType::semicolon, "';'", open_paren.line);
         }
+        // while(expr){scope}
+        if (peek().value().type == TokenType::while_)
+        {
+            consume();                                                       // while
+            try_consume(TokenType::open_paren, "'('", peek(0).value().line); // (
+            auto expr = parseExpression();                                   // expr
+            if (!expr.has_value())
+            {
+                LOG_ERROR("Expected Expression in While Loop");
+                exit(EXIT_FAILURE);
+            }
+            try_consume(TokenType::close_paren, "')'", peek(0).value().line); // )
+            auto scope = parseScope();
+            if (!scope.has_value())
+            {
+                LOG_ERROR("Expected Scope for While Loop");
+                exit(EXIT_FAILURE);
+            }
+            auto statement_while = m_allocator.alloc<NodeStatementWhile>();
+            statement_while->expr = expr.value();
+            statement_while->scope = scope.value();
+            auto stmt = m_allocator.alloc<NodeStatement>();
+            stmt->var = statement_while;
+            statement = stmt;
+        }
         // Return statement: return expr?;
         else if (peek().value().type == TokenType::return_)
         {

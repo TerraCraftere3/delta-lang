@@ -270,6 +270,13 @@ namespace Delta
         const char *id = "Array Assign";
     };
 
+    struct NodeStatementWhile
+    {
+        NodeExpression *expr;
+        NodeScope *scope;
+        const char *id = "While Loop";
+    };
+
     struct NodeParameter
     {
         Token ident;
@@ -293,6 +300,7 @@ namespace Delta
             NodeStatementLet *,
             NodeStatementAssign *,
             NodeStatementIf *,
+            NodeStatementWhile *,
             NodeScope *,
             NodeStatementReturn *,
             NodeExpression *,

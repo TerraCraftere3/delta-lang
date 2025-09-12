@@ -40,9 +40,14 @@ namespace Delta
                     tokens.push_back({TokenType::return_, line_count});
                     buf.clear();
                 }
-                else if (buf == "exit")
+                /*else if (buf == "exit") // DEPRECATED
                 {
                     tokens.push_back({TokenType::exit, line_count});
+                    buf.clear();
+                }*/
+                else if (buf == "while")
+                {
+                    tokens.push_back({TokenType::while_, line_count});
                     buf.clear();
                 }
                 else if (isValidDataType(buf))
