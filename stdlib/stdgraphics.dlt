@@ -1,6 +1,8 @@
+#include <stdbool>
+
 external int stdOpenWindow(char*, int, int);
 
-external int8 stdIsWindowOpen(int);
+external bool stdIsWindowOpen(int);
 external void stdKeepWindowOpen(int);
 external void stdUpdateWindow(int);
 
@@ -13,8 +15,8 @@ external void stdCloseWindow(int);
 external void stdMaximizeWindow(int);
 external void stdMinimizeWindow(int);
 
-external int8 stdIsKeyPressed(int, char);
+external bool stdIsKeyPressed(int, char);
 
-external int8 stdCreateOpenGLContext(int);
-external int8 stdMakeContextCurrent(int);
+external bool stdCreateOpenGLContext(int);
+external bool stdMakeContextCurrent(int);
 external void stdSwapBuffers(int);

@@ -161,7 +161,7 @@ namespace Delta
         Tokenizer tokenizer(contents);
         std::vector<Token> tokens = tokenizer.tokenize();
         Preprocessor processor(tokens);
-        std::vector<Token> processedTokens = processor.process(includeDirs);
+        std::vector<Token> processedTokens = processor.process(includeDirs).tokens;
         Parser parser(processedTokens);
         auto parseTree = parser.parseProgram();
         if (parseTree.has_value())

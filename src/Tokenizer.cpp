@@ -16,21 +16,11 @@ namespace Delta
             if (std::isalpha(peek().value()))
             {
                 buf.push_back(consume());
-                while (peek().has_value() && std::isalnum(peek().value()))
+                while (peek().has_value() && (std::isalnum(peek().value()) || peek().value() == '_'))
                 {
                     buf.push_back(consume());
                 }
-                if (buf == "true")
-                {
-                    tokens.push_back({TokenType::int_literal, line_count, "1"});
-                    buf.clear();
-                }
-                else if (buf == "false")
-                {
-                    tokens.push_back({TokenType::int_literal, line_count, "0"});
-                    buf.clear();
-                }
-                else if (buf == "const")
+                if (buf == "const")
                 {
                     tokens.push_back({TokenType::const_, line_count});
                     buf.clear();
@@ -48,6 +38,11 @@ namespace Delta
                 else if (buf == "include")
                 {
                     tokens.push_back({TokenType::include, line_count});
+                    buf.clear();
+                }
+                else if (buf == "define")
+                {
+                    tokens.push_back({TokenType::define, line_count});
                     buf.clear();
                 }
                 /*else if (buf == "exit") // DEPRECATED
@@ -95,43 +90,64 @@ namespace Delta
             {
                 buf.push_back(consume());
 
-                while (peek().has_value() && std::isdigit(peek().value()))
-                {
-                    buf.push_back(consume());
-                }
-
-                if (peek().has_value() && peek().value() == '.')
+                if (buf == "0" && peek().has_value() && (peek().value() == 'x' || peek().value() == 'X'))
                 {
                     buf.push_back(consume());
 
-                    if (!peek().has_value() || !std::isdigit(peek().value()))
+                    if (!peek().has_value() || !std::isxdigit(peek().value()))
                     {
-                        LOG_ERROR("Malformed float/double literal on line {}", line_count);
+                        LOG_ERROR("Malformed hex literal on line {}", line_count);
                         exit(EXIT_FAILURE);
                     }
 
+                    while (peek().has_value() && std::isxdigit(peek().value()))
+                    {
+                        buf.push_back(consume());
+                    }
+
+                    tokens.push_back({TokenType::int_literal, line_count, buf});
+                    buf.clear();
+                }
+                else
+                {
                     while (peek().has_value() && std::isdigit(peek().value()))
                     {
                         buf.push_back(consume());
                     }
 
-                    // check suffix (f means float, else double)
-                    if (peek().has_value() && (peek().value() == 'f' || peek().value() == 'F'))
+                    if (peek().has_value() && peek().value() == '.')
                     {
-                        consume(); // eat the 'f'
-                        tokens.push_back({TokenType::float_literal, line_count, buf});
+                        buf.push_back(consume());
+
+                        if (!peek().has_value() || !std::isdigit(peek().value()))
+                        {
+                            LOG_ERROR("Malformed float/double literal on line {}", line_count);
+                            exit(EXIT_FAILURE);
+                        }
+
+                        while (peek().has_value() && std::isdigit(peek().value()))
+                        {
+                            buf.push_back(consume());
+                        }
+
+                        // check suffix (f means float, else double)
+                        if (peek().has_value() && (peek().value() == 'f' || peek().value() == 'F'))
+                        {
+                            consume(); // eat the 'f'
+                            tokens.push_back({TokenType::float_literal, line_count, buf});
+                        }
+                        else
+                        {
+                            tokens.push_back({TokenType::double_literal, line_count, buf});
+                        }
                     }
                     else
                     {
-                        tokens.push_back({TokenType::double_literal, line_count, buf});
+                        tokens.push_back({TokenType::int_literal, line_count, buf});
                     }
-                }
-                else
-                {
-                    tokens.push_back({TokenType::int_literal, line_count, buf});
-                }
 
-                buf.clear();
+                    buf.clear();
+                }
             }
             else if (peek().value() == '.' && peek(2).has_value() && peek(2).value() == '.' && peek(3).has_value() && peek(3).value() == '.')
             {

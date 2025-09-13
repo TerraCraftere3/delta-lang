@@ -7,11 +7,17 @@
 
 namespace Delta
 {
+    struct PreprocessorResult
+    {
+        std::vector<Token> tokens;
+        std::unordered_map<std::string, std::vector<Token>> macros;
+    };
+
     class Preprocessor
     {
     public:
         Preprocessor(std::vector<Token> tokens);
-        std::vector<Token> process(std::vector<std::string> includeDirs);
+        PreprocessorResult process(std::vector<std::string> includeDirs);
 
     private:
         std::optional<Token> peek(int count) const;
@@ -20,6 +26,7 @@ namespace Delta
         std::optional<Token> try_consume(TokenType type);
 
     private:
+        std::unordered_map<std::string, std::vector<Token>> m_definitions;
         const std::vector<Token> m_tokens;
         std::vector<Token> m_output;
         size_t m_position = 0;

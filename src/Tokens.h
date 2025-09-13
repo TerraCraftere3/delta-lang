@@ -20,6 +20,7 @@ namespace Delta
         string_literal, // strings like "hello world"
         external,       // external void someFunction();
         include,        // include
+        define,         // define
         apostrophe,     // '
         quotes,         // "
         semicolon,      // ;

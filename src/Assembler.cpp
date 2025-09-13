@@ -185,7 +185,32 @@ namespace Delta
 
             std::string operator()(const NodeTermIntegerLiteral *term_int_lit) const
             {
-                return term_int_lit->int_literal.value.value();
+                const std::string &val = term_int_lit->int_literal.value.value();
+
+                try
+                {
+                    size_t idx = 0;
+                    long long number = 0;
+
+                    if (val.size() > 2 && (val[0] == '0') && (val[1] == 'x' || val[1] == 'X'))
+                    {
+                        number = std::stoll(val, &idx, 16);
+                    }
+                    else if (val.size() > 1 && val[0] == '0')
+                    {
+                        number = std::stoll(val, &idx, 8);
+                    }
+                    else
+                    {
+                        number = std::stoll(val, &idx, 10);
+                    }
+
+                    return std::to_string(number);
+                }
+                catch (const std::exception &)
+                {
+                    return val;
+                }
             }
 
             std::string operator()(const NodeTermFloatLiteral *term_float_lit) const

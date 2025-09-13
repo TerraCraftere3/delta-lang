@@ -13,7 +13,7 @@ namespace Delta
     //                  PUBLIC FUNCTIONS
     // -----------------------------------------------------
 
-    std::vector<Token> Preprocessor::process(std::vector<std::string> includeDirs)
+    PreprocessorResult Preprocessor::process(std::vector<std::string> includeDirs)
     {
         while (peek(1).has_value())
         {
@@ -53,16 +53,56 @@ namespace Delta
                 auto tokens = tokenizer.tokenize();
 
                 Preprocessor subPreproc(tokens);
-                auto includedTokens = subPreproc.process(includeDirs);
+                auto subResult = subPreproc.process(includeDirs);
 
-                m_output.insert(m_output.end(), includedTokens.begin(), includedTokens.end());
+                // merge tokens
+                m_output.insert(m_output.end(), subResult.tokens.begin(), subResult.tokens.end());
+
+                // merge macros
+                for (auto &[name, repl] : subResult.macros)
+                {
+                    m_definitions[name] = repl;
+                }
             }
+            else if (peek(1).value().type == TokenType::hashtag &&
+                     peek(2).has_value() && peek(2).value().type == TokenType::define &&
+                     peek(3).has_value() && peek(3).value().type == TokenType::identifier)
+            {
+                consume();                // #
+                consume();                // define
+                auto nameTok = consume(); // identifier
+                std::string name = nameTok.value.value();
+
+                // Collect replacement tokens until end of line
+                std::vector<Token> replacement;
+                while (peek(1).has_value() && peek(1).value().line == nameTok.line)
+                {
+                    replacement.push_back(consume());
+                }
+
+                m_definitions[name] = replacement;
+                continue; // don't push anything to m_output
+            }
+
             else
             {
-                m_output.push_back(consume());
+                auto tok = consume();
+                if (tok.type == TokenType::identifier)
+                {
+                    auto it = m_definitions.find(tok.value.value());
+                    if (it != m_definitions.end())
+                    {
+                        m_output.insert(m_output.end(), it->second.begin(), it->second.end());
+                        continue;
+                    }
+                }
+                m_output.push_back(tok);
             }
         }
-        return m_output;
+        PreprocessorResult result;
+        result.tokens = m_output;
+        result.macros = m_definitions;
+        return result;
     }
 
     // -----------------------------------------------------

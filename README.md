@@ -159,6 +159,13 @@ int main(){
 }
 ```
 
+### Definitions
+```
+#define PI 3.14159265359
+#define someFunction windowsBackend_someFunctionCall()
+```
+The name of a definition cant be the same as an existing token
+
 ## Grammar
 (LaTeX Expression might not render correctly in Github)
 

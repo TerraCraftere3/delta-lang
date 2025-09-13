@@ -38,7 +38,7 @@ int main() {
         stdGetWindowSize(win, &width, &height);
         glViewport(0, 0, width, height);
         glClearColor(1.0f, 0.8f, 0.2f, 1.0f);
-        glClear(16384);
+        glClear(GL_COLOR_BUFFER_BIT);
         stdSwapBuffers(win);
         stdSleep(16); // sleep 16ms (~60fps)
     }
