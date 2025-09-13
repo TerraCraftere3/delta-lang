@@ -21,6 +21,7 @@ namespace Delta
         std::optional<NodeExpressionTerm *> parseTerm();
 
         std::optional<NodeFunctionDeclaration *> parseFunctionDeclaration();
+        std::optional<NodeExternalDeclaration *> parseExternalDeclaration();
         std::optional<std::vector<NodeParameter *>> parseParameterList();
         std::optional<NodeParameter *> parseParameter();
         std::optional<std::vector<NodeExpression *>> parseArgumentList();

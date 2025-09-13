@@ -40,6 +40,11 @@ namespace Delta
                     tokens.push_back({TokenType::return_, line_count});
                     buf.clear();
                 }
+                else if (buf == "external")
+                {
+                    tokens.push_back({TokenType::external, line_count});
+                    buf.clear();
+                }
                 /*else if (buf == "exit") // DEPRECATED
                 {
                     tokens.push_back({TokenType::exit, line_count});

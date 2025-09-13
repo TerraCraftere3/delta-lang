@@ -293,6 +293,14 @@ namespace Delta
         const char *id = "Function Declaration";
     };
 
+    struct NodeExternalDeclaration
+    {
+        Token function_name;
+        std::vector<DataType> parameters;
+        DataType return_type;
+        const char *id = "External Declaration";
+    };
+
     struct NodeStatement
     {
         std::variant<
@@ -312,6 +320,7 @@ namespace Delta
 
     struct NodeProgram
     {
+        std::vector<NodeExternalDeclaration *> externals;
         std::vector<NodeFunctionDeclaration *> functions;
         std::vector<NodeStatement *> statements;
         const char *id = "Program";

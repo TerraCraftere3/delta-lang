@@ -18,6 +18,7 @@ namespace Delta
         float_literal,  // floats (32bit) like 3.14f, etc
         double_literal, // doubles (64bit) like 3.14, etc
         string_literal, // strings like "hello world"
+        external,       // external void someFunction();
         apostrophe,     // '
         quotes,         // "
         semicolon,      // ;

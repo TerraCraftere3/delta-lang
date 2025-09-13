@@ -24,6 +24,12 @@ namespace Delta
         generateStringLiterals();
 
         // Generate all function definitions
+
+        for (const NodeExternalDeclaration *external : m_program.externals)
+        {
+            addFunction(external->function_name.value.value(), external->parameters, external->return_type, true, false);
+        }
+
         for (const NodeFunctionDeclaration *func : m_program.functions)
         {
             generateFunctionDeclaration(func);
@@ -1623,12 +1629,12 @@ namespace Delta
     Assembler::registerBuiltinFunctions()
     {
         // ---- C Standard ----
-        addFunction("exit", {DataType::INT32}, DataType::VOID, true, false);
+        /*addFunction("exit", {DataType::INT32}, DataType::VOID, true, false);
         addFunction("printf", {DataType::INT8_PTR}, DataType::INT32, true, true);
-        addFunction("malloc", {DataType::INT64}, DataType::VOID_PTR, true, false);
+        addFunction("malloc", {DataType::INT64}, DataType::VOID_PTR, true, false); // REPLACED BY EXTERNAL DECLARATIONS
         addFunction("free", {DataType::VOID_PTR}, DataType::VOID, true, false);
         addFunction("strlen", {DataType::INT8_PTR}, DataType::INT64, true, false);
-        addFunction("strcpy", {DataType::INT8_PTR, DataType::INT8_PTR}, DataType::INT8_PTR, true, false);
+        addFunction("strcpy", {DataType::INT8_PTR, DataType::INT8_PTR}, DataType::INT8_PTR, true, false);*/
 
         // ---- Delta Standard ----
         StdlibFunctions stdlib = StdlibFunctions();

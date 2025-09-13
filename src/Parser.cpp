@@ -277,12 +277,17 @@ namespace Delta
 
         while (peek().has_value())
         {
-            // Try to parse function declaration first
+            // type name (parameters, ...);
             if (auto func_decl = parseFunctionDeclaration())
             {
                 program.functions.push_back(func_decl.value());
             }
-            // Otherwise parse statement
+            // external type name (parameters, ...);
+            else if (auto external_decl = parseExternalDeclaration())
+            {
+                program.externals.push_back(external_decl.value());
+            }
+            // any statement
             else if (auto statement = parseStatement())
             {
                 program.statements.push_back(statement.value());
@@ -342,6 +347,45 @@ namespace Delta
         }
 
         return std::nullopt;
+    }
+
+    std::optional<NodeExternalDeclaration *>
+    Parser::parseExternalDeclaration()
+    {
+        {
+            // Check if this looks like a function: type identifier(
+            if (peek(1).has_value() && peek(1).value().type == TokenType::external &&
+                peek(2).has_value() && peek(2).value().type == TokenType::data_type &&
+                peek(3).has_value() && peek(3).value().type == TokenType::identifier &&
+                peek(4).has_value() && peek(4).value().type == TokenType::open_paren)
+            {
+                consume();                          // external
+                auto return_type_token = consume(); // type
+                auto function_name = consume();     // name
+                auto open_paren = consume();        // (
+
+                auto *external_decl = m_allocator.alloc<NodeExternalDeclaration>();
+                external_decl->return_type = stringToType(return_type_token.value.value());
+                external_decl->function_name = function_name;
+
+                // Parse parameter list
+                if (peek().has_value() && peek().value().type != TokenType::close_paren)
+                {
+                    while (peek().has_value() && peek().value().type == TokenType::data_type)
+                    {
+                        auto type_token = consume();
+                        external_decl->parameters.push_back(stringToType(type_token.value.value()));
+                    }
+                }
+
+                try_consume(TokenType::close_paren, "')'", open_paren.line); // )
+                try_consume(TokenType::semicolon, "';'", peek().value().line);
+
+                return external_decl;
+            }
+
+            return std::nullopt;
+        }
     }
 
     std::optional<std::vector<NodeParameter *>> Parser::parseParameterList()
