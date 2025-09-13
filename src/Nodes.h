@@ -298,6 +298,7 @@ namespace Delta
         Token function_name;
         std::vector<DataType> parameters;
         DataType return_type;
+        bool is_variadic; // any amount of variables, like printf(str, ...)
         const char *id = "External Declaration";
     };
 

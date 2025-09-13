@@ -27,7 +27,7 @@ namespace Delta
 
         for (const NodeExternalDeclaration *external : m_program.externals)
         {
-            addFunction(external->function_name.value.value(), external->parameters, external->return_type, true, false);
+            addFunction(external->function_name.value.value(), external->parameters, external->return_type, true, external->is_variadic);
         }
 
         for (const NodeFunctionDeclaration *func : m_program.functions)

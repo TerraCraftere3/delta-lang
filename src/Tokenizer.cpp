@@ -128,20 +128,27 @@ namespace Delta
 
                 buf.clear();
             }
+            else if (peek().value() == '.' && peek(2).has_value() && peek(2).value() == '.' && peek(3).has_value() && peek(3).value() == '.')
+            {
+                consume(); // '.'
+                consume(); // '.'
+                consume(); // '.'
+                tokens.push_back({TokenType::ellipsis, line_count});
+            }
 
             else if (peek().value() == '/' && peek(2).has_value() && peek(2).value() == '/')
             {
-                consume();
-                consume();
+                consume(); // /
+                consume(); // /
                 while (peek().has_value() && peek().value() != '\n')
                 {
-                    consume();
+                    consume(); // \n
                 }
             }
             else if (peek().value() == '/' && peek(2).has_value() && peek(2).value() == '*')
             {
-                consume();
-                consume();
+                consume(); // /
+                consume(); // *
                 while (peek().has_value())
                 {
                     if (peek().value() == '*' && peek(2).has_value() && peek(2).value() == '/')
@@ -149,9 +156,9 @@ namespace Delta
                     consume();
                 }
                 if (peek().has_value())
-                    consume();
+                    consume(); // *
                 if (peek().has_value())
-                    consume();
+                    consume(); // /
             }
             else if (peek().value() == '=' && peek(2).has_value() && peek(2).value() == '=')
             {

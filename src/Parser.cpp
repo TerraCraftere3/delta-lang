@@ -367,14 +367,37 @@ namespace Delta
                 auto *external_decl = m_allocator.alloc<NodeExternalDeclaration>();
                 external_decl->return_type = stringToType(return_type_token.value.value());
                 external_decl->function_name = function_name;
+                external_decl->is_variadic = false; // Default to false
 
                 // Parse parameter list
                 if (peek().has_value() && peek().value().type != TokenType::close_paren)
                 {
-                    while (peek().has_value() && peek().value().type == TokenType::data_type)
+                    while (true)
                     {
+                        if (!peek().has_value() || (peek().value().type != TokenType::data_type && peek().value().type != TokenType::ellipsis))
+                        {
+                            LOG_ERROR("Expected parameter type or ellipsis (...)  in external function declaration");
+                            exit(EXIT_FAILURE);
+                        }
+
                         auto type_token = consume();
-                        external_decl->parameters.push_back(stringToType(type_token.value.value()));
+                        if (type_token.type == TokenType::ellipsis)
+                        {
+                            external_decl->is_variadic = true;
+                            break; // ellipsis must be last paremeter
+                        }
+                        else
+                        {
+                            external_decl->parameters.push_back(stringToType(type_token.value.value()));
+                        }
+
+                        if (peek().has_value() && peek().value().type == TokenType::comma)
+                        {
+                            consume(); // ,
+                            continue;
+                        }
+
+                        break;
                     }
                 }
 

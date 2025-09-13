@@ -4,11 +4,11 @@ int clamp(int value, int min, int max) {
     return value;
 }
 
-external int printf(char*);
+external int printf(char*, ...);
 
 int main() {
     int win = stdOpenWindow("Example Window", 800, 600);
-    printf("Test\n");
+    printf("Test %d\n", 42);
     while(stdIsWindowOpen(win)){
         stdUpdateWindow(win);
         if(stdIsKeyPressed(win, 'Z')){
