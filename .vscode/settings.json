@@ -5,6 +5,8 @@
             "..\\example\\example.dlt",
             "-o",
             "..\\example\\example.exe",
+            "-L",
+            "..\\example\\glew\\lib\\Release\\x64\\glew32.lib",
             "--verbose",
             "--run",
         ]

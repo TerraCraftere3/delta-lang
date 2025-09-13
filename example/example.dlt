@@ -1,17 +1,33 @@
 #include <stdio>
 #include <stdgraphics>
 #include <stdtime>
-#include <stdmemory>
-
-int clamp(int value, int min, int max) {
-    if (value < min){ return min; }
-    if (value > max){ return max; }
-    return value;
-}
+#include <glew>
 
 int main() {
     int win = stdOpenWindow("Example Window", 800, 600);
-    printf("Opened Window");
+    if (win < 0) {
+        printf("Failed to create window\n");
+        return 1;
+    }
+
+    if (stdCreateOpenGLContext(win) == 0) {
+        printf("Failed to create OpenGL context\n");
+        stdDestroyWindow(win);
+        return 1;
+    }
+
+    // Make the context current
+    if (stdMakeContextCurrent(win) == 0) {
+        printf("Failed to make context current\n");
+        stdDestroyWindow(win);
+        return 1;
+    }
+
+    if(glewInit() > 0){
+        printf("Failed to initialize glew!\n");
+        return 1;
+    }
+
     while(stdIsWindowOpen(win)){
         stdUpdateWindow(win);
         if(stdIsKeyPressed(win, 'Z')){
@@ -20,15 +36,12 @@ int main() {
         int width = 0;
         int height = 0;
         stdGetWindowSize(win, &width, &height);
-
-        int r = clamp(width * 255 / 800, 0, 255);
-        int g = clamp(height * 255 / 600, 0, 255);
-        int b = 0;
-
-        stdClearWindow(win, r, g, b);
+        glViewport(0, 0, width, height);
+        glClearColor(1.0f, 0.8f, 0.2f, 1.0f);
+        glClear(16384);
+        stdSwapBuffers(win);
         stdSleep(16); // sleep 16ms (~60fps)
     }
     stdDestroyWindow(win);
-    printf("Destroyed Window");
-    return 42;
+    return 0;
 }

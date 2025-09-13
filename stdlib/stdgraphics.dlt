@@ -14,4 +14,7 @@ external void stdMaximizeWindow(int);
 external void stdMinimizeWindow(int);
 
 external int8 stdIsKeyPressed(int, char);
-external void stdClearWindow(int, int, int, int);
+
+external int8 stdCreateOpenGLContext(int);
+external int8 stdMakeContextCurrent(int);
+external void stdSwapBuffers(int);

@@ -34,15 +34,10 @@ namespace Delta
                 std::string filepath;
                 for (auto &dir : includeDirs)
                 {
-                    std::string candidate = dir + FILE_SEPARATOR + filename;
+                    std::string candidate = dir + FILE_SEPARATOR + filename + ".dlt";
                     if (Files::fileExists(candidate))
                     {
                         filepath = candidate;
-                        break;
-                    }
-                    if (Files::fileExists(candidate + ".dlt"))
-                    {
-                        filepath = candidate + ".dlt";
                         break;
                     }
                 }

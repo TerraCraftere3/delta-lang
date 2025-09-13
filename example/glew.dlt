@@ -1,0 +1,4 @@
+external int glewInit();
+external void glClear(int);
+external void glClearColor(float, float, float, float);
+external void glViewport(int, int, int64, int64);

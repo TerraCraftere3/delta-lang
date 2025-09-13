@@ -1,5 +1,8 @@
 #pragma once
 
+#include <vector>
+#include <string>
+
 namespace Delta
 {
     enum CompileType
@@ -30,5 +33,7 @@ namespace Delta
         CompileType compileType = COMPILE_ONLY;
         const char *inputFile = nullptr;
         const char *outputFile = nullptr;
+        std::vector<std::string> additionalLinks;
+        std::vector<std::string> includeDirs;
     };
 }
