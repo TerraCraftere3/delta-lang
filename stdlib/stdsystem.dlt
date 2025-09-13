@@ -1,0 +1,4 @@
+external void exit(int);
+external int system(char*);
+external char* getenv(char*);
+external int putenv(char*);

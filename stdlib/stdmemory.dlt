@@ -1,0 +1,4 @@
+external void* malloc(int64);
+external void* calloc(int64, int64);
+external void* realloc(void*, int64);
+external void free(void*);

@@ -1,1 +1,10 @@
 external int printf(char*, ...);
+external int fprintf(void*, char*, ...);
+external int sprintf(char*, char*, ...);
+external int scanf(char*, ...);
+external void* fopen(char*, char*);
+external int fclose(void*);
+external int64 fread(void*, int64, int64, void*);
+external int64 fwrite(void*, int64, int64, void*);
+external int fseek(void*, int64, int);
+external int64 ftell(void*);

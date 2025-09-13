@@ -13,6 +13,7 @@ namespace Delta
         static bool fileExists(const std::string &path);
         static std::string readFile(const std::string &path);
         static bool writeFile(const std::string &path, const std::string &content);
+        static bool deleteFile(const std::string &path);
         static std::string getFileExtension(const std::string &filename);
         static std::string getFileName(const std::string &path);
         static std::string getFileNameWithoutExtension(const std::string &path);

@@ -1,15 +1,12 @@
 #include "Assembler.h"
 
 #include "Log.h"
-#include "../stdlib/AssemblerStdlibFunctions.h"
 #include <algorithm>
 
 namespace Delta
 {
     Assembler::Assembler(NodeProgram root) : m_program(root), m_current_block_id(0), m_temp_counter(0)
     {
-        registerBuiltinFunctions();
-        registerExternalFunctions();
     }
 
     std::string Assembler::generate()
@@ -1623,29 +1620,6 @@ namespace Delta
     {
         Function func(name, param_types, ret_type, name, external, variadic);
         m_functions.emplace_back(func);
-    }
-
-    void
-    Assembler::registerBuiltinFunctions()
-    {
-        // ---- C Standard ----
-        /*addFunction("exit", {DataType::INT32}, DataType::VOID, true, false);
-        addFunction("printf", {DataType::INT8_PTR}, DataType::INT32, true, true);
-        addFunction("malloc", {DataType::INT64}, DataType::VOID_PTR, true, false); // REPLACED BY EXTERNAL DECLARATIONS
-        addFunction("free", {DataType::VOID_PTR}, DataType::VOID, true, false);
-        addFunction("strlen", {DataType::INT8_PTR}, DataType::INT64, true, false);
-        addFunction("strcpy", {DataType::INT8_PTR, DataType::INT8_PTR}, DataType::INT8_PTR, true, false);*/
-
-        // ---- Delta Standard ----
-        StdlibFunctions stdlib = StdlibFunctions();
-        stdlib.setAddFunction([this](const std::string &name, const std::vector<DataType> &params, DataType ret, bool external, bool variadic)
-                              { this->addFunction(name, params, ret, external, variadic); });
-        stdlib.setupFunctions();
-    }
-
-    void Assembler::registerExternalFunctions()
-    {
-        // None for now
     }
 
     void Assembler::validateFunctionCall(const std::string &func_name, const std::vector<NodeExpression *> &arguments)

@@ -111,8 +111,6 @@ namespace Delta
 
         // Function management
         Function *findFunction(const std::string &name);
-        void registerBuiltinFunctions();
-        void registerExternalFunctions();
         void validateFunctionCall(const std::string &func_name, const std::vector<NodeExpression *> &arguments);
         std::string applyDefaultPromotions(const std::string &value, DataType &type);
         DataType getPromotedType(DataType type);

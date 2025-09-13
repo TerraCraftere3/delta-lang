@@ -66,6 +66,24 @@ bool Delta::Files::writeFile(const std::string &path, const std::string &content
     return true;
 }
 
+bool Delta::Files::deleteFile(const std::string &path)
+{
+    try
+    {
+        if (!std::filesystem::remove(path))
+        {
+            LOG_ERROR("File {} does not exist", path);
+            return false;
+        }
+        return true;
+    }
+    catch (const std::filesystem::filesystem_error &e)
+    {
+        LOG_ERROR("Could not delete {}", path);
+        return false;
+    }
+}
+
 std::string Delta::Files::getFileExtension(const std::string &filename)
 {
     std::filesystem::path path(filename);

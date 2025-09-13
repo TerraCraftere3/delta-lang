@@ -1,0 +1,6 @@
+external double sin(double);
+external double cos(double);
+external double tan(double);
+external double sqrt(double);
+external double pow(double, double);
+external double fabs(double);

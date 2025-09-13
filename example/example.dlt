@@ -1,4 +1,7 @@
 #include <stdio>
+#include <stdgraphics>
+#include <stdtime>
+#include <stdmemory>
 
 int clamp(int value, int min, int max) {
     if (value < min){ return min; }
@@ -8,7 +11,7 @@ int clamp(int value, int min, int max) {
 
 int main() {
     int win = stdOpenWindow("Example Window", 800, 600);
-    printf("Test %d\n", 42);
+    printf("Opened Window");
     while(stdIsWindowOpen(win)){
         stdUpdateWindow(win);
         if(stdIsKeyPressed(win, 'Z')){
@@ -26,5 +29,6 @@ int main() {
         stdSleep(16); // sleep 16ms (~60fps)
     }
     stdDestroyWindow(win);
-    return 0;
+    printf("Destroyed Window");
+    return 42;
 }

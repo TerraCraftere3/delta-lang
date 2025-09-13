@@ -1,0 +1,8 @@
+external int64 strlen(char*);
+external char* strcpy(char*, char*);
+external char* strncpy(char*, char*, int64);
+external char* strcat(char*, char*);
+external int strcmp(char*, char*);
+external int strncmp(char*, char*, int64);
+external char* strchr(char*, int);
+external char* strstr(char*, char*);

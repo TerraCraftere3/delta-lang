@@ -8,9 +8,43 @@
 #include "Error.h"
 #include "Debug.h"
 #include <fstream>
+#include <sstream>
+
+#ifdef _WIN32
+#include <windows.h>
+#endif
 
 namespace Delta
 {
+    int runProgram(const std::string &programPath)
+    {
+#ifdef _WIN32
+        STARTUPINFO si = {sizeof(si)};
+        PROCESS_INFORMATION pi;
+
+        // Create a new console window
+        BOOL success = CreateProcess(
+            nullptr,
+            const_cast<char *>(programPath.c_str()), // command line
+            nullptr, nullptr, FALSE,
+            CREATE_NEW_CONSOLE, nullptr, nullptr,
+            &si, &pi);
+
+        if (!success)
+            return -1; // failed to launch
+
+        // Wait for the process to finish
+        WaitForSingleObject(pi.hProcess, INFINITE);
+
+        DWORD exitCode = 0;
+        GetExitCodeProcess(pi.hProcess, &exitCode);
+
+        CloseHandle(pi.hProcess);
+        CloseHandle(pi.hThread);
+
+        return static_cast<int>(exitCode);
+#endif
+    }
 
     int Compiler::compile(const CompilerProperties &props)
     {
@@ -183,7 +217,7 @@ namespace Delta
 
             std::string runCommandStr = "\"" + std::string(outputPath) + "\"";
             LOG_INFO("Running command: {}", runCommandStr);
-            int exitCode = std::system(runCommandStr.c_str());
+            int exitCode = runProgram(std::string(outputPath));
             LOG_INFO("Program exited with code: {}", exitCode);
             break;
         }

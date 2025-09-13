@@ -1,0 +1,17 @@
+external int stdOpenWindow(char*, int, int);
+
+external int8 stdIsWindowOpen(int);
+external void stdKeepWindowOpen(int);
+external void stdUpdateWindow(int);
+
+external void stdSetWindowTitle(int, char*);
+external void stdSetWindowSize(int, int, int);
+external void stdGetWindowSize(int, int*, int*);
+
+external void stdDestroyWindow(int);
+external void stdCloseWindow(int);
+external void stdMaximizeWindow(int);
+external void stdMinimizeWindow(int);
+
+external int8 stdIsKeyPressed(int, char);
+external void stdClearWindow(int, int, int, int);
