@@ -879,6 +879,7 @@ namespace Delta
         {
             Error::throwExpected(c, line, row);
         }
+        return {};
     }
 
     std::optional<Token> Parser::try_consume(TokenType type)

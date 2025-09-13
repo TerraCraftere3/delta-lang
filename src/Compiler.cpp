@@ -2,6 +2,7 @@
 #include "Log.h"
 #include "Files.h"
 #include "Tokenizer.h"
+#include "Preprocessor.h"
 #include "Parser.h"
 #include "Assembler.h"
 #include "Error.h"
@@ -121,7 +122,9 @@ namespace Delta
 
         Tokenizer tokenizer(contents);
         std::vector<Token> tokens = tokenizer.tokenize();
-        Parser parser(tokens);
+        Preprocessor processor(tokens);
+        std::vector<Token> processedTokens = tokenizer.tokenize();
+        Parser parser(processedTokens);
         auto parseTree = parser.parseProgram();
         if (parseTree.has_value())
         {
@@ -184,41 +187,5 @@ namespace Delta
         }
 
         return 0;
-    }
-
-    std::string Compiler::assemble(const std::vector<Token> &tokens)
-    {
-        std::string output;
-        output += "global _start\n";      // ASM: Text Section
-        output += "extern ExitProcess\n"; // ASM: WinAPI ExitProcess
-        output += "\n";                   // ASM:
-        output += "section .text\n";      // ASM: Entry Point definition
-        output += "_start:\n";            // ASM: Start Label
-        for (int i = 0; i < tokens.size(); i++)
-        {
-            const Token &token = tokens[i];
-            if (token.type == TokenType::exit)
-            {
-                if (i + 1 < tokens.size() && tokens[i + 1].type == TokenType::int_literal)
-                {
-                    if (i + 2 < tokens.size() && tokens[i + 2].type == TokenType::semicolon)
-                    {
-                        output += "\tsub rsp, 40\n";                                  // ASM: Align Stack
-                        output += "\tmov ecx, " + tokens[i + 1].value.value() + "\n"; // ASM: Move literal to ecx
-                        output += "\tcall ExitProcess\n";                             // ASM: Exit
-                        i += 2;                                                       // Skip the next two tokens
-                    }
-                    else
-                    {
-                        LOG_ERROR("Expected ';' after integer literal");
-                    }
-                }
-                else
-                {
-                    LOG_ERROR("Expected integer literal after 'return'");
-                }
-            }
-        }
-        return output;
     }
 }

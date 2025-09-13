@@ -43,6 +43,7 @@ namespace Delta
         double_equals,  // ==
         and_,           // &
         ellipsis,       // ...
+        hashtag,        // #
     };
 
     struct Token

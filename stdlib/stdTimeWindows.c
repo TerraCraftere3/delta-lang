@@ -1,5 +1,6 @@
 #ifdef _WIN32
-#include "stdlibTime.h"
+#pragma message("Compiling stdTime.c for Windows")
+#include "stdTime.h"
 #include <windows.h>
 
 void stdSleep(int milliseconds) {

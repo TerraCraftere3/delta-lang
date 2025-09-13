@@ -1,10 +1,10 @@
 #ifdef _WIN32
-#pragma message("Compiling stdlibGraphics.c for Windows")
+#pragma message("Compiling stdGraphics.c for Windows")
 #include <windows.h>
 #include <stdbool.h>
 #include <string.h>
 #include <stdio.h>
-#include "stdlibGraphics.h"
+#include "stdGraphics.h"
 
 #define MAX_WINDOWS 16
 

@@ -293,6 +293,11 @@ namespace Delta
                 consume();
                 tokens.push_back({TokenType::and_, line_count});
             }
+            else if (peek().value() == '#')
+            {
+                consume();
+                tokens.push_back({TokenType::hashtag, line_count});
+            }
             else if (peek().value() == '\n')
             {
                 line_count++;
