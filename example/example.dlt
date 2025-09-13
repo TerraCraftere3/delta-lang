@@ -1,10 +1,10 @@
+#include <stdio>
+
 int clamp(int value, int min, int max) {
     if (value < min){ return min; }
     if (value > max){ return max; }
     return value;
 }
-
-external int printf(char*, ...);
 
 int main() {
     int win = stdOpenWindow("Example Window", 800, 600);

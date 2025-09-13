@@ -117,3 +117,8 @@ std::string Delta::Files::getAbsolutePath(const std::string &path)
         return path;
     }
 }
+
+std::string Delta::Files::getSeparator()
+{
+    return std::string(1, std::filesystem::path::preferred_separator);
+}

@@ -45,6 +45,11 @@ namespace Delta
                     tokens.push_back({TokenType::external, line_count});
                     buf.clear();
                 }
+                else if (buf == "include")
+                {
+                    tokens.push_back({TokenType::include, line_count});
+                    buf.clear();
+                }
                 /*else if (buf == "exit") // DEPRECATED
                 {
                     tokens.push_back({TokenType::exit, line_count});

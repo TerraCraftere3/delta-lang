@@ -19,6 +19,7 @@ namespace Delta
         double_literal, // doubles (64bit) like 3.14, etc
         string_literal, // strings like "hello world"
         external,       // external void someFunction();
+        include,        // include
         apostrophe,     // '
         quotes,         // "
         semicolon,      // ;

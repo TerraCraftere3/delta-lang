@@ -11,10 +11,10 @@ namespace Delta
     {
     public:
         Preprocessor(std::vector<Token> tokens);
-        std::vector<Token> process();
+        std::vector<Token> process(std::vector<std::string> includeDirs);
 
     private:
-        std::optional<Token> peek(int count = 1) const;
+        std::optional<Token> peek(int count) const;
         Token consume();
         Token try_consume(TokenType type, const std::string &c, int line, int row = 0);
         std::optional<Token> try_consume(TokenType type);

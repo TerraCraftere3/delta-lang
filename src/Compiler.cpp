@@ -102,6 +102,9 @@ namespace Delta
         std::string asmFile = Files::joinPaths(intDir, baseName + ".ll");
         std::string objFile = Files::joinPaths(intDir, baseName + ".obj");
 
+        std::string stdlibIncludePath = Files::joinPaths(Files::getDirectory(Files::getDirectory(Files::getProgramPath())), "stdlib");
+        std::vector<std::string> includeDirs = {Files::getDirectory(inputPath), stdlibIncludePath};
+
         std::string llcArguments = "-filetype=obj";
         std::string linkArguments = "-nodefaultlibs";
 
@@ -123,7 +126,7 @@ namespace Delta
         Tokenizer tokenizer(contents);
         std::vector<Token> tokens = tokenizer.tokenize();
         Preprocessor processor(tokens);
-        std::vector<Token> processedTokens = tokenizer.tokenize();
+        std::vector<Token> processedTokens = processor.process(includeDirs);
         Parser parser(processedTokens);
         auto parseTree = parser.parseProgram();
         if (parseTree.has_value())

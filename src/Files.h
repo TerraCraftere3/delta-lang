@@ -5,6 +5,8 @@
 
 namespace Delta
 {
+#define FILE_SEPARATOR ::Delta::Files::getSeparator()
+
     class Files
     {
     public:
@@ -20,5 +22,6 @@ namespace Delta
         static std::string getWorkingDirectory();
         static std::string joinPaths(const std::string &path1, const std::string &path2);
         static std::string getAbsolutePath(const std::string &path);
+        static std::string getSeparator();
     };
 }
