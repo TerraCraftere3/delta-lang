@@ -9,11 +9,28 @@ Delta is a C Style Programming Language that is compiled to LLVM Intermediate Re
 
 ## How to Build
 - Clone the repository using `git clone --recursive https://github.com/TerraCraftere3/delta-lang` into any folder you want
-- Open a terminal in the repository and run the following commands:
+### Terminal
+- Open the cloned repo in a terminal and enter the following commands:
     - `mkdir build`
     - `cd build`
     - `cmake .. -G "Visual Studio 17 2022"` (Adjust the Generator to your Visual Studio Version)
     - `cmake --build . --config Release` or open the generated Solution File
+### VSCode
+- Open the cloned repo in vscode
+- Press CTRL + Shift + P
+- Enter "CMake: Debug" and press enter
+- The Project will build and run the example project
+
+## Structure
+- ``.github`` - Contains workflows and github properties
+- ``.vscode`` - Contains the settings for vscode cmake
+- ``build`` - The output of cmake
+- ``example`` - The Example Project (usually showcases the new feature)
+- ``extension`` - A VSCode Extension for syntax highlighting
+- ``runtime`` - All the files required by delta.exe
+- ``src`` - The Source Code of the Compiler
+- ``stdlib`` - The Standard Library shipped with the compiler
+- ``vendor`` - External Libraries like spdlog
 
 ## Usage
 ### Variables
@@ -132,15 +149,14 @@ int32 main(){
 ```
 The return value of main() is used as the exit code of the program
 
-### External Functions
+### Includes
 ```
-// MSVCRT (C runtime)
-void exit(int)
-int printf(char*, ...);
-void* malloc(long);
-void free(void*);
-long strlen(long);
-long strcpy(long, long);
+#include <stdio> // includes io functions like printf
+#include <stdgraphics>
+
+int main(){
+    printf("Hello World");
+}
 ```
 
 ## Grammar

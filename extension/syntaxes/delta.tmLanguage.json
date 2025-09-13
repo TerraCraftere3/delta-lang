@@ -1,0 +1,108 @@
+{
+	"scopeName": "source.delta",
+	"name": "Delta",
+	"patterns": [
+		{
+			"include": "#comments"
+		},
+		{
+			"include": "#preprocessor"
+		},
+		{
+			"include": "#keywords"
+		},
+		{
+			"include": "#types"
+		},
+		{
+			"include": "#numbers"
+		},
+		{
+			"include": "#strings"
+		},
+		{
+			"include": "#functions"
+		}
+	],
+	"repository": {
+		"comments": {
+			"patterns": [
+				{
+					"name": "comment.line.double-slash",
+					"match": "//.*$"
+				}
+			]
+		},
+		"preprocessor": {
+			"patterns": [
+				{
+					"name": "meta.preprocessor.include",
+					"begin": "^(\\s*#\\s*include)\\s*",
+					"beginCaptures": {
+						"1": {
+							"name": "keyword.control.import.include"
+						}
+					},
+					"end": "$",
+					"patterns": [
+						{
+							"name": "string.quoted.other.lt-gt.include",
+							"match": "<[^>]+>"
+						},
+						{
+							"name": "string.quoted.double.include",
+							"match": "\"[^\"]+\""
+						}
+					]
+				}
+			]
+		},
+		"keywords": {
+			"patterns": [
+				{
+					"name": "keyword.control",
+					"match": "\\b(if|else|for|while|return)\\b"
+				}
+			]
+		},
+		"types": {
+			"patterns": [
+				{
+					"name": "storage.type",
+					"match": "\\b(int|float|double|char|void)\\b"
+				}
+			]
+		},
+		"numbers": {
+			"patterns": [
+				{
+					"name": "constant.numeric",
+					"match": "\\b\\d+(\\.\\d+)?([eE][+-]?\\d+)?[fF]?\\b"
+				}
+			]
+		},
+		"strings": {
+			"patterns": [
+				{
+					"name": "string.quoted.double",
+					"begin": "\"",
+					"end": "\"",
+					"patterns": [
+						{
+							"name": "constant.character.escape",
+							"match": "\\\\."
+						}
+					]
+				}
+			]
+		},
+		"functions": {
+			"patterns": [
+				{
+					"name": "support.function",
+					"match": "\\b(std[A-Za-z0-9_]*|gl[A-Za-z0-9_]*|printf|glewInit)\\b"
+				}
+			]
+		}
+	}
+}
