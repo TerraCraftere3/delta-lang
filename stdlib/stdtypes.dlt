@@ -1,0 +1,5 @@
+#if defined(_WIN64)
+    #define size_t int64
+#else
+    #define size_t int32
+#endif

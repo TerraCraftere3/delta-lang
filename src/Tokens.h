@@ -10,9 +10,11 @@ namespace Delta
         if_,            // if
         elif,           // elif
         else_,          // else
+        endif,          // endif
         exit,           // exit
         while_,         // while
         data_type,      // int64, float32, bool, etc.
+        let,            // let
         equals,         // =
         int_literal,    // integer like 10, etc
         float_literal,  // floats (32bit) like 3.14f, etc
@@ -21,6 +23,9 @@ namespace Delta
         external,       // external void someFunction();
         include,        // include
         define,         // define
+        function,       // fn
+        arrow_left,     // <-
+        arrow_right,    // ->
         apostrophe,     // '
         quotes,         // "
         semicolon,      // ;
@@ -46,6 +51,8 @@ namespace Delta
         and_,           // &
         ellipsis,       // ...
         hashtag,        // #
+        exclamation,    // !
+        colon,          // :
     };
 
     struct Token

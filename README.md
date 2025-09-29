@@ -35,31 +35,31 @@ Delta is a C Style Programming Language that is compiled to LLVM Intermediate Re
 ## Usage
 ### Variables
 ```
-int a = 42; // Setting Variable
-short b = 3;
-long c = a + b;  
+let a: int = 42; // Setting Variable
+let b: short = 3;
+let c: long = a + b;  
 c = 2 * c; // Updating Variable
 ```
 
 ### Maths 
 ```
-int d = a * (b + 2);
-int e = d - 128;
+let d: int = a * (b + 2);
+let e: int = d - 128;
 ```
 
 ### Exit
 ```
-int code = 0;
+let code: int = 0;
 exit(code); // or just exit(0)
 ```
 
 ### Scopes
 ```
-int a = 3;
+let a: int = 3;
 {
-    int b = 9;
+    let b: int = 9;
 }
-int b = 3; // Can redefine because scope is closed
+let b: int = 3; // Can redefine because scope is closed
 ```
 You cannot shadow variables that are outside scopes
 
@@ -78,7 +78,7 @@ You cannot shadow variables that are outside scopes
 ### Comments
 ```
 // This is an example comment
-int a = 3
+let a: int = 3
 
 // This is a multiline comment
 /*if(error) {
@@ -89,51 +89,51 @@ int a = 3
 ### Constants
 ```
 // Constant values cant be changed after declaration
-const long ZERO = 0;
+let const ZERO: int = 0;
 ```
 
 ### Types
 ```
-int a = 10;
-float b = 1.2345f;
-double pi = 3.14;
+let a: int = 10;
+let b: float = 1.2345f;
+let pi: double = 3.14;
 ```
 Any integer type is compatible with another integer type, so are other types (like floats in the future).
 
 ### Functions
 ```
-int add(int a, int b) {
+fn add(a: int, b: int) -> int {
     return a + b;
 }
 
-int result = add(3, 5);
+let result: int = add(3, 5);
 ```
 
 ### Casting
 ```
-int a = 10;
-float b = (float) a;
+let a: int = 10;
+let b: float = (float) a;
 ```
 
 ### Pointer
 ```
-void modifyInt(int* ptr, int newValue) {
+fn modifyInt(int* ptr, int newValue) -> void{
     *ptr = newValue;
 }
 
-int x = 10;
+let x: int = 10;
 modifyInt(&x, 42); // sets the value of x to 42
 ```
 
 ### Strings
 ```
-const char* str = "Hello World\n";
+let const str: char* = "Hello World\n";
 printf(str);
 ```
 
 ### Arrays
 ```
-int* array = malloc(8 * 4); // Allocates an array of 8 * int32
+let array: int* = malloc(8 * 4); // Allocates an array of 8 * int32
 array[0] = 4;
 array[1] = 16;
 ...
@@ -143,7 +143,7 @@ array[7] = 3;
 ### Main Function
 
 ```
-int32 main(){
+fn main() -> int{
     return 0;
 }
 ```
@@ -154,7 +154,7 @@ The return value of main() is used as the exit code of the program
 #include <stdio> // includes io functions like printf
 #include <stdgraphics>
 
-int main(){
+fn main() -> int{
     printf("Hello World");
 }
 ```
@@ -173,11 +173,11 @@ $$
 \begin{align}
 [\text{Prog}] &\to [\text{FuncDecl}]^* \space [\text{Statement}]^* \space\textit{List of Functions and Statements}
 \\
-[\text{FuncDecl}] &\to [\text{Type}] \space \text{Identifier}([\text{ParamList}]?)[\text{Scope}]
+[\text{FuncDecl}] &\to fn \space \text{Identifier}([\text{ParamList}]?) \space \text{->} \space [\text{Type}][\text{Scope}]
 \\
 [\text{ParamList}] &\to \text{Param}^*
 \\
-[\text{Param}] &\to [\text{Type}] \space \text{Identifier}
+[\text{Param}] &\to \text{Identifier}: \space [\text{Type}]
 \\
 [\text{FuncCall}] &\to \text{Identifier}([\text{ArgList}]?)
 \\
@@ -187,7 +187,7 @@ $$
 \begin{cases}
     exit([\text{Expr}]); 
     \\
-    [\text{const}|\epsilon]\space[\text{Type}] \space\text{Identifier} = [\text{Expr}]; & \textit{Let Variable}
+    let \space[\text{const}|\epsilon] \space\text{Identifier}: \space[\text{Type}] = [\text{Expr}]; & \textit{Let Variable}
     \\
     \text{Identifier} = [\text{Expr}]; & \textit{Assign to Variable}
     \\

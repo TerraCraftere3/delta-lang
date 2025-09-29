@@ -13,14 +13,24 @@ namespace Delta
         int line_count = 1;
         while (peek().has_value())
         {
-            if (std::isalpha(peek().value()))
+            if (std::isalpha(peek().value()) || peek().value() == '_')
             {
                 buf.push_back(consume());
                 while (peek().has_value() && (std::isalnum(peek().value()) || peek().value() == '_'))
                 {
                     buf.push_back(consume());
                 }
-                if (buf == "const")
+                if (buf == "fn")
+                {
+                    tokens.push_back({TokenType::function, line_count});
+                    buf.clear();
+                }
+                else if (buf == "let")
+                {
+                    tokens.push_back({TokenType::let, line_count});
+                    buf.clear();
+                }
+                else if (buf == "const")
                 {
                     tokens.push_back({TokenType::const_, line_count});
                     buf.clear();
@@ -80,12 +90,18 @@ namespace Delta
                     tokens.push_back({TokenType::else_, line_count});
                     buf.clear();
                 }
+                else if (buf == "endif")
+                {
+                    tokens.push_back({TokenType::endif, line_count});
+                    buf.clear();
+                }
                 else
                 {
                     tokens.push_back({TokenType::identifier, line_count, buf});
                     buf.clear();
                 }
             }
+            // hex numbers(0xffffff...), float numbers: 3.14, int numbers: 42
             else if (std::isdigit(peek().value()))
             {
                 buf.push_back(consume());
@@ -149,6 +165,7 @@ namespace Delta
                     buf.clear();
                 }
             }
+            // ...
             else if (peek().value() == '.' && peek(2).has_value() && peek(2).value() == '.' && peek(3).has_value() && peek(3).value() == '.')
             {
                 consume(); // '.'
@@ -157,6 +174,7 @@ namespace Delta
                 tokens.push_back({TokenType::ellipsis, line_count});
             }
 
+            // // single line comment
             else if (peek().value() == '/' && peek(2).has_value() && peek(2).value() == '/')
             {
                 consume(); // /
@@ -166,6 +184,7 @@ namespace Delta
                     consume(); // \n
                 }
             }
+            // /*multi line comment*/
             else if (peek().value() == '/' && peek(2).has_value() && peek(2).value() == '*')
             {
                 consume(); // /
@@ -181,49 +200,72 @@ namespace Delta
                 if (peek().has_value())
                     consume(); // /
             }
+            // ==
             else if (peek().value() == '=' && peek(2).has_value() && peek(2).value() == '=')
             {
                 consume(); // '='
                 consume(); // '='
                 tokens.push_back({TokenType::double_equals, line_count});
             }
+            // >=
             else if (peek().value() == '>' && peek(2).has_value() && peek(2).value() == '=')
             {
                 consume(); // '>'
                 consume(); // '='
                 tokens.push_back({TokenType::greater_equals, line_count});
             }
+            // <=
             else if (peek().value() == '<' && peek(2).has_value() && peek(2).value() == '=')
             {
                 consume(); // '<'
                 consume(); // '='
                 tokens.push_back({TokenType::less_equals, line_count});
             }
+            // ->
+            else if (peek().value() == '-' && peek(2).has_value() && peek(2).value() == '>')
+            {
+                consume(); // '-'
+                consume(); // '>'
+                tokens.push_back({TokenType::arrow_right, line_count});
+            }
+            // <-
+            else if (peek().value() == '<' && peek(2).has_value() && peek(2).value() == '-')
+            {
+                consume(); // '<'
+                consume(); // '-'
+                tokens.push_back({TokenType::arrow_left, line_count});
+            }
+            // >
             else if (peek().value() == '>')
             {
                 consume();
                 tokens.push_back({TokenType::greater, line_count});
             }
+            // <
             else if (peek().value() == '<')
             {
                 consume();
                 tokens.push_back({TokenType::less, line_count});
             }
+            // ,
             else if (peek().value() == ',')
             {
                 consume();
                 tokens.push_back({TokenType::comma, line_count});
             }
+            // ;
             else if (peek().value() == ';')
             {
                 consume();
                 tokens.push_back({TokenType::semicolon, line_count});
             }
+            // '
             else if (peek().value() == '\'')
             {
                 consume();
                 tokens.push_back({TokenType::apostrophe, line_count});
             }
+            // "string literal"
             else if (peek().value() == '"')
             {
                 consume(); // eat opening quote
@@ -253,72 +295,96 @@ namespace Delta
                 tokens.push_back({TokenType::string_literal, line_count, value});
                 buf.clear();
             }
-
+            // (
             else if (peek().value() == '(')
             {
                 consume();
                 tokens.push_back({TokenType::open_paren, line_count});
             }
+            // )
             else if (peek().value() == ')')
             {
                 consume();
                 tokens.push_back({TokenType::close_paren, line_count});
             }
+            // =
             else if (peek().value() == '=')
             {
                 consume();
                 tokens.push_back({TokenType::equals, line_count});
             }
+            // +
             else if (peek().value() == '+')
             {
                 consume();
                 tokens.push_back({TokenType::plus, line_count});
             }
+            // -
             else if (peek().value() == '-')
             {
                 consume();
                 tokens.push_back({TokenType::minus, line_count});
             }
+            // *
             else if (peek().value() == '*')
             {
                 consume();
                 tokens.push_back({TokenType::star, line_count});
             }
+            // /
             else if (peek().value() == '/')
             {
                 consume();
                 tokens.push_back({TokenType::slash, line_count});
             }
+            // !
+            else if (peek().value() == '!')
+            {
+                consume();
+                tokens.push_back({TokenType::exclamation, line_count});
+            }
+            // {
             else if (peek().value() == '{')
             {
                 consume();
                 tokens.push_back({TokenType::open_curly, line_count});
             }
+            // }
             else if (peek().value() == '}')
             {
                 consume();
                 tokens.push_back({TokenType::close_curly, line_count});
             }
+            // [
             else if (peek().value() == '[')
             {
                 consume();
                 tokens.push_back({TokenType::open_square, line_count});
             }
+            // ]
             else if (peek().value() == ']')
             {
                 consume();
                 tokens.push_back({TokenType::close_square, line_count});
             }
+            // &
             else if (peek().value() == '&')
             {
                 consume();
                 tokens.push_back({TokenType::and_, line_count});
             }
+            // #
             else if (peek().value() == '#')
             {
                 consume();
                 tokens.push_back({TokenType::hashtag, line_count});
             }
+            else if (peek().value() == ':')
+            {
+                consume();
+                tokens.push_back({TokenType::colon, line_count});
+            }
+            // newline
             else if (peek().value() == '\n')
             {
                 line_count++;

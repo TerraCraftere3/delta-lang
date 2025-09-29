@@ -93,15 +93,22 @@ namespace Delta
             try_consume(TokenType::semicolon, "';'", return_token.line);
         }
         // Const variable declaration: const type identifier = expr;
-        else if (peek().value().type == TokenType::const_ && peek(2).has_value() && peek(2).value().type == TokenType::data_type && peek(3).has_value() && peek(3).value().type == TokenType::identifier && peek(4).has_value() && peek(4).value().type == TokenType::equals)
+        else if (peek(1).value().type == TokenType::let &&
+                 peek(2).has_value() && peek(2).value().type == TokenType::const_ &&
+                 peek(3).has_value() && peek(3).value().type == TokenType::identifier &&
+                 peek(4).has_value() && peek(4).value().type == TokenType::colon &&
+                 peek(5).has_value() && peek(5).value().type == TokenType::data_type &&
+                 peek(6).has_value() && peek(6).value().type == TokenType::equals)
         {
-            consume(); // const
-            auto data_type = consume();
-            auto *statement_let = m_allocator.alloc<NodeStatementLet>();
+            consume();                                                   // let
+            consume();                                                   // const
+            auto *statement_let = m_allocator.alloc<NodeStatementLet>(); //
+            statement_let->ident = consume();                            // name
+            statement_let->isConst = true;                               //
+            consume();                                                   // :
+            auto data_type = consume();                                  // type
+            auto eq = consume();                                         // =
             statement_let->type = stringToType(data_type.value.value());
-            statement_let->ident = consume();
-            statement_let->isConst = true;
-            auto eq = consume();
             if (auto node_expr = parseExpression())
             {
                 statement_let->expression = node_expr.value();
@@ -116,17 +123,21 @@ namespace Delta
             }
             try_consume(TokenType::semicolon, "';'", eq.line);
         }
-        // Variable declaration: type identifier = expr;
-        else if (peek().value().type == TokenType::data_type &&
+        // Variable declaration: let identifier: type = expr;
+        else if (peek().value().type == TokenType::let &&
                  peek(2).has_value() && peek(2).value().type == TokenType::identifier &&
-                 peek(3).has_value() && peek(3).value().type == TokenType::equals)
+                 peek(3).has_value() && peek(3).value().type == TokenType::colon &&
+                 peek(4).has_value() && peek(4).value().type == TokenType::data_type &&
+                 peek(5).has_value() && peek(5).value().type == TokenType::equals)
         {
-            auto data_type = consume();
-            auto *statement_let = m_allocator.alloc<NodeStatementLet>();
+            consume();                                                   // let
+            auto *statement_let = m_allocator.alloc<NodeStatementLet>(); //
+            statement_let->ident = consume();                            // name
+            statement_let->isConst = false;                              //
+            consume();                                                   // :
+            auto data_type = consume();                                  // type
+            auto eq = consume();                                         // =
             statement_let->type = stringToType(data_type.value.value());
-            statement_let->ident = consume();
-            statement_let->isConst = false;
-            auto eq = consume();
             if (auto node_expr = parseExpression())
             {
                 statement_let->expression = node_expr.value();
@@ -277,15 +288,15 @@ namespace Delta
 
         while (peek().has_value())
         {
-            // type name (parameters, ...);
-            if (auto func_decl = parseFunctionDeclaration())
-            {
-                program.functions.push_back(func_decl.value());
-            }
             // external type name (parameters, ...);
-            else if (auto external_decl = parseExternalDeclaration())
+            if (auto external_decl = parseExternalDeclaration())
             {
                 program.externals.push_back(external_decl.value());
+            }
+            // type name (parameters, ...);
+            else if (auto func_decl = parseFunctionDeclaration())
+            {
+                program.functions.push_back(func_decl.value());
             }
             // any statement
             else if (auto statement = parseStatement())
@@ -303,17 +314,16 @@ namespace Delta
 
     std::optional<NodeFunctionDeclaration *> Parser::parseFunctionDeclaration()
     {
-        // Check if this looks like a function: type identifier(
-        if (peek().has_value() && peek().value().type == TokenType::data_type &&
+        // Check if this looks like a function: fn identifier(
+        if (peek().has_value() && peek().value().type == TokenType::function &&
             peek(2).has_value() && peek(2).value().type == TokenType::identifier &&
             peek(3).has_value() && peek(3).value().type == TokenType::open_paren)
         {
-            auto return_type_token = consume();
+            auto function_token = consume();
             auto function_name = consume();
             auto open_paren = consume();
 
             auto *func_decl = m_allocator.alloc<NodeFunctionDeclaration>();
-            func_decl->return_type = stringToType(return_type_token.value.value());
             func_decl->function_name = function_name;
 
             // Parse parameter list
@@ -331,6 +341,9 @@ namespace Delta
             }
 
             try_consume(TokenType::close_paren, "')'", open_paren.line);
+            try_consume(TokenType::arrow_right, "->", peek().value().line);
+            auto return_type_token = consume();
+            func_decl->return_type = stringToType(return_type_token.value.value());
 
             // Parse function body
             if (auto body = parseScope())
@@ -445,11 +458,13 @@ namespace Delta
 
     std::optional<NodeParameter *> Parser::parseParameter()
     {
-        if (peek().has_value() && peek().value().type == TokenType::data_type &&
-            peek(2).has_value() && peek(2).value().type == TokenType::identifier)
+        if (peek().has_value() && peek().value().type == TokenType::identifier &&
+            peek(2).has_value() && peek(2).value().type == TokenType::colon &&
+            peek(3).has_value() && peek(3).value().type == TokenType::data_type)
         {
-            auto type_token = consume();
-            auto name_token = consume();
+            auto name_token = consume(); // name
+            consume();                   // :
+            auto type_token = consume(); // type
 
             auto *param = m_allocator.alloc<NodeParameter>();
             param->type = stringToType(type_token.value.value());

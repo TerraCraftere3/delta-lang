@@ -3,8 +3,27 @@
 #include <stdtime>
 #include <glew>
 
-int main() {
-    int win = stdOpenWindow("Example Window", 800, 600);
+fn fibonacci(n: int) -> int64 {
+    if (n <= 1) {
+        return n;
+    }
+    return fibonacci(n - 1) + fibonacci(n - 2);
+}
+
+fn printFibonacci(n: int) -> void {
+    let i: int = 0;
+    while (i < n) {
+        printf("Fibonacci #%d: %lld\n", i+1, fibonacci(i+1));
+        i = i + 1;
+    }
+}
+
+fn main() -> int {
+    printf("Compiler Name: %s\nCompiler Version: %s\nStandard Version: %s\n", _DLT_CC_NAME, _DLT_CC_VERSION, _DLT_VERSION);
+
+    printFibonacci(30);
+
+    let win: int = stdOpenWindow("Delta Demo", 800, 600);
     if (win < 0) {
         printf("Failed to create window\n");
         return 1;
@@ -23,25 +42,29 @@ int main() {
         return 1;
     }
 
-    if(glewInit() > 0){
+    if (glewInit() > 0) {
         printf("Failed to initialize glew!\n");
         return 1;
     }
 
-    while(stdIsWindowOpen(win)){
+    while (stdIsWindowOpen(win)) {
         stdUpdateWindow(win);
-        if(stdIsKeyPressed(win, 'Z')){
+        if (stdIsKeyPressed(win, 'Z')) {
             stdCloseWindow(win); // Close window when Z is pressed
         }
-        int width = 0;
-        int height = 0;
+
+        let width: int = 0;
+        let height: int = 0;
         stdGetWindowSize(win, &width, &height);
+
         glViewport(0, 0, width, height);
         glClearColor(1.0f, 0.8f, 0.2f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
+
         stdSwapBuffers(win);
         stdSleep(16); // sleep 16ms (~60fps)
     }
+
     stdDestroyWindow(win);
     return 0;
 }
