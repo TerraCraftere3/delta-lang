@@ -191,9 +191,11 @@ $$
     \\
     \text{Identifier} = [\text{Expr}]; & \textit{Assign to Variable}
     \\
-    *[\text{Expr}] = [\text{Expr}] & \textit{Assign to Pointer}
+    \text{Identifier++}; & \textit{Increment Variable}
     \\
-    [\text{Expr}][[\text{Expr}]] = [\text{Expr}] & \textit{Assign to Array}
+    *[\text{Expr}] = [\text{Expr}]; & \textit{Assign to Pointer}
+    \\
+    [\text{Expr}][[\text{Expr}]] = [\text{Expr}]; & \textit{Assign to Array}
     \\
     if([\text{Expr}])[\text{Scope}][\text{IfPred}]
     \\

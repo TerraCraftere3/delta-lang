@@ -156,8 +156,8 @@ namespace Delta
         else if (peek().value().type == TokenType::identifier && peek(2).has_value() && peek(2).value().type == TokenType::equals)
         {
             auto assign = m_allocator.alloc<NodeStatementAssign>();
-            assign->ident = consume();
-            auto eq = consume(); // equals sign
+            assign->ident = consume(); // identifier
+            auto eq = consume();       // ==
             if (auto expr = parseExpression())
             {
                 assign->expression = expr.value();
@@ -168,6 +168,90 @@ namespace Delta
                 exit(EXIT_FAILURE);
             }
             try_consume(TokenType::semicolon, "';'", eq.line);
+            auto stmt = m_allocator.alloc<NodeStatement>();
+            stmt->var = assign;
+            statement = stmt;
+        }
+        // Decrement: identifier--
+        else if (peek().value().type == TokenType::identifier && peek(2).has_value() && peek(2).value().type == TokenType::minus && peek(3).has_value() && peek(3).value().type == TokenType::minus)
+        {
+            auto assign = m_allocator.alloc<NodeStatementAssign>();
+            assign->ident = consume(); // identifier
+            auto minus1 = consume();   // -
+            auto plus2 = consume();    // -
+
+            // Build expression: ident + 1
+            auto expr = m_allocator.alloc<NodeExpression>();
+            auto binop = m_allocator.alloc<NodeExpressionBinary>();
+            auto subtraction = m_allocator.alloc<NodeExpressionBinarySubtraction>();
+
+            // Left side = ident
+            auto left = m_allocator.alloc<NodeExpression>();
+            auto left_term = m_allocator.alloc<NodeExpressionTerm>();
+            auto left_ident = m_allocator.alloc<NodeTermIdentifier>();
+            left_ident->ident = assign->ident;
+            left_term->var = left_ident;
+            left->var = left_term;
+
+            // Right side = 1
+            auto right = m_allocator.alloc<NodeExpression>();
+            auto right_term = m_allocator.alloc<NodeExpressionTerm>();
+            auto one_lit = m_allocator.alloc<NodeTermIntegerLiteral>();
+            one_lit->int_literal = {TokenType::int_literal, plus2.line, "1"};
+            right_term->var = one_lit;
+            right->var = right_term;
+
+            binop->var = subtraction;
+            subtraction->left = left;
+            subtraction->right = right;
+            expr->var = binop;
+
+            assign->expression = expr;
+
+            try_consume(TokenType::semicolon, "';'", plus2.line);
+
+            auto stmt = m_allocator.alloc<NodeStatement>();
+            stmt->var = assign;
+            statement = stmt;
+        }
+        // Increment: identifier++
+        else if (peek().value().type == TokenType::identifier && peek(2).has_value() && peek(2).value().type == TokenType::plus && peek(3).has_value() && peek(3).value().type == TokenType::plus)
+        {
+            auto assign = m_allocator.alloc<NodeStatementAssign>();
+            assign->ident = consume(); // identifier
+            auto plus1 = consume();    // +
+            auto plus2 = consume();    // +
+
+            // Build expression: ident + 1
+            auto expr = m_allocator.alloc<NodeExpression>();
+            auto binop = m_allocator.alloc<NodeExpressionBinary>();
+            auto addition = m_allocator.alloc<NodeExpressionBinaryAddition>();
+
+            // Left side = ident
+            auto left = m_allocator.alloc<NodeExpression>();
+            auto left_term = m_allocator.alloc<NodeExpressionTerm>();
+            auto left_ident = m_allocator.alloc<NodeTermIdentifier>();
+            left_ident->ident = assign->ident;
+            left_term->var = left_ident;
+            left->var = left_term;
+
+            // Right side = 1
+            auto right = m_allocator.alloc<NodeExpression>();
+            auto right_term = m_allocator.alloc<NodeExpressionTerm>();
+            auto one_lit = m_allocator.alloc<NodeTermIntegerLiteral>();
+            one_lit->int_literal = {TokenType::int_literal, plus2.line, "1"};
+            right_term->var = one_lit;
+            right->var = right_term;
+
+            binop->var = addition;
+            addition->left = left;
+            addition->right = right;
+            expr->var = binop;
+
+            assign->expression = expr;
+
+            try_consume(TokenType::semicolon, "';'", plus2.line);
+
             auto stmt = m_allocator.alloc<NodeStatement>();
             stmt->var = assign;
             statement = stmt;
