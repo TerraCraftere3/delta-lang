@@ -1,6 +1,10 @@
 cmake_minimum_required(VERSION 3.16)
 project(delta LANGUAGES CXX C)
 
+set(DELTA_COMPILER_NAME "Official Delta Compiler")
+set(DELTA_COMPILER_VERSION "2025.0.1")
+set(DELTA_STDLIB_VERSION "2025.0")
+
 if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
     message(STATUS "No build type specified, forcing Release")
     set(CMAKE_BUILD_TYPE Release CACHE STRING "Build type" FORCE)
@@ -58,6 +62,24 @@ else()
 endif()
 
 # ---- Executable ----
+file(READ "${CMAKE_CURRENT_SOURCE_DIR}/src/Wasm.html" WASM_HTML_CONTENT)
+set(WASM_HTML "${WASM_HTML_CONTENT}")
+configure_file(
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/Wasm.h.in"
+    "${CMAKE_CURRENT_BINARY_DIR}/Wasm.h"
+    @ONLY
+)
+
+set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS 
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/Wasm.html"
+)
+
+configure_file(
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/Globals.h.in"
+    "${CMAKE_CURRENT_BINARY_DIR}/Globals.h"
+    @ONLY
+)
+
 file(GLOB SRC_FILES CONFIGURE_DEPENDS src/*.cpp)
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/runtime)
@@ -69,6 +91,7 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_MINSIZEREL ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
 add_executable(${PROJECT_NAME} ${SRC_FILES})
 
 target_include_directories(${PROJECT_NAME} PRIVATE src)
+target_include_directories(${PROJECT_NAME} PRIVATE "${CMAKE_CURRENT_BINARY_DIR}")
 target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_20)
 
 # ---- Libraries ----

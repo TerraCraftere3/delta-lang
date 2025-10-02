@@ -11,8 +11,10 @@ CTestTestfile.cmake
 _deps
 CMakeUserPresets.json
 build
+
 runtime/delta.*
 runtime/*.pdb
+
 examples/*/int
 examples/*/*.exe
 examples/*/*.wasm
