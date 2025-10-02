@@ -1,11 +1,11 @@
-# delta-lang
+# The Official Delta Compiler
 [![CMake](https://github.com/TerraCraftere3/delta-lang/actions/workflows/cmake_windows.yml/badge.svg)](https://github.com/TerraCraftere3/delta-lang/actions/workflows/cmake_windows.yml) 
 ![Top language](https://img.shields.io/github/languages/top/TerraCraftere3/delta-lang?color=yellow&logo=cplusplus)
 ![Language count](https://img.shields.io/github/languages/count/TerraCraftere3/delta-lang?color=blue)
 ![Repo size](https://img.shields.io/github/repo-size/TerraCraftere3/delta-lang?color=red&logo=gitlab)
 ![GitHub License](https://img.shields.io/github/license/TerraCraftere3/delta-lang)
 
-Delta is a C Style Programming Language that is compiled to LLVM Intermediate Representation
+Delta is a Programming Language that is compiled to LLVM Intermediate Representation for native performance. It has a custom standard library with simple window management and some c functions. It also has support for custom libraries (for example glew in the example) using external definitions.
 
 ## How to Build
 - Clone the repository using `git clone --recursive https://github.com/TerraCraftere3/delta-lang` into any folder you want
@@ -198,6 +198,8 @@ fn \space \text{Identifier}([\text{ParamList}]?) \space [\text{Scope}] & \textit
     \text{Identifier} = [\text{Expr}]; & \textit{Assign to Variable}
     \\
     \text{Identifier++}; & \textit{Increment Variable}
+    \\
+    \text{Identifier--}; & \textit{Decrement Variable}
     \\
     *[\text{Expr}] = [\text{Expr}]; & \textit{Assign to Pointer}
     \\
