@@ -19,6 +19,11 @@ fn printFibonacci(n: int) -> void {
 }
 
 fn main() -> int {
+    if(_WIN32){
+        printf("Running on Windows\n");
+    }else{
+        printf("Not running on Windows\n");
+    }
     printf("Compiler Name: %s\nCompiler Version: %s\nStandard Version: %s\n", _DLT_CC_NAME, _DLT_CC_VERSION, _DLT_VERSION);
 
     printFibonacci(30);

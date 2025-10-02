@@ -2,7 +2,7 @@
   "name": "deltalang",
   "displayName": "DeltaLang",
   "description": "Language support for the Delta Compiler",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "engines": {
     "vscode": "^1.104.0"
   },
@@ -10,16 +10,26 @@
     "Programming Languages"
   ],
   "contributes": {
-    "languages": [{
-      "id": "delta",
-      "aliases": ["Delta", "delta"],
-      "extensions": [".dlt",".delta"],
-      "configuration": "./language-configuration.json"
-    }],
-    "grammars": [{
-      "language": "delta",
-      "scopeName": "source.delta",
-      "path": "./syntaxes/delta.tmLanguage.json"
-    }]
+    "languages": [
+      {
+        "id": "delta",
+        "aliases": [
+          "Delta",
+          "delta"
+        ],
+        "extensions": [
+          ".dlt",
+          ".delta"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "delta",
+        "scopeName": "source.delta",
+        "path": "./syntaxes/delta.tmLanguage.json"
+      }
+    ]
   }
 }

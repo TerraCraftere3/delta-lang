@@ -62,6 +62,14 @@
 				{
 					"name": "keyword.control",
 					"match": "\\b(if|else|for|while|return)\\b"
+				},
+				{
+					"name": "keyword.declaration",
+					"match": "\\b(fn|let)\\b"
+				},
+				{
+					"name": "keyword.operator.arrow",
+					"match": "->"
 				}
 			]
 		},
@@ -69,7 +77,7 @@
 			"patterns": [
 				{
 					"name": "storage.type",
-					"match": "\\b(int|float|double|char|void)\\b"
+					"match": "\\b(int|int64|float|double|char|void)\\b"
 				}
 			]
 		},
@@ -99,8 +107,12 @@
 		"functions": {
 			"patterns": [
 				{
-					"name": "support.function",
-					"match": "\\b(std[A-Za-z0-9_]*|gl[A-Za-z0-9_]*|printf|glewInit)\\b"
+					"name": "entity.name.function.definition",
+					"match": "(?<=\\bfn\\s+)([A-Za-z_][A-Za-z0-9_]*)"
+				},
+				{
+					"name": "entity.name.function.call",
+					"match": "\\b([A-Za-z_][A-Za-z0-9_]*)\\s*(?=\\()"
 				}
 			]
 		}
