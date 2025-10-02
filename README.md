@@ -22,15 +22,17 @@ Delta is a C Style Programming Language that is compiled to LLVM Intermediate Re
 - The Project will build and run the example project
 
 ## Structure
-- ``.github`` - Contains workflows and github properties
-- ``.vscode`` - Contains the settings for vscode cmake
-- ``build`` - The output of cmake
-- ``example`` - The Example Project (usually showcases the new feature)
-- ``extension`` - A VSCode Extension for syntax highlighting
-- ``runtime`` - All the files required by delta.exe
-- ``src`` - The Source Code of the Compiler
-- ``stdlib`` - The Standard Library shipped with the compiler
-- ``vendor`` - External Libraries like spdlog
+| Folder        | Usage                                                   |
+| ------------- | ------------------------------------------------------- |
+| ``.github``   | Contains workflows and github properties                |
+| ``.vscode``   | Contains the settings for vscode cmake                  |
+| ``build``     | The output of cmake                                     |
+| ``example``   | The Example Project (usually showcases the new feature) |
+| ``extension`` | A VSCode Extension for syntax highlighting              |
+| ``runtime``   | All the files required by delta.exe                     |
+| ``src``       | The Source Code of the Compiler                         |
+| ``stdlib``    | The Standard Library shipped with the compiler          |
+| ``vendor``    | External Libraries like spdlog                          |
 
 ## Usage
 ### Variables
@@ -45,12 +47,6 @@ c = 2 * c; // Updating Variable
 ```
 let d: int = a * (b + 2);
 let e: int = d - 128;
-```
-
-### Exit
-```
-let code: int = 0;
-exit(code); // or just exit(0)
 ```
 
 ### Scopes
@@ -125,6 +121,11 @@ let x: int = 10;
 modifyInt(&x, 42); // sets the value of x to 42
 ```
 
+### Chars
+```
+let c: char = 'H';
+```
+
 ### Strings
 ```
 let const str: char* = "Hello World\n";
@@ -173,7 +174,12 @@ $$
 \begin{align}
 [\text{Prog}] &\to [\text{FuncDecl}]^* \space [\text{Statement}]^* \space\textit{List of Functions and Statements}
 \\
-[\text{FuncDecl}] &\to fn \space \text{Identifier}([\text{ParamList}]?) \space \text{->} \space [\text{Type}][\text{Scope}]
+[\text{FuncDecl}] &\to 
+\begin{cases}
+fn \space \text{Identifier}([\text{ParamList}]?) \space \text{->} \space [\text{Type}][\text{Scope}]
+\\
+fn \space \text{Identifier}([\text{ParamList}]?) \space [\text{Scope}] & \textit{Default to void type}
+\end{cases}
 \\
 [\text{ParamList}] &\to \text{Param}^*
 \\

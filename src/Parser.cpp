@@ -425,9 +425,15 @@ namespace Delta
             }
 
             try_consume(TokenType::close_paren, "')'", open_paren.line);
-            try_consume(TokenType::arrow_right, "->", peek().value().line);
-            auto return_type_token = consume();
-            func_decl->return_type = stringToType(return_type_token.value.value());
+            if (try_consume(TokenType::arrow_right).has_value())
+            {
+                auto return_type_token = consume();
+                func_decl->return_type = stringToType(return_type_token.value.value());
+            }
+            else
+            {
+                func_decl->return_type = DataType::VOID; // Default to void
+            }
 
             // Parse function body
             if (auto body = parseScope())
