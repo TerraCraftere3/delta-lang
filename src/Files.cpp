@@ -90,6 +90,13 @@ std::string Delta::Files::getFileExtension(const std::string &filename)
     return path.extension().string();
 }
 
+std::string Delta::Files::replaceExtension(const std::string &filename, const std::string &newExtension)
+{
+    std::filesystem::path path(filename);
+    path.replace_extension(newExtension);
+    return path.string();
+}
+
 std::string Delta::Files::getFileName(const std::string &path)
 {
     std::filesystem::path p(path);

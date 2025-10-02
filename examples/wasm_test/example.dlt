@@ -1,0 +1,23 @@
+#include <stdio>
+
+fn fibonacci(n: int) -> int {
+    if (n <= 1) {
+        return n;
+    }
+    return fibonacci(n - 1) + fibonacci(n - 2);
+}
+
+fn printFibonacci(n: int) -> void {
+    let i: int = 0;
+    while (i < n) {
+        printf("Fibonacci #%d: %d\n", i+1, fibonacci(i+1));
+        i++;
+    }
+}
+
+fn main() -> int {
+    printf("Compiler Name: %s\nCompiler Version: %s\nStandard Version: %s\n", _DLT_CC_NAME, _DLT_CC_VERSION, _DLT_VERSION);
+
+    printFibonacci(30);
+    return 0;
+}

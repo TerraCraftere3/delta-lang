@@ -13,6 +13,8 @@ CMakeUserPresets.json
 build
 runtime/delta.*
 runtime/*.pdb
-example/int
-example/*.exe
-example/*.log
+examples/*/int
+examples/*/*.exe
+examples/*/*.wasm
+examples/*/*.html
+examples/*/*.log

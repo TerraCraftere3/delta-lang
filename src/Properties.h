@@ -12,6 +12,12 @@ namespace Delta
         COMPILE_LINK_AND_RUN
     };
 
+    enum CompileTarget
+    {
+        TARGET_NATIVE,
+        TARGET_WASM
+    };
+
     inline const char *getCompileTypeName(CompileType type)
     {
         switch (type)
@@ -31,6 +37,7 @@ namespace Delta
     {
         bool verbose = false;
         CompileType compileType = COMPILE_ONLY;
+        CompileTarget compileTarget = TARGET_NATIVE;
         const char *inputFile = nullptr;
         const char *outputFile = nullptr;
         std::vector<std::string> additionalLinks;

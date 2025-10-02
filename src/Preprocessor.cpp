@@ -7,24 +7,31 @@ namespace Delta
 {
 #define SPECIAL_TOKEN(type, value) {type, 0, value}
 
-    Preprocessor::Preprocessor(std::vector<Token> tokens)
+    Preprocessor::Preprocessor(std::vector<Token> tokens, bool isWasm)
         : m_tokens(tokens)
     {
+        if (!isWasm)
+        {
 #if defined(_WIN32)
-        m_definitions["_WIN32"].push_back(SPECIAL_TOKEN(TokenType::int_literal, "1"));
+            m_definitions["_WIN32"].push_back(SPECIAL_TOKEN(TokenType::int_literal, "1"));
 #endif
 #if defined(_WIN64)
-        m_definitions["_WIN64"].push_back(SPECIAL_TOKEN(TokenType::int_literal, "1"));
+            m_definitions["_WIN64"].push_back(SPECIAL_TOKEN(TokenType::int_literal, "1"));
 #endif
 #if defined(__linux__)
-        m_definitions["__linux__"].push_back(SPECIAL_TOKEN(TokenType::int_literal, "1"));
+            m_definitions["__linux__"].push_back(SPECIAL_TOKEN(TokenType::int_literal, "1"));
 #endif
 #if defined(__linux)
-        m_definitions["__linux"].push_back(SPECIAL_TOKEN(TokenType::int_literal, "1"));
+            m_definitions["__linux"].push_back(SPECIAL_TOKEN(TokenType::int_literal, "1"));
 #endif
 #if defined(__APPLE__)
-        m_definitions["__APPLE__"].push_back(SPECIAL_TOKEN(TokenType::int_literal, "1"));
+            m_definitions["__APPLE__"].push_back(SPECIAL_TOKEN(TokenType::int_literal, "1"));
 #endif
+        }
+        else
+        {
+            m_definitions["_WASM"].push_back(SPECIAL_TOKEN(TokenType::int_literal, "1"));
+        }
         m_definitions["_DLT_CC"].push_back(SPECIAL_TOKEN(TokenType::int_literal, "1"));
         m_definitions["_DLT_CC_VERSION"].push_back(SPECIAL_TOKEN(TokenType::string_literal, COMPILER_VERSION));
         m_definitions["_DLT_CC_NAME"].push_back(SPECIAL_TOKEN(TokenType::string_literal, COMPILER_NAME));

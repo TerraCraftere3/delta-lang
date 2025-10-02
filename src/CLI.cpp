@@ -15,6 +15,8 @@ int main(int argc, char **argv)
     std::vector<std::string> includeDirs;
     std::vector<std::string> linkerFiles;
 
+    Delta::CompileTarget target = Delta::CompileTarget::TARGET_NATIVE;
+
     for (int i = 1; i < argc; i++)
     {
         std::string arg = argv[i];
@@ -74,6 +76,30 @@ int main(int argc, char **argv)
                 return 1;
             }
         }
+        else if (arg == "-T" || arg == "--target")
+        {
+            if (i + 1 < argc)
+            {
+                if (std::string(argv[++i]) == "native")
+                {
+                    target = Delta::CompileTarget::TARGET_NATIVE;
+                }
+                else if (std::string(argv[i]) == "wasm")
+                {
+                    target = Delta::CompileTarget::TARGET_WASM;
+                }
+                else
+                {
+                    std::cerr << "Error: Invalid target '" << argv[i] << "'. Use 'native' or 'wasm'.\n";
+                    return 1;
+                }
+            }
+            else
+            {
+                std::cerr << "Error: -T/--target requires a target\n";
+                return 1;
+            }
+        }
         else if (arg == "-v" || arg == "--verbose")
         {
             verbose = true;
@@ -106,5 +132,6 @@ int main(int argc, char **argv)
     props.compileType = run ? Delta::COMPILE_LINK_AND_RUN : (link ? Delta::COMPILE_AND_LINK : Delta::COMPILE_ONLY);
     props.additionalLinks = linkerFiles;
     props.includeDirs = includeDirs;
+    props.compileTarget = target;
     return Delta::Compiler::compile(props);
 }

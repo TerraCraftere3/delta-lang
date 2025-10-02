@@ -16,7 +16,7 @@ namespace Delta
     class Preprocessor
     {
     public:
-        Preprocessor(std::vector<Token> tokens);
+        Preprocessor(std::vector<Token> tokens, bool isWasm = false);
         PreprocessorResult process(std::vector<std::string> includeDirs);
 
     private:

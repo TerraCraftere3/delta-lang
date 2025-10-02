@@ -2,11 +2,11 @@
     "cmake.debugConfig": {
         "args": [
             "-i",
-            "..\\example\\example.dlt",
+            "..\\examples\\wasm_test\\example.dlt",
             "-o",
-            "..\\example\\example.exe",
-            "-L",
-            "..\\example\\glew32.lib",
+            "..\\examples\\wasm_test\\example.wasm",
+            "-T",
+            "wasm",
             "--verbose",
             "--run",
         ]
