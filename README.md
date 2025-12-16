@@ -1,4 +1,4 @@
-# The Official Delta Compiler
+# 🚀 The Official Delta Compiler
 [![CMake](https://github.com/TerraCraftere3/delta-lang/actions/workflows/cmake_windows.yml/badge.svg)](https://github.com/TerraCraftere3/delta-lang/actions/workflows/cmake_windows.yml) 
 ![Top language](https://img.shields.io/github/languages/top/TerraCraftere3/delta-lang?color=yellow&logo=cplusplus)
 ![Language count](https://img.shields.io/github/languages/count/TerraCraftere3/delta-lang?color=blue)
@@ -7,21 +7,36 @@
 
 Delta is a Programming Language that is compiled to LLVM Intermediate Representation for native performance. It has a custom standard library with simple window management and some c functions. It also has support for custom libraries (for example glew in the example) using external definitions.
 
-## How to Build
+## 🛠️ How to Build
 - Clone the repository using `git clone --recursive https://github.com/TerraCraftere3/delta-lang` into any folder you want
-### Terminal
+### 💻 Terminal
 - Open the cloned repo in a terminal and enter the following commands:
     - `mkdir build`
     - `cd build`
     - `cmake .. -G "Visual Studio 17 2022"` (Adjust the Generator to your Visual Studio Version)
     - `cmake --build . --config Release` or open the generated Solution File
-### VSCode
+### 🧩 VSCode
 - Open the cloned repo in vscode
 - Press CTRL + Shift + P
 - Enter "CMake: Debug" and press enter
 - The Project will build and run the example project
 
-## Structure
+## ▶️ Usage
+You can compile files using the `delta` command. e.g.:
+```
+delta -i example.dltu -i fibonacci.dltu -o example.exe --verbose --run
+```
+
+Here are the possible arguments for the compiler:
+- `-i [input_file].dltu`: Adds a new Compile Unit to the Compiler
+- `-o [output_file]`: Sets the output file for the Compiler
+- `-L [library_file]`: Adds a linker library to the Compiler
+- `--verbose`: Activates Verbose Logging
+- `--run`: Runs the program after compilation
+
+You usually use .dltu files for delta compile units and .dlt for headers (headers need to be .dlt files) 
+
+## 🗂️ Structure
 | Folder        | Usage                                                   |
 | ------------- | ------------------------------------------------------- |
 | ``.github``   | Contains workflows and github properties                |
@@ -34,8 +49,8 @@ Delta is a Programming Language that is compiled to LLVM Intermediate Representa
 | ``stdlib``    | The Standard Library shipped with the compiler          |
 | ``vendor``    | External Libraries like spdlog                          |
 
-## Usage
-### Variables
+## ▶️ Usage
+### 🧮 Variables
 ```
 let a: int = 42; // Setting Variable
 let b: short = 3;
@@ -43,13 +58,13 @@ let c: long = a + b;
 c = 2 * c; // Updating Variable
 ```
 
-### Maths 
+### ➕ Maths 
 ```
 let d: int = a * (b + 2);
 let e: int = d - 128;
 ```
 
-### Scopes
+### 📦 Scopes
 ```
 let a: int = 3;
 {
@@ -59,7 +74,7 @@ let b: int = 3; // Can redefine because scope is closed
 ```
 You cannot shadow variables that are outside scopes
 
-### IF Statements
+### ❓ IF Statements
 ```
 if(statement_a){
     ...
@@ -71,7 +86,7 @@ if(statement_a){
 ```
 You cannot shadow variables that are outside scopes
 
-### Comments
+### 📝 Comments
 ```
 // This is an example comment
 let a: int = 3
@@ -82,13 +97,13 @@ let a: int = 3
 }*/
 ```
 
-### Constants
+### 🔒 Constants
 ```
 // Constant values cant be changed after declaration
 let const ZERO: int = 0;
 ```
 
-### Types
+### 🧩 Types
 ```
 let a: int = 10;
 let b: float = 1.2345f;
@@ -96,7 +111,7 @@ let pi: double = 3.14;
 ```
 Any integer type is compatible with another integer type, so are other types (like floats in the future).
 
-### Functions
+### 🧪 Functions
 ```
 fn add(a: int, b: int) -> int {
     return a + b;
@@ -105,13 +120,13 @@ fn add(a: int, b: int) -> int {
 let result: int = add(3, 5);
 ```
 
-### Casting
+### 🔄 Casting
 ```
 let a: int = 10;
 let b: float = (float) a;
 ```
 
-### Pointer
+### 📍 Pointer
 ```
 fn modifyInt(int* ptr, int newValue) -> void{
     *ptr = newValue;
@@ -121,18 +136,18 @@ let x: int = 10;
 modifyInt(&x, 42); // sets the value of x to 42
 ```
 
-### Chars
+### 🔤 Chars
 ```
 let c: char = 'H';
 ```
 
-### Strings
+### 📜 Strings
 ```
 let const str: char* = "Hello World\n";
 printf(str);
 ```
 
-### Arrays
+### 🧾 Arrays
 ```
 let array: int* = malloc(8 * 4); // Allocates an array of 8 * int32
 array[0] = 4;
@@ -141,7 +156,7 @@ array[1] = 16;
 array[7] = 3;
 ```
 
-### Main Function
+### 🧠 Main Function
 
 ```
 fn main() -> int{
@@ -150,7 +165,7 @@ fn main() -> int{
 ```
 The return value of main() is used as the exit code of the program
 
-### Includes
+### 📎 Includes
 ```
 #include <stdio> // includes io functions like printf
 #include <stdgraphics>
@@ -160,14 +175,14 @@ fn main() -> int{
 }
 ```
 
-### Definitions
+### 🧱 Definitions
 ```
 #define PI 3.14159265359
 #define someFunction windowsBackend_someFunctionCall()
 ```
 The name of a definition cant be the same as an existing token
 
-## Grammar
+## 📐 Grammar
 (LaTeX Expression might not render correctly in Github)
 
 $$
@@ -306,7 +321,7 @@ fn \space \text{Identifier}([\text{ParamList}]?) \space [\text{Scope}] & \textit
 \end{align}
 $$
 
-### Grammar Rules
+### 📏 Grammar Rules
 - Nonterminals: $` [\text{Category / Element}] `$ - Can continue to have subnodes
 - Terminals: $` \text{Element} `$ - Can NOT have subnodes
 - Alternations: $` \text{float64} \space | \space \text{double} `$ - Means that two values are the same

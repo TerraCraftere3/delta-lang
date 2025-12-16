@@ -45,6 +45,7 @@ namespace Delta
     // General
     std::string nodeDebugPrint(NodeScope *node, int indention);
     std::string nodeDebugPrint(NodeFunctionDeclaration *node, int indention);
+    std::string nodeDebugPrint(NodeExternalDeclaration *node, int indention);
     std::string nodeDebugPrint(NodeProgram node, int indention = 0);
 
     template <typename T>

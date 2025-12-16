@@ -2,9 +2,9 @@
     "cmake.debugConfig": {
         "args": [
             "-i",
-            "..\\examples\\native_test\\example.dlt",
+            "..\\examples\\native_test\\example.dltu",
             "-i",
-            "..\\examples\\native_test\\fibonacci.dlt",
+            "..\\examples\\native_test\\fibonacci.dltu",
             "-o",
             "..\\examples\\native_test\\example.exe",
             "-L",
@@ -99,5 +99,6 @@
         "xutility": "cpp",
         "windows.h": "c",
         "stdbool.h": "c"
-    }
+    },
+    "iis.configDir": ""
 }

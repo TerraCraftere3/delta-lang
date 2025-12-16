@@ -272,11 +272,39 @@ namespace Delta
         return output.str();
     }
 
+    std::string nodeDebugPrint(NodeExternalDeclaration *node, int indention)
+    {
+        std::stringstream output;
+        output << Indent(indention) << DEBUG_NODE_PREFIX;
+        output << "External \"" << typeToString(node->return_type) << " " << node->function_name.value.value();
+        output << "(";
+        bool firstArg = true;
+        for (auto argument : node->parameters)
+        {
+            if (!firstArg)
+                output << ", ";
+            output << typeToString(argument);
+            firstArg = false;
+        }
+        if (node->is_variadic)
+        {
+            if (!firstArg)
+                output << ", ";
+            output << "...";
+        }
+        output << ")\"\n";
+        return output.str();
+    }
+
     std::string nodeDebugPrint(NodeProgram node, int indention)
     {
         std::stringstream output;
         output << Indent(indention) << DEBUG_NODE_PREFIX << "Node Program\n";
         output << Indent(indention + 1) << DEBUG_NODE_PREFIX << "Functions\n";
+        for (auto external : node.externals)
+        {
+            output << nodeDebugPrint(external, indention + 2);
+        }
         for (auto function : node.functions)
         {
             output << nodeDebugPrint(function, indention + 2);
