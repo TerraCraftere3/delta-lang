@@ -38,7 +38,7 @@ namespace Delta
         bool verbose = false;
         CompileType compileType = COMPILE_ONLY;
         CompileTarget compileTarget = TARGET_NATIVE;
-        const char *inputFile = nullptr;
+        std::vector<std::string> inputFiles; // support multiple input files
         const char *outputFile = nullptr;
         std::vector<std::string> additionalLinks;
         std::vector<std::string> includeDirs;

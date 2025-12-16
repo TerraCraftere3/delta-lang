@@ -3,12 +3,14 @@
         "args": [
             "-i",
             "..\\examples\\native_test\\example.dlt",
+            "-i",
+            "..\\examples\\native_test\\fibonacci.dlt",
             "-o",
             "..\\examples\\native_test\\example.exe",
             "-L",
             "..\\examples\\native_test\\glew32.lib",
             "--verbose",
-            "--run",
+            "--run"
         ]
     },
     "files.associations": {

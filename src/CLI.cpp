@@ -6,7 +6,7 @@
 
 int main(int argc, char **argv)
 {
-    std::string inputFile;
+    std::vector<std::string> inputFiles;
     std::string outputFile = "a.exe";
     bool verbose = true;
     bool link = false;
@@ -26,7 +26,7 @@ int main(int argc, char **argv)
             std::cout << "Delta Language Compiler\n";
             std::cout << "Usage: delta.exe [options]\n";
             std::cout << "Options:\n";
-            std::cout << "\t-i, --input <file>         Specify input source file (required)\n";
+            std::cout << "\t-i, --input <file>         Specify input source file (repeatable)\n";
             std::cout << "\t-o, --output <file>        Specify output executable file (default: a.exe)\n";
             std::cout << "\t-I, --include <dir>        Add an include directory (can be repeated)\n";
             std::cout << "\t-L, --link-lib <file>      Add a linker library/file (can be repeated)\n";
@@ -39,7 +39,7 @@ int main(int argc, char **argv)
         else if (arg == "-i" || arg == "--input")
         {
             if (i + 1 < argc)
-                inputFile = argv[++i];
+                inputFiles.push_back(argv[++i]);
             else
             {
                 std::cerr << "Error: -i/--input requires a filename\n";
@@ -119,14 +119,14 @@ int main(int argc, char **argv)
         }
     }
 
-    if (inputFile.empty())
+    if (inputFiles.empty())
     {
-        std::cerr << "Error: No input file specified. Use -i or --input to specify an input file.";
+        std::cerr << "Error: No input file specified. Use -i or --input to specify one or more input files.";
         return 1;
     }
-    Delta::Log::init(inputFile + ".log");
+    Delta::Log::init(inputFiles.front() + ".log");
     Delta::CompilerProperties props;
-    props.inputFile = inputFile.c_str();
+    props.inputFiles = inputFiles;
     props.outputFile = outputFile.c_str();
     props.verbose = verbose;
     props.compileType = run ? Delta::COMPILE_LINK_AND_RUN : (link ? Delta::COMPILE_AND_LINK : Delta::COMPILE_ONLY);
