@@ -13,7 +13,6 @@ namespace Delta
         endif,          // endif
         exit,           // exit
         while_,         // while
-        data_type,      // int64, float32, bool, etc.
         let,            // let
         equals,         // =
         int_literal,    // integer like 10, etc

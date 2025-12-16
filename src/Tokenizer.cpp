@@ -1,6 +1,5 @@
 #include "Tokenizer.h"
 
-#include "Types.h"
 #include "Log.h"
 #include "Strings.h"
 
@@ -64,17 +63,7 @@ namespace Delta
                 {
                     tokens.push_back({TokenType::while_, line_count});
                     buf.clear();
-                }
-                else if (isValidDataType(buf))
-                {
-                    while (peek().has_value() && peek().value() == '*')
-                    {
-                        buf.push_back(consume());
-                    }
-
-                    tokens.push_back({TokenType::data_type, line_count, buf});
-                    buf.clear();
-                }
+                }                // No dedicated data_type token anymore; treat as identifier
                 else if (buf == "if")
                 {
                     tokens.push_back({TokenType::if_, line_count});

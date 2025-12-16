@@ -10,6 +10,26 @@ namespace Delta
     {
     }
 
+    std::optional<DataType> Parser::parseTypeSpec()
+    {
+        if (!peek().has_value() || peek().value().type != TokenType::identifier)
+            return std::nullopt;
+
+        // Base type name
+        auto type_ident = consume();
+        std::string type_str = type_ident.value.has_value() ? type_ident.value.value() : "";
+
+        // Zero or more '*'
+        while (peek().has_value() && peek().value().type == TokenType::star)
+        {
+            consume();
+            type_str.push_back('*');
+        }
+
+        DataType dt = stringToType(type_str);
+        return dt;
+    }
+
     std::optional<NodeStatement *> Parser::parseStatement()
     {
         std::optional<NodeStatement *> statement = std::nullopt;
@@ -92,52 +112,40 @@ namespace Delta
             statement = stmt;
             try_consume(TokenType::semicolon, "';'", return_token.line);
         }
-        // Const variable declaration: const type identifier = expr;
-        else if (peek(1).value().type == TokenType::let &&
-                 peek(2).has_value() && peek(2).value().type == TokenType::const_ &&
-                 peek(3).has_value() && peek(3).value().type == TokenType::identifier &&
-                 peek(4).has_value() && peek(4).value().type == TokenType::colon &&
-                 peek(5).has_value() && peek(5).value().type == TokenType::data_type &&
-                 peek(6).has_value() && peek(6).value().type == TokenType::equals)
+        // Variable declaration: let [const] identifier: type = expr;
+        else if (peek().value().type == TokenType::let)
         {
-            consume();                                                   // let
-            consume();                                                   // const
-            auto *statement_let = m_allocator.alloc<NodeStatementLet>(); //
-            statement_let->ident = consume();                            // name
-            statement_let->isConst = true;                               //
-            consume();                                                   // :
-            auto data_type = consume();                                  // type
-            auto eq = consume();                                         // =
-            statement_let->type = stringToType(data_type.value.value());
-            if (auto node_expr = parseExpression())
+            auto let_tok = consume(); // let
+
+            bool isConst = false;
+            if (peek().has_value() && peek().value().type == TokenType::const_)
             {
-                statement_let->expression = node_expr.value();
-                auto *stmt = m_allocator.alloc<NodeStatement>();
-                stmt->var = statement_let;
-                statement = stmt;
+                consume();
+                isConst = true;
             }
-            else
+
+            if (!peek().has_value() || peek().value().type != TokenType::identifier)
             {
-                LOG_ERROR("Invalid Expression");
+                LOG_ERROR("Expected identifier after 'let'");
                 exit(EXIT_FAILURE);
             }
-            try_consume(TokenType::semicolon, "';'", eq.line);
-        }
-        // Variable declaration: let identifier: type = expr;
-        else if (peek().value().type == TokenType::let &&
-                 peek(2).has_value() && peek(2).value().type == TokenType::identifier &&
-                 peek(3).has_value() && peek(3).value().type == TokenType::colon &&
-                 peek(4).has_value() && peek(4).value().type == TokenType::data_type &&
-                 peek(5).has_value() && peek(5).value().type == TokenType::equals)
-        {
-            consume();                                                   // let
-            auto *statement_let = m_allocator.alloc<NodeStatementLet>(); //
-            statement_let->ident = consume();                            // name
-            statement_let->isConst = false;                              //
-            consume();                                                   // :
-            auto data_type = consume();                                  // type
-            auto eq = consume();                                         // =
-            statement_let->type = stringToType(data_type.value.value());
+
+            auto *statement_let = m_allocator.alloc<NodeStatementLet>();
+            statement_let->ident = consume(); // name
+            statement_let->isConst = isConst;
+
+            try_consume(TokenType::colon, "':'", let_tok.line);
+
+            auto dt = parseTypeSpec();
+            if (!dt.has_value())
+            {
+                LOG_ERROR("Expected type after ':' in variable declaration");
+                exit(EXIT_FAILURE);
+            }
+            statement_let->type = dt.value();
+
+            auto eq = try_consume(TokenType::equals, "'='", peek(0).value().line);
+
             if (auto node_expr = parseExpression())
             {
                 statement_let->expression = node_expr.value();
@@ -427,8 +435,13 @@ namespace Delta
             try_consume(TokenType::close_paren, "')'", open_paren.line);
             if (try_consume(TokenType::arrow_right).has_value())
             {
-                auto return_type_token = consume();
-                func_decl->return_type = stringToType(return_type_token.value.value());
+                auto rt = parseTypeSpec();
+                if (!rt.has_value())
+                {
+                    LOG_ERROR("Expected return type after '->'");
+                    exit(EXIT_FAILURE);
+                }
+                func_decl->return_type = rt.value();
             }
             else
             {
@@ -458,17 +471,29 @@ namespace Delta
         {
             // Check if this looks like a function: type identifier(
             if (peek(1).has_value() && peek(1).value().type == TokenType::external &&
-                peek(2).has_value() && peek(2).value().type == TokenType::data_type &&
-                peek(3).has_value() && peek(3).value().type == TokenType::identifier &&
-                peek(4).has_value() && peek(4).value().type == TokenType::open_paren)
+                peek(2).has_value())
             {
                 consume();                          // external
-                auto return_type_token = consume(); // type
+
+                auto rt = parseTypeSpec();
+                if (!rt.has_value())
+                {
+                    LOG_ERROR("Expected return type in external declaration");
+                    exit(EXIT_FAILURE);
+                }
+                auto return_type_token_value = rt.value();
+
+                if (!peek().has_value() || peek().value().type != TokenType::identifier)
+                {
+                    LOG_ERROR("Expected function name in external declaration");
+                    exit(EXIT_FAILURE);
+                }
+
                 auto function_name = consume();     // name
-                auto open_paren = consume();        // (
+                auto open_paren = try_consume(TokenType::open_paren, "'('", function_name.line);        // (
 
                 auto *external_decl = m_allocator.alloc<NodeExternalDeclaration>();
-                external_decl->return_type = stringToType(return_type_token.value.value());
+                external_decl->return_type = return_type_token_value;
                 external_decl->function_name = function_name;
                 external_decl->is_variadic = false; // Default to false
 
@@ -477,21 +502,27 @@ namespace Delta
                 {
                     while (true)
                     {
-                        if (!peek().has_value() || (peek().value().type != TokenType::data_type && peek().value().type != TokenType::ellipsis))
+                        if (!peek().has_value())
                         {
                             LOG_ERROR("Expected parameter type or ellipsis (...)  in external function declaration");
                             exit(EXIT_FAILURE);
                         }
 
-                        auto type_token = consume();
-                        if (type_token.type == TokenType::ellipsis)
+                        if (peek().value().type == TokenType::ellipsis)
                         {
+                            consume();
                             external_decl->is_variadic = true;
                             break; // ellipsis must be last paremeter
                         }
                         else
                         {
-                            external_decl->parameters.push_back(stringToType(type_token.value.value()));
+                            auto ptype = parseTypeSpec();
+                            if (!ptype.has_value())
+                            {
+                                LOG_ERROR("Expected parameter type or ellipsis (...) in external function declaration");
+                                exit(EXIT_FAILURE);
+                            }
+                            external_decl->parameters.push_back(ptype.value());
                         }
 
                         if (peek().has_value() && peek().value().type == TokenType::comma)
@@ -549,15 +580,19 @@ namespace Delta
     std::optional<NodeParameter *> Parser::parseParameter()
     {
         if (peek().has_value() && peek().value().type == TokenType::identifier &&
-            peek(2).has_value() && peek(2).value().type == TokenType::colon &&
-            peek(3).has_value() && peek(3).value().type == TokenType::data_type)
+            peek(2).has_value() && peek(2).value().type == TokenType::colon)
         {
             auto name_token = consume(); // name
             consume();                   // :
-            auto type_token = consume(); // type
+            auto type_spec = parseTypeSpec(); // type
+            if (!type_spec.has_value())
+            {
+                LOG_ERROR("Expected parameter type after ':'");
+                exit(EXIT_FAILURE);
+            }
 
             auto *param = m_allocator.alloc<NodeParameter>();
-            param->type = stringToType(type_token.value.value());
+            param->type = type_spec.value();
             param->ident = name_token;
 
             return param;
@@ -808,25 +843,49 @@ namespace Delta
             return node_term;
         }
         // Cast: (type) value
-        else if (peek().has_value() && peek().value().type == TokenType::open_paren &&
-                 peek(2).has_value() && peek(2).value().type == TokenType::data_type &&
-                 peek(3).has_value() && peek(3).value().type == TokenType::close_paren)
+        else if (peek().has_value() && peek().value().type == TokenType::open_paren)
         {
-            consume();                   // (
-            auto type_token = consume(); // type
-            consume();                   // )
-            auto term_cast = m_allocator.alloc<NodeTermCast>();
-            term_cast->target_type = stringToType(type_token.value.value());
-            auto expr = parseExpression();
-            if (!expr.has_value())
+            // Check if this is a cast: ( identifier '*'* )
+            size_t save_pos = m_position;
+            consume(); // (
+            bool is_cast = false;
+            if (peek().has_value() && peek().value().type == TokenType::identifier)
             {
-                LOG_ERROR("Expected Expression after Cast");
-                exit(EXIT_FAILURE);
+                // Consume identifier and any number of stars, then require ')'
+                consume();
+                while (peek().has_value() && peek().value().type == TokenType::star)
+                    consume();
+                if (peek().has_value() && peek().value().type == TokenType::close_paren)
+                {
+                    is_cast = true;
+                }
             }
-            term_cast->expr = expr.value();
-            auto node_term = m_allocator.alloc<NodeExpressionTerm>();
-            node_term->var = term_cast;
-            return node_term;
+
+            // Reset position back to after '('
+            m_position = save_pos;
+
+            if (is_cast)
+            {
+                consume(); // (
+                auto dt = parseTypeSpec();
+                try_consume(TokenType::close_paren, "')'", peek(0).value().line);
+                auto term_cast = m_allocator.alloc<NodeTermCast>();
+                term_cast->target_type = dt.value();
+                auto expr = parseExpression();
+                if (!expr.has_value())
+                {
+                    LOG_ERROR("Expected Expression after Cast");
+                    exit(EXIT_FAILURE);
+                }
+                term_cast->expr = expr.value();
+                auto node_term = m_allocator.alloc<NodeExpressionTerm>();
+                node_term->var = term_cast;
+                return node_term;
+            }
+            else
+            {
+                // Parenthesized expression path handled later in this function
+            }
         }
         // Function call: identifier(args)
         else if (peek().has_value() && peek().value().type == TokenType::identifier &&
