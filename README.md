@@ -128,7 +128,7 @@ let b: float = (float) a;
 
 ### 📍 Pointer
 ```
-fn modifyInt(int* ptr, int newValue) -> void{
+fn modifyInt(ptr: int*, newValue: int) -> void{
     *ptr = newValue;
 }
 
