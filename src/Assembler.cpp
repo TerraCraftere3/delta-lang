@@ -1119,63 +1119,60 @@ namespace Delta
 
     std::string Assembler::dataTypeToLLVM(DataType type)
     {
-        switch (type)
+        std::string base;
+        switch (type.base)
         {
-        case DataType::INT8:
-            return "i8";
-        case DataType::INT16:
-            return "i16";
-        case DataType::INT32:
-            return "i32";
-        case DataType::INT64:
-            return "i64";
-        case DataType::FLOAT32:
-            return "float";
-        case DataType::FLOAT64:
-            return "double";
-        case DataType::VOID:
-            return "void";
-        // Pointer types
-        case DataType::INT8_PTR:
-            return "i8*";
-        case DataType::INT16_PTR:
-            return "i16*";
-        case DataType::INT32_PTR:
-            return "i32*";
-        case DataType::INT64_PTR:
-            return "i64*";
-        case DataType::FLOAT32_PTR:
-            return "float*";
-        case DataType::FLOAT64_PTR:
-            return "double*";
-        case DataType::VOID_PTR:
-            return "i8*"; // void* == i8*
+        case BaseType::INT8:
+            base = "i8";
+            break;
+        case BaseType::INT16:
+            base = "i16";
+            break;
+        case BaseType::INT32:
+            base = "i32";
+            break;
+        case BaseType::INT64:
+            base = "i64";
+            break;
+        case BaseType::FLOAT32:
+            base = "float";
+            break;
+        case BaseType::FLOAT64:
+            base = "double";
+            break;
+        case BaseType::VOID:
+            base = (type.pointer_level > 0) ? "i8" : "void"; // void* -> i8*
+            break;
         default:
-            return "i32";
+            base = "i32";
+            break;
         }
+
+        base.append(type.pointer_level, '*');
+        return base;
     }
 
     void Assembler::generateDefaultValue(DataType type)
     {
-        switch (type)
+        if (isPointerType(type))
         {
-        case DataType::INT8:
-        case DataType::INT16:
-        case DataType::INT32:
-        case DataType::INT64:
+            m_output << "null";
+            return;
+        }
+
+        switch (type.base)
+        {
+        case BaseType::INT8:
+        case BaseType::INT16:
+        case BaseType::INT32:
+        case BaseType::INT64:
             m_output << "0";
             break;
-        case DataType::FLOAT32:
+        case BaseType::FLOAT32:
+        case BaseType::FLOAT64:
             m_output << "0.0";
-            break;
-        case DataType::FLOAT64:
-            m_output << "0.0";
-            break;
-        case DataType::VOID:
-            // Should not happen
             break;
         default:
-            m_output << "0";
             break;
         }
     }
@@ -1342,6 +1339,12 @@ namespace Delta
             m_output << "  " << bool_temp << " = fcmp one " << dataTypeToLLVM(type)
                      << " " << value << ", 0.0 ; Float to Boolean\n";
         }
+        else if (isPointerType(type))
+        {
+            // Compare pointer with null
+            m_output << "  " << bool_temp << " = icmp ne " << dataTypeToLLVM(type)
+                     << " " << value << ", null ; Ptr to Boolean\n";
+        }
         else
         {
             // Compare integer with 0
@@ -1356,14 +1359,21 @@ namespace Delta
     {
         if (isPointerType(left) && isPointerType(right))
         {
+            if (left.pointer_level != right.pointer_level)
+            {
+                LOG_ERROR("Incompatible pointer depths in expression");
+                exit(EXIT_FAILURE);
+            }
+
             if (left == right)
                 return left;
-            // void* is compatible with any pointer
-            if (left == DataType::VOID_PTR)
+
+            // allow void* (any depth) with typed pointers of same depth
+            if (left.base == BaseType::VOID)
                 return right;
-            if (right == DataType::VOID_PTR)
+            if (right.base == BaseType::VOID)
                 return left;
-            // Otherwise, they're incompatible - this might need special handling
+
             LOG_ERROR("Incompatible pointer types in expression");
             exit(EXIT_FAILURE);
         }
@@ -1719,12 +1729,15 @@ namespace Delta
 
     DataType Assembler::getPromotedType(DataType type)
     {
-        switch (type)
+        if (isPointerType(type))
+            return type;
+
+        switch (type.base)
         {
-        case DataType::INT8:
-        case DataType::INT16:
+        case BaseType::INT8:
+        case BaseType::INT16:
             return DataType::INT32;
-        case DataType::FLOAT32:
+        case BaseType::FLOAT32:
             return DataType::FLOAT64;
         default:
             return type;

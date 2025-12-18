@@ -4,123 +4,154 @@
 
 namespace Delta
 {
+    const DataType DataType::ERRORTYPE = DataType(BaseType::ERRORTYPE, 0);
+    const DataType DataType::INT8 = DataType(BaseType::INT8, 0);
+    const DataType DataType::INT16 = DataType(BaseType::INT16, 0);
+    const DataType DataType::INT32 = DataType(BaseType::INT32, 0);
+    const DataType DataType::INT64 = DataType(BaseType::INT64, 0);
+    const DataType DataType::FLOAT32 = DataType(BaseType::FLOAT32, 0);
+    const DataType DataType::FLOAT64 = DataType(BaseType::FLOAT64, 0);
+    const DataType DataType::VOID = DataType(BaseType::VOID, 0);
+
+    const DataType DataType::INT8_PTR = DataType(BaseType::INT8, 1);
+    const DataType DataType::INT16_PTR = DataType(BaseType::INT16, 1);
+    const DataType DataType::INT32_PTR = DataType(BaseType::INT32, 1);
+    const DataType DataType::INT64_PTR = DataType(BaseType::INT64, 1);
+    const DataType DataType::FLOAT32_PTR = DataType(BaseType::FLOAT32, 1);
+    const DataType DataType::FLOAT64_PTR = DataType(BaseType::FLOAT64, 1);
+    const DataType DataType::VOID_PTR = DataType(BaseType::VOID, 1);
+
+    namespace
+    {
+        std::string baseTypeToString(BaseType base)
+        {
+            switch (base)
+            {
+            case BaseType::VOID:
+                return "void";
+            case BaseType::INT8:
+                return "int8";
+            case BaseType::INT16:
+                return "int16";
+            case BaseType::INT32:
+                return "int32";
+            case BaseType::INT64:
+                return "int64";
+            case BaseType::FLOAT32:
+                return "float32";
+            case BaseType::FLOAT64:
+                return "float64";
+            case BaseType::STRUCT:
+                return "struct";
+            default:
+                return "<errortype>";
+            }
+        }
+
+        BaseType stringToBase(const std::string &base)
+        {
+            if (base == "void")
+                return BaseType::VOID;
+            if (base == "char" || base == "int8")
+                return BaseType::INT8;
+            if (base == "short" || base == "int16")
+                return BaseType::INT16;
+            if (base == "int" || base == "int32")
+                return BaseType::INT32;
+            if (base == "long" || base == "int64")
+                return BaseType::INT64;
+            if (base == "float" || base == "float32")
+                return BaseType::FLOAT32;
+            if (base == "double" || base == "float64")
+                return BaseType::FLOAT64;
+            if (base == "struct")
+                return BaseType::STRUCT;
+            return BaseType::ERRORTYPE;
+        }
+    } // namespace
+
     size_t getTypeSize(DataType type)
     {
-        switch (type)
+        if (type.pointer_level > 0)
+            return 8; // 64-bit pointers
+
+        switch (type.base)
         {
-        case DataType::INT8:
+        case BaseType::INT8:
             return 1;
-        case DataType::INT16:
+        case BaseType::INT16:
             return 2;
-        case DataType::INT32:
+        case BaseType::INT32:
             return 4;
-        case DataType::INT64:
+        case BaseType::INT64:
             return 8;
-        case DataType::FLOAT32:
+        case BaseType::FLOAT32:
             return 4;
-        case DataType::FLOAT64:
+        case BaseType::FLOAT64:
             return 8;
-        case DataType::INT8_PTR:
-        case DataType::INT16_PTR:
-        case DataType::INT32_PTR:
-        case DataType::INT64_PTR:
-        case DataType::FLOAT32_PTR:
-        case DataType::FLOAT64_PTR:
-        case DataType::VOID_PTR:
-            return 8;
+        case BaseType::VOID:
+            return 0;
         default:
-            return 4;
+            return 0;
         }
     }
 
     size_t getTypeAlignment(DataType type)
     {
-        switch (type)
+        if (type.pointer_level > 0)
+            return 8;
+
+        switch (type.base)
         {
-        case DataType::INT8:
+        case BaseType::INT8:
             return 1;
-        case DataType::INT16:
+        case BaseType::INT16:
             return 2;
-        case DataType::INT32:
+        case BaseType::INT32:
             return 4;
-        case DataType::INT64:
+        case BaseType::INT64:
             return 8;
-        case DataType::FLOAT32:
+        case BaseType::FLOAT32:
             return 4;
-        case DataType::FLOAT64:
+        case BaseType::FLOAT64:
             return 8;
-        // All pointers are 8 bytes on 64-bit systems
-        case DataType::INT8_PTR:
-        case DataType::INT16_PTR:
-        case DataType::INT32_PTR:
-        case DataType::INT64_PTR:
-        case DataType::FLOAT32_PTR:
-        case DataType::FLOAT64_PTR:
-        case DataType::VOID_PTR:
-            return 8;
+        case BaseType::VOID:
+            return 1;
         default:
-            return 4;
+            return 1;
         }
     }
 
     DataType getPointerType(DataType baseType)
     {
-        switch (baseType)
+        if (baseType.base == BaseType::ERRORTYPE)
         {
-        case DataType::INT8:
-            return DataType::INT8_PTR;
-        case DataType::INT16:
-            return DataType::INT16_PTR;
-        case DataType::INT32:
-            return DataType::INT32_PTR;
-        case DataType::INT64:
-            return DataType::INT64_PTR;
-        case DataType::FLOAT32:
-            return DataType::FLOAT32_PTR;
-        case DataType::FLOAT64:
-            return DataType::FLOAT64_PTR;
-        case DataType::VOID:
-            return DataType::VOID_PTR;
-        default:
-            LOG_ERROR("Cannot create pointer to type");
+            LOG_ERROR("Cannot create pointer to error type");
             BREAKPOINT();
             exit(EXIT_FAILURE);
         }
+        return DataType::pointerTo(baseType);
     }
 
     DataType getPointeeType(DataType ptrType)
     {
-        switch (ptrType)
+        if (ptrType.pointer_level == 0)
         {
-        case DataType::INT8_PTR:
-            return DataType::INT8;
-        case DataType::INT16_PTR:
-            return DataType::INT16;
-        case DataType::INT32_PTR:
-            return DataType::INT32;
-        case DataType::INT64_PTR:
-            return DataType::INT64;
-        case DataType::FLOAT32_PTR:
-            return DataType::FLOAT32;
-        case DataType::FLOAT64_PTR:
-            return DataType::FLOAT64;
-        case DataType::VOID_PTR:
-            return DataType::VOID;
-        default:
             LOG_ERROR("Not a pointer type");
             BREAKPOINT();
             exit(EXIT_FAILURE);
         }
+        return DataType(ptrType.base, static_cast<std::uint16_t>(ptrType.pointer_level - 1));
     }
 
     bool isFloatType(DataType type)
     {
-        return type == DataType::FLOAT32 || type == DataType::FLOAT64;
+        return type.pointer_level == 0 && (type.base == BaseType::FLOAT32 || type.base == BaseType::FLOAT64);
     }
 
     bool isPointerType(DataType type)
     {
-        return type >= DataType::INT8_PTR && type <= DataType::VOID_PTR;
+        return type.pointer_level > 0;
     }
 
     bool isTypeCompatible(DataType declared, DataType actual)
@@ -128,13 +159,27 @@ namespace Delta
         if (declared == actual)
             return true;
 
-        if (declared == DataType::VOID || actual == DataType::VOID)
+        if (declared.pointer_level > 0 || actual.pointer_level > 0)
+        {
+            if (declared.pointer_level == 0 || actual.pointer_level == 0)
+                return false;
+
+            if (declared.pointer_level != actual.pointer_level)
+                return false;
+
+            if (declared.base == BaseType::VOID || actual.base == BaseType::VOID)
+                return true;
+
+            return declared.base == actual.base;
+        }
+
+        if (declared.base == BaseType::VOID || actual.base == BaseType::VOID)
             return false;
 
-        if ((declared == DataType::INT8 || declared == DataType::INT16 ||
-             declared == DataType::INT32 || declared == DataType::INT64) &&
-            (actual == DataType::INT8 || actual == DataType::INT16 ||
-             actual == DataType::INT32 || actual == DataType::INT64))
+        if ((declared.base == BaseType::INT8 || declared.base == BaseType::INT16 ||
+             declared.base == BaseType::INT32 || declared.base == BaseType::INT64) &&
+            (actual.base == BaseType::INT8 || actual.base == BaseType::INT16 ||
+             actual.base == BaseType::INT32 || actual.base == BaseType::INT64))
         {
             return true;
         }
@@ -144,78 +189,34 @@ namespace Delta
 
     std::string typeToString(DataType type)
     {
-        switch (type)
-        {
-        case DataType::VOID:
-            return "void";
-        case DataType::INT8:
-            return "int8";
-        case DataType::INT16:
-            return "int16";
-        case DataType::INT32:
-            return "int32";
-        case DataType::INT64:
-            return "int64";
-        case DataType::FLOAT32:
-            return "float32";
-        case DataType::FLOAT64:
-            return "float64";
-
-        // Pointer types
-        case DataType::INT8_PTR:
-            return "int8*";
-        case DataType::INT16_PTR:
-            return "int16*";
-        case DataType::INT32_PTR:
-            return "int32*";
-        case DataType::INT64_PTR:
-            return "int64*";
-        case DataType::FLOAT32_PTR:
-            return "float32*";
-        case DataType::FLOAT64_PTR:
-            return "float64*";
-        case DataType::VOID_PTR:
-            return "void*";
-
-        default:
-            return "<errortype>";
-        }
+        std::string base = baseTypeToString(type.base);
+        base.append(type.pointer_level, '*');
+        return base;
     }
 
     DataType stringToType(const std::string &s)
     {
-        if (s == "void")
-            return DataType::VOID;
-        else if (s == "char" || s == "int8")
-            return DataType::INT8;
-        else if (s == "short" || s == "int16")
-            return DataType::INT16;
-        else if (s == "int" || s == "int32")
-            return DataType::INT32;
-        else if (s == "long" || s == "int64")
-            return DataType::INT64;
-        else if (s == "float" || s == "float32")
-            return DataType::FLOAT32;
-        else if (s == "double" || s == "float64")
-            return DataType::FLOAT64;
+        if (s.empty())
+            return DataType::ERRORTYPE;
 
-        // Pointer types
-        else if (s == "char*" || s == "int8*")
-            return DataType::INT8_PTR;
-        else if (s == "short*" || s == "int16*")
-            return DataType::INT16_PTR;
-        else if (s == "int*" || s == "int32*")
-            return DataType::INT32_PTR;
-        else if (s == "long*" || s == "int64*")
-            return DataType::INT64_PTR;
-        else if (s == "float*" || s == "float32*")
-            return DataType::FLOAT32_PTR;
-        else if (s == "double*" || s == "float64*")
-            return DataType::FLOAT64_PTR;
-        else if (s == "void*")
-            return DataType::VOID_PTR;
+        std::size_t first_star = s.find('*');
+        std::string base_part = (first_star == std::string::npos) ? s : s.substr(0, first_star);
+        std::uint16_t pointer_level = 0;
+        if (first_star != std::string::npos)
+        {
+            for (std::size_t i = first_star; i < s.size(); ++i)
+            {
+                if (s[i] != '*')
+                    return DataType::ERRORTYPE;
+                pointer_level++;
+            }
+        }
 
-        return DataType::ERRORTYPE;
+        BaseType base = stringToBase(base_part);
+        if (base == BaseType::ERRORTYPE)
+            return DataType::ERRORTYPE;
+
+        return DataType(base, pointer_level);
     }
 
     bool isValidDataType(const std::string &s)
