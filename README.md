@@ -51,7 +51,7 @@ You usually use .dltu files for delta compile units and .dlt for headers (header
 
 ## ▶️ Usage
 ### 🧮 Variables
-```
+```c++
 let a: int = 42; // Setting Variable
 let b: short = 3;
 let c: long = a + b;  
@@ -59,13 +59,13 @@ c = 2 * c; // Updating Variable
 ```
 
 ### ➕ Maths 
-```
+```c++
 let d: int = a * (b + 2);
 let e: int = d - 128;
 ```
 
 ### 📦 Scopes
-```
+```c++
 let a: int = 3;
 {
     let b: int = 9;
@@ -75,7 +75,7 @@ let b: int = 3; // Can redefine because scope is closed
 You cannot shadow variables that are outside scopes
 
 ### ❓ IF Statements
-```
+```c++
 if(statement_a){
     ...
 }elif(statement_b){
@@ -87,7 +87,7 @@ if(statement_a){
 You cannot shadow variables that are outside scopes
 
 ### 📝 Comments
-```
+```c++
 // This is an example comment
 let a: int = 3
 
@@ -98,21 +98,21 @@ let a: int = 3
 ```
 
 ### 🔒 Constants
-```
+```c++
 // Constant values cant be changed after declaration
 let const ZERO: int = 0;
 ```
 
 ### 🧩 Types
-```
+```c++
 let a: int = 10;
 let b: float = 1.2345f;
 let pi: double = 3.14;
 ```
-Any integer type is compatible with another integer type, so are other types (like floats in the future).
+Any integer type is compatible with another integer type, so are other types.
 
 ### 🧪 Functions
-```
+```c++
 fn add(a: int, b: int) -> int {
     return a + b;
 }
@@ -121,13 +121,13 @@ let result: int = add(3, 5);
 ```
 
 ### 🔄 Casting
-```
+```c++
 let a: int = 10;
 let b: float = (float) a;
 ```
 
 ### 📍 Pointer
-```
+```c++
 fn modifyInt(ptr: int*, newValue: int) -> void{
     *ptr = newValue;
 }
@@ -137,18 +137,18 @@ modifyInt(&x, 42); // sets the value of x to 42
 ```
 
 ### 🔤 Chars
-```
+```c++
 let c: char = 'H';
 ```
 
 ### 📜 Strings
-```
+```c++
 let const str: char* = "Hello World\n";
 printf(str);
 ```
 
 ### 🧾 Arrays
-```
+```c++
 let array: int* = malloc(8 * 4); // Allocates an array of 8 * int32
 array[0] = 4;
 array[1] = 16;
@@ -158,7 +158,7 @@ array[7] = 3;
 
 ### 🧠 Main Function
 
-```
+```c++
 fn main() -> int{
     return 0;
 }
@@ -166,7 +166,7 @@ fn main() -> int{
 The return value of main() is used as the exit code of the program
 
 ### 📎 Includes
-```
+```c++
 #include <stdio> // includes io functions like printf
 #include <stdgraphics>
 
@@ -175,8 +175,22 @@ fn main() -> int{
 }
 ```
 
-### 🧱 Definitions
+### 🏗️ Structs
+```c++
+struct Foo{
+    a: float;
+    b: int;
+    c: double;
+}
+
+fn main() -> int{
+    let foo: Foo;
+    return 0;
+}
 ```
+
+### 🧱 Definitions
+```c++
 #define PI 3.14159265359
 #define someFunction windowsBackend_someFunctionCall
 ```
