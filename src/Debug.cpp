@@ -224,7 +224,8 @@ namespace Delta
         output << "\"" << typeToString(node->type) << " " << node->ident.value.value() << "\"";
         output << "\n";
 
-        output << nodeDebugPrint(node->expression, indention + 1);
+        if (node->expression)
+            output << nodeDebugPrint(node->expression, indention + 1);
         return output.str();
     }
 
@@ -298,13 +299,14 @@ namespace Delta
 
     std::string nodeDebugPrint(NodeStruct *node, int indention)
     {
-        
+
         std::stringstream output;
         output << Indent(indention) << DEBUG_NODE_PREFIX;
         output << node->struct_name.value.value();
         for (auto argument : node->parameters)
         {
-            output << "\n" << Indent(indention + 1) << DEBUG_NODE_PREFIX << typeToString(argument->type) << " " << argument->ident.value.value();
+            output << "\n"
+                   << Indent(indention + 1) << DEBUG_NODE_PREFIX << typeToString(argument->type) << " " << argument->ident.value.value();
         }
         output << "\n";
         return output.str();
@@ -315,7 +317,8 @@ namespace Delta
         std::stringstream output;
         output << Indent(indention) << DEBUG_NODE_PREFIX << "Node Program\n";
         output << Indent(indention + 1) << DEBUG_NODE_PREFIX << "Structs\n";
-        for(auto struct_ : node.structs){
+        for (auto struct_ : node.structs)
+        {
             output << nodeDebugPrint(struct_, indention + 2);
         }
         output << Indent(indention + 1) << DEBUG_NODE_PREFIX << "Functions\n";

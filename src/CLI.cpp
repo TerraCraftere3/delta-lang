@@ -8,7 +8,7 @@ int main(int argc, char **argv)
 {
     std::vector<std::string> inputFiles;
     std::string outputFile = "a.exe";
-    bool verbose = true;
+    bool verbose = false;
     bool link = false;
     bool run = false;
 

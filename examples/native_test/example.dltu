@@ -29,9 +29,7 @@ fn main() -> int {
 
     printFibonacci(30);
 
-    let val: int = 16;
-    let ptr: int* = &val;
-    let ptrptr: int** = &ptr;
+    let val: Test;
 
     let win: int = stdOpenWindow("Delta Demo", 800, 600);
     if (win < 0) {

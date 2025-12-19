@@ -914,10 +914,13 @@ namespace Delta
                               << ", align " << getTypeAlignment(statement_let->type) << "; Allocate variable \"" << statement_let->ident.value.value() << "\"\n";
 
                 // Generate Expression
-                std::string expr_value = gen->generateExpression(statement_let->expression);
-                gen->m_output << "  store " << gen->dataTypeToLLVM(statement_let->type) << " " << expr_value
-                              << ", " << gen->dataTypeToLLVM(statement_let->type) << "* " << alloca_temp
-                              << ", align " << getTypeAlignment(statement_let->type) << "; Set variable \"" << statement_let->ident.value.value() << "\"\n";
+                if (statement_let->expression)
+                {
+                    std::string expr_value = gen->generateExpression(statement_let->expression);
+                    gen->m_output << "  store " << gen->dataTypeToLLVM(statement_let->type) << " " << expr_value
+                                  << ", " << gen->dataTypeToLLVM(statement_let->type) << "* " << alloca_temp
+                                  << ", align " << getTypeAlignment(statement_let->type) << "; Set variable \"" << statement_let->ident.value.value() << "\"\n";
+                }
 
                 Var var = Var(statement_let->ident.value.value(), 0, statement_let->type);
                 var.setConstant(statement_let->isConst);
@@ -1167,12 +1170,20 @@ namespace Delta
         case BaseType::VOID:
             base = (type.pointer_level > 0) ? "i8" : "void"; // void* -> i8*
             break;
+        case BaseType::STRUCT:
+        {
+            base = std::string("%struct.") + type.struct_name;
+        }
+        break;
         default:
             base = "i32";
             break;
         }
 
-        base.append(type.pointer_level, '*');
+        if (type.pointer_level >= 1)
+        {
+            return "ptr";
+        }
         return base;
     }
 
@@ -1877,7 +1888,8 @@ namespace Delta
 
             void operator()(const NodeStatementLet *statement_let)
             {
-                gen->collectStringLiteralsFromExpression(statement_let->expression);
+                if (statement_let->expression)
+                    gen->collectStringLiteralsFromExpression(statement_let->expression);
             }
 
             void operator()(const NodeStatementAssign *assign)

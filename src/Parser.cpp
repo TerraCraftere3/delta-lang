@@ -27,6 +27,11 @@ namespace Delta
         }
 
         DataType dt = stringToType(type_str);
+        if (dt.base == BaseType::ERRORTYPE)
+        {
+            dt.struct_name = type_str;
+            dt.base = BaseType::STRUCT;
+        }
         return dt;
     }
 
@@ -144,21 +149,32 @@ namespace Delta
             }
             statement_let->type = dt.value();
 
-            auto eq = try_consume(TokenType::equals, "'='", peek(0).value().line);
-
-            if (auto node_expr = parseExpression())
+            if (peek().has_value() && peek().value().type == TokenType::equals)
             {
-                statement_let->expression = node_expr.value();
+
+                auto eq = try_consume(TokenType::equals, "'='", peek(0).value().line);
+
+                if (auto node_expr = parseExpression())
+                {
+                    statement_let->expression = node_expr.value();
+                    auto *stmt = m_allocator.alloc<NodeStatement>();
+                    stmt->var = statement_let;
+                    statement = stmt;
+                }
+                else
+                {
+                    LOG_ERROR("Invalid Expression");
+                    exit(EXIT_FAILURE);
+                }
+            }
+            else
+            {
+                statement_let->expression = nullptr;
                 auto *stmt = m_allocator.alloc<NodeStatement>();
                 stmt->var = statement_let;
                 statement = stmt;
             }
-            else
-            {
-                LOG_ERROR("Invalid Expression");
-                exit(EXIT_FAILURE);
-            }
-            try_consume(TokenType::semicolon, "';'", eq.line);
+            try_consume(TokenType::semicolon, "';'", peek().value().line);
         }
         // Assignment: identifier = expr
         else if (peek().value().type == TokenType::identifier && peek(2).has_value() && peek(2).value().type == TokenType::equals)
@@ -543,11 +559,13 @@ namespace Delta
             consume();                                                     // struct
             struct_->struct_name = consume();                              // name
             try_consume(TokenType::open_curly, "{", peek(0).value().line); // {
-            while(peek().has_value() && peek().value().type != TokenType::close_curly){
+            while (peek().has_value() && peek().value().type != TokenType::close_curly)
+            {
                 auto name = consume();
                 try_consume(TokenType::colon, ":", peek(0).value().line);
                 auto type = parseTypeSpec();
-                if(!type.has_value()){
+                if (!type.has_value())
+                {
                     Error::throwExpected("Type", peek(0).value().line);
                 }
                 try_consume(TokenType::semicolon, ";", peek(0).value().line);

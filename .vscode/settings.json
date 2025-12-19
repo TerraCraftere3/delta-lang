@@ -9,7 +9,6 @@
             "..\\examples\\native_test\\example.exe",
             "-L",
             "..\\examples\\native_test\\glew32.lib",
-            "--verbose",
             "--run"
         ]
     },

@@ -24,6 +24,7 @@ namespace Delta
     {
         BaseType base;
         std::uint16_t pointer_level;
+        std::string struct_name;
 
         constexpr DataType(BaseType b = BaseType::ERRORTYPE, std::uint16_t level = 0) : base(b), pointer_level(level) {}
 
