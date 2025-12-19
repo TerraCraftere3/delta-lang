@@ -3,7 +3,7 @@
 #include <stdtime>
 #include <glew>
 
-external int64 fibonacci(int);
+fn fibonacci(n: int) -> int64;
 
 fn printFibonacci(n: int) -> void {
     let i: int = 0;

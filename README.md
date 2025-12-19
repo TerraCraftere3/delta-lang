@@ -178,7 +178,7 @@ fn main() -> int{
 ### 🧱 Definitions
 ```
 #define PI 3.14159265359
-#define someFunction windowsBackend_someFunctionCall()
+#define someFunction windowsBackend_someFunctionCall
 ```
 The name of a definition cant be the same as an existing token
 
@@ -187,13 +187,20 @@ The name of a definition cant be the same as an existing token
 
 $$
 \begin{align}
-[\text{Prog}] &\to [\text{FuncDecl}]^* \space [\text{Statement}]^* \space\textit{List of Functions and Statements}
+[\text{Prog}] &\to [\text{FuncDecl}]^* \space [\text{FuncHeader}]* \space [\text{Statement}]^* \space\textit{List of Functions and Statements}
 \\
 [\text{FuncDecl}] &\to 
 \begin{cases}
 fn \space \text{Identifier}([\text{ParamList}]?) \space \text{->} \space [\text{Type}][\text{Scope}]
 \\
 fn \space \text{Identifier}([\text{ParamList}]?) \space [\text{Scope}] & \textit{Default to void type}
+\end{cases}
+\\
+[\text{FuncHeader}] &\to 
+\begin{cases}
+fn \space \text{Identifier}([\text{ParamList}]?) \space \text{->} \space [\text{Type}];
+\\
+fn \space \text{Identifier}([\text{ParamList}]?); & \textit{Default to void type}
 \end{cases}
 \\
 [\text{ParamList}] &\to \text{Param}^*

@@ -370,7 +370,7 @@ namespace Delta
     struct NodeExternalDeclaration
     {
         Token function_name;
-        std::vector<DataType> parameters;
+        std::vector<NodeParameter *> parameters;
         DataType return_type;
         bool is_variadic; // any amount of variables, like printf(str, ...)
 #ifdef DELTA_NODE_ID

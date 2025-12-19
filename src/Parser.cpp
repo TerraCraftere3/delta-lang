@@ -380,15 +380,88 @@ namespace Delta
 
         while (peek().has_value())
         {
-            // external type name (parameters, ...);
-            if (auto external_decl = parseExternalDeclaration())
+            // Try to parse function (either external or definition)
+            if (peek().has_value() && peek().value().type == TokenType::function &&
+                peek(2).has_value() && peek(2).value().type == TokenType::identifier &&
+                peek(3).has_value() && peek(3).value().type == TokenType::open_paren)
             {
-                program.externals.push_back(external_decl.value());
-            }
-            // type name (parameters, ...);
-            else if (auto func_decl = parseFunctionDeclaration())
-            {
-                program.functions.push_back(func_decl.value());
+                auto function_token = consume();
+                auto function_name = consume();
+                auto open_paren = consume();
+
+                std::vector<NodeParameter *> parameters;
+                bool is_variadic = false;
+
+                // Parse parameter list
+                if (peek().has_value() && peek().value().type != TokenType::close_paren)
+                {
+                    if (auto param_list = parseParameterList())
+                    {
+                        parameters = param_list.value();
+                    }
+                    else
+                    {
+                        LOG_ERROR("Invalid parameter list");
+                        exit(EXIT_FAILURE);
+                    }
+
+                    if (peek().has_value() && peek().value().type == TokenType::ellipsis)
+                    {
+                        consume(); // consume ...
+                        is_variadic = true;
+                    }
+                }
+
+                try_consume(TokenType::close_paren, "')'", open_paren.line);
+
+                // Parse return type
+                DataType return_type = DataType::VOID;
+                if (try_consume(TokenType::arrow_right).has_value())
+                {
+                    auto rt = parseTypeSpec();
+                    if (!rt.has_value())
+                    {
+                        LOG_ERROR("Expected return type after '->'");
+                        exit(EXIT_FAILURE);
+                    }
+                    return_type = rt.value();
+                }
+
+                // Determine if it's an external declaration (;) or function definition ({)
+                if (peek().has_value() && peek().value().type == TokenType::semicolon)
+                {
+                    // External declaration
+                    consume(); // semicolon
+                    auto *external_decl = m_allocator.alloc<NodeExternalDeclaration>();
+                    external_decl->function_name = function_name;
+                    external_decl->parameters = parameters;
+                    external_decl->is_variadic = is_variadic;
+                    external_decl->return_type = return_type;
+                    program.externals.push_back(external_decl);
+                }
+                else if (peek().has_value() && peek().value().type == TokenType::open_curly)
+                {
+                    // Function definition
+                    if (auto body = parseScope())
+                    {
+                        auto *func_decl = m_allocator.alloc<NodeFunctionDeclaration>();
+                        func_decl->function_name = function_name;
+                        func_decl->parameters = parameters;
+                        func_decl->return_type = return_type;
+                        func_decl->body = body.value();
+                        program.functions.push_back(func_decl);
+                    }
+                    else
+                    {
+                        LOG_ERROR("Expected function body");
+                        exit(EXIT_FAILURE);
+                    }
+                }
+                else
+                {
+                    LOG_ERROR("Expected ';' or function body after function signature");
+                    exit(EXIT_FAILURE);
+                }
             }
             // any statement
             else if (auto statement = parseStatement())
@@ -404,146 +477,7 @@ namespace Delta
         return program;
     }
 
-    std::optional<NodeFunctionDeclaration *> Parser::parseFunctionDeclaration()
-    {
-        // Check if this looks like a function: fn identifier(
-        if (peek().has_value() && peek().value().type == TokenType::function &&
-            peek(2).has_value() && peek(2).value().type == TokenType::identifier &&
-            peek(3).has_value() && peek(3).value().type == TokenType::open_paren)
-        {
-            auto function_token = consume();
-            auto function_name = consume();
-            auto open_paren = consume();
 
-            auto *func_decl = m_allocator.alloc<NodeFunctionDeclaration>();
-            func_decl->function_name = function_name;
-
-            // Parse parameter list
-            if (peek().has_value() && peek().value().type != TokenType::close_paren)
-            {
-                if (auto param_list = parseParameterList())
-                {
-                    func_decl->parameters = param_list.value();
-                }
-                else
-                {
-                    LOG_ERROR("Invalid parameter list");
-                    exit(EXIT_FAILURE);
-                }
-            }
-
-            try_consume(TokenType::close_paren, "')'", open_paren.line);
-            if (try_consume(TokenType::arrow_right).has_value())
-            {
-                auto rt = parseTypeSpec();
-                if (!rt.has_value())
-                {
-                    LOG_ERROR("Expected return type after '->'");
-                    exit(EXIT_FAILURE);
-                }
-                func_decl->return_type = rt.value();
-            }
-            else
-            {
-                func_decl->return_type = DataType::VOID; // Default to void
-            }
-
-            // Parse function body
-            if (auto body = parseScope())
-            {
-                func_decl->body = body.value();
-            }
-            else
-            {
-                LOG_ERROR("Expected function body");
-                exit(EXIT_FAILURE);
-            }
-
-            return func_decl;
-        }
-
-        return std::nullopt;
-    }
-
-    std::optional<NodeExternalDeclaration *>
-    Parser::parseExternalDeclaration()
-    {
-        {
-            // Check if this looks like a function: type identifier(
-            if (peek(1).has_value() && peek(1).value().type == TokenType::external &&
-                peek(2).has_value())
-            {
-                consume();                          // external
-
-                auto rt = parseTypeSpec();
-                if (!rt.has_value())
-                {
-                    LOG_ERROR("Expected return type in external declaration");
-                    exit(EXIT_FAILURE);
-                }
-                auto return_type_token_value = rt.value();
-
-                if (!peek().has_value() || peek().value().type != TokenType::identifier)
-                {
-                    LOG_ERROR("Expected function name in external declaration");
-                    exit(EXIT_FAILURE);
-                }
-
-                auto function_name = consume();     // name
-                auto open_paren = try_consume(TokenType::open_paren, "'('", function_name.line);        // (
-
-                auto *external_decl = m_allocator.alloc<NodeExternalDeclaration>();
-                external_decl->return_type = return_type_token_value;
-                external_decl->function_name = function_name;
-                external_decl->is_variadic = false; // Default to false
-
-                // Parse parameter list
-                if (peek().has_value() && peek().value().type != TokenType::close_paren)
-                {
-                    while (true)
-                    {
-                        if (!peek().has_value())
-                        {
-                            LOG_ERROR("Expected parameter type or ellipsis (...)  in external function declaration");
-                            exit(EXIT_FAILURE);
-                        }
-
-                        if (peek().value().type == TokenType::ellipsis)
-                        {
-                            consume();
-                            external_decl->is_variadic = true;
-                            break; // ellipsis must be last paremeter
-                        }
-                        else
-                        {
-                            auto ptype = parseTypeSpec();
-                            if (!ptype.has_value())
-                            {
-                                LOG_ERROR("Expected parameter type or ellipsis (...) in external function declaration");
-                                exit(EXIT_FAILURE);
-                            }
-                            external_decl->parameters.push_back(ptype.value());
-                        }
-
-                        if (peek().has_value() && peek().value().type == TokenType::comma)
-                        {
-                            consume(); // ,
-                            continue;
-                        }
-
-                        break;
-                    }
-                }
-
-                try_consume(TokenType::close_paren, "')'", open_paren.line); // )
-                try_consume(TokenType::semicolon, "';'", peek().value().line);
-
-                return external_decl;
-            }
-
-            return std::nullopt;
-        }
-    }
 
     std::optional<std::vector<NodeParameter *>> Parser::parseParameterList()
     {
@@ -569,8 +503,7 @@ namespace Delta
             }
             else
             {
-                LOG_ERROR("Expected parameter after comma");
-                exit(EXIT_FAILURE);
+                return parameters;
             }
         }
 
@@ -582,8 +515,8 @@ namespace Delta
         if (peek().has_value() && peek().value().type == TokenType::identifier &&
             peek(2).has_value() && peek(2).value().type == TokenType::colon)
         {
-            auto name_token = consume(); // name
-            consume();                   // :
+            auto name_token = consume();      // name
+            consume();                        // :
             auto type_spec = parseTypeSpec(); // type
             if (!type_spec.has_value())
             {

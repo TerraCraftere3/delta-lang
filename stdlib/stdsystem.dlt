@@ -1,4 +1,4 @@
-external void exit(int);
-external int system(char*);
-external char* getenv(char*);
-external int putenv(char*);
+fn exit(status: int) -> void;
+fn system(command: char*) -> int;
+fn getenv(name: char*) -> char*;
+fn putenv(string: char*) -> int;

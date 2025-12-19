@@ -283,7 +283,7 @@ namespace Delta
         {
             if (!firstArg)
                 output << ", ";
-            output << typeToString(argument);
+            output << typeToString(argument->type) << " " << argument->ident.value.value();
             firstArg = false;
         }
         if (node->is_variadic)

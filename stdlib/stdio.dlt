@@ -1,12 +1,12 @@
 #include <stdtypes>
 
-external int printf(char*, ...);
-external int fprintf(void*, char*, ...);
-external int sprintf(char*, char*, ...);
-external int scanf(char*, ...);
-external void* fopen(char*, char*);
-external int fclose(void*);
-external size_t fread(void*, size_t, size_t, void*);
-external size_t fwrite(void*, size_t, size_t, void*);
-external int fseek(void*, size_t, int);
-external int64 ftell(void*);
+fn printf(format: char*, ...) -> int;
+fn fprintf(stream: void*, format: char*, ...) -> int;
+fn sprintf(str: char*, format: char*, ...) -> int;
+fn scanf(format: char*, ...) -> int;
+fn fopen(filename: char*, mode: char*) -> void*;
+fn fclose(stream: void*) -> int;
+fn fread(ptr: void*, size: size_t, nmemb: size_t, stream: void*) -> size_t;
+fn fwrite(ptr: void*, size: size_t, nmemb: size_t, stream: void*) -> size_t;
+fn fseek(stream: void*, offset: size_t, whence: int) -> int;
+fn ftell(stream: void*) -> int64;

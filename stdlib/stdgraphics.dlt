@@ -1,22 +1,22 @@
 #include <stdbool>
 
-external int stdOpenWindow(char*, int, int);
+fn stdOpenWindow(title: char*, width: int, height: int) -> int;
 
-external bool stdIsWindowOpen(int);
-external void stdKeepWindowOpen(int);
-external void stdUpdateWindow(int);
+fn stdIsWindowOpen(window: int) -> bool;
+fn stdKeepWindowOpen(window: int) -> void;
+fn stdUpdateWindow(window: int) -> void;
 
-external void stdSetWindowTitle(int, char*);
-external void stdSetWindowSize(int, int, int);
-external void stdGetWindowSize(int, int*, int*);
+fn stdSetWindowTitle(window: int, title: char*) -> void;
+fn stdSetWindowSize(window: int, width: int, height: int) -> void;
+fn stdGetWindowSize(window: int, width: int*, height: int*) -> void;
 
-external void stdDestroyWindow(int);
-external void stdCloseWindow(int);
-external void stdMaximizeWindow(int);
-external void stdMinimizeWindow(int);
+fn stdDestroyWindow(window: int) -> void;
+fn stdCloseWindow(window: int) -> void;
+fn stdMaximizeWindow(window: int) -> void;
+fn stdMinimizeWindow(window: int) -> void;
 
-external bool stdIsKeyPressed(int, char);
+fn stdIsKeyPressed(window: int, key: char) -> bool;
 
-external bool stdCreateOpenGLContext(int);
-external bool stdMakeContextCurrent(int);
-external void stdSwapBuffers(int);
+fn stdCreateOpenGLContext(window: int) -> bool;
+fn stdMakeContextCurrent(window: int) -> bool;
+fn stdSwapBuffers(window: int) -> void;

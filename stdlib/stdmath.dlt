@@ -1,6 +1,6 @@
-external double sin(double);
-external double cos(double);
-external double tan(double);
-external double sqrt(double);
-external double pow(double, double);
-external double fabs(double);
+fn sin(x: double) -> double;
+fn cos(x: double) -> double;
+fn tan(x: double) -> double;
+fn sqrt(x: double) -> double;
+fn pow(x: double, y: double) -> double;
+fn fabs(x: double) -> double;
