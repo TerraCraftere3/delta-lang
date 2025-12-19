@@ -70,6 +70,7 @@ namespace Delta
         void generateStringLiterals();
         std::string generateFunctionCall(const NodeTermFunctionCall *func_call);
         void generateFunctionDeclaration(const NodeFunctionDeclaration *func_decl);
+        void generateStructDeclaration(const NodeStruct *struct_decl);
 
     private:
         // LLVM IR specific helpers

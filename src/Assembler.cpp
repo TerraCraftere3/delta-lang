@@ -22,6 +22,13 @@ namespace Delta
 
         // Generate all function definitions
 
+        for (const NodeStruct *struct_decl : m_program.structs)
+        {
+            generateStructDeclaration(struct_decl);
+        }
+
+        m_output << "\n";
+
         for (const NodeExternalDeclaration *external : m_program.externals)
         {
             std::vector<DataType> param_types;
@@ -132,6 +139,18 @@ namespace Delta
 
         end_function();
         m_output << "}\n\n";
+    }
+
+    void Assembler::generateStructDeclaration(const NodeStruct *struct_decl)
+    {
+        m_output << "%struct." << struct_decl->struct_name.value.value() << " = type { ";
+        for (size_t i = 0; i < struct_decl->parameters.size(); i++)
+        {
+            if (i > 0)
+                m_output << ", ";
+            m_output << dataTypeToLLVM(struct_decl->parameters[i]->type);
+        }
+        m_output << " }\n";
     }
 
     std::string float32ToLLVM(const std::string &input)
