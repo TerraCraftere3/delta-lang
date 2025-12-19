@@ -463,7 +463,10 @@ namespace Delta
                     exit(EXIT_FAILURE);
                 }
             }
-            // any statement
+            else if (auto struct_ = parseStruct())
+            {
+                program.structs.push_back(struct_.value());
+            }
             else if (auto statement = parseStatement())
             {
                 program.statements.push_back(statement.value());
@@ -476,8 +479,6 @@ namespace Delta
         }
         return program;
     }
-
-
 
     std::optional<std::vector<NodeParameter *>> Parser::parseParameterList()
     {
@@ -531,6 +532,34 @@ namespace Delta
             return param;
         }
 
+        return std::nullopt;
+    }
+
+    std::optional<NodeStruct *> Parser::parseStruct()
+    {
+        if (peek().has_value() && peek().value().type == TokenType::struct_)
+        {
+            auto struct_ = m_allocator.alloc<NodeStruct>();
+            consume();                                                     // struct
+            struct_->struct_name = consume();                              // name
+            try_consume(TokenType::open_curly, "{", peek(0).value().line); // {
+            while(peek().has_value() && peek().value().type != TokenType::close_curly){
+                auto name = consume();
+                try_consume(TokenType::colon, ":", peek(0).value().line);
+                auto type = parseTypeSpec();
+                if(!type.has_value()){
+                    Error::throwExpected("Type", peek(0).value().line);
+                }
+                try_consume(TokenType::semicolon, ";", peek(0).value().line);
+
+                auto param = m_allocator.alloc<NodeParameter>();
+                param->ident = name;
+                param->type = type.value();
+                struct_->parameters.push_back(param);
+            }
+            try_consume(TokenType::close_curly, "}", peek(0).value().line); // }
+            return struct_;
+        }
         return std::nullopt;
     }
 

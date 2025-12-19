@@ -13,6 +13,12 @@ fn printFibonacci(n: int) -> void {
     }
 }
 
+struct Test {
+    a: float;
+    b: int;
+    c: double;
+}
+
 fn main() -> int {
     if(_WIN32){
         printf("Running on Windows\n");

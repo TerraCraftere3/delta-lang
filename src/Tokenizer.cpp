@@ -54,6 +54,10 @@ namespace Delta
                     tokens.push_back({TokenType::define, line_count});
                     buf.clear();
                 }
+                else if(buf == "struct"){
+                    tokens.push_back({TokenType::struct_, line_count});
+                    buf.clear();
+                }
                 /*else if (buf == "exit") // DEPRECATED
                 {
                     tokens.push_back({TokenType::exit, line_count});

@@ -13,6 +13,7 @@ namespace Delta
         endif,          // endif
         exit,           // exit
         while_,         // while
+        struct_,        // struct
         let,            // let
         equals,         // =
         int_literal,    // integer like 10, etc

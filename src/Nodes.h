@@ -378,6 +378,11 @@ namespace Delta
 #endif
     };
 
+    struct NodeStruct{
+        Token struct_name;
+        std::vector<NodeParameter *> parameters;
+    };
+
     struct NodeStatement
     {
         std::variant<
@@ -401,6 +406,7 @@ namespace Delta
     {
         std::vector<NodeExternalDeclaration *> externals;
         std::vector<NodeFunctionDeclaration *> functions;
+        std::vector<NodeStruct *> structs;
         std::vector<NodeStatement *> statements;
 #ifdef DELTA_NODE_ID
         const char *id = "Program";
