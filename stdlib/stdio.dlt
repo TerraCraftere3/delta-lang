@@ -10,3 +10,5 @@ fn fread(ptr: void*, size: size_t, nmemb: size_t, stream: void*) -> size_t;
 fn fwrite(ptr: void*, size: size_t, nmemb: size_t, stream: void*) -> size_t;
 fn fseek(stream: void*, offset: size_t, whence: int) -> int;
 fn ftell(stream: void*) -> int64;
+
+fn stdExecute(cmd: char*) -> int;

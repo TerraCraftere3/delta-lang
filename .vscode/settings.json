@@ -2,12 +2,15 @@
     "cmake.debugConfig": {
         "args": [
             "-i",
-            "..\\examples\\native_test\\structs.dltu",
+            "..\\examples\\native_test\\example.dltu",
+            "-i",
+            "..\\examples\\native_test\\fibonacci.dltu",
             "-o",
             "..\\examples\\native_test\\example.exe",
             "-L",
             "..\\examples\\native_test\\glew32.lib",
-            "--run"
+            "--run",
+            "--verbose"
         ]
     },
     "files.associations": {

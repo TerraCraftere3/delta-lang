@@ -1,1 +1,2 @@
 fn stdSleep(milliseconds: int) -> void;
+fn stdGetTimeMS() -> int64;

@@ -124,7 +124,7 @@ int main(int argc, char **argv)
         std::cerr << "Error: No input file specified. Use -i or --input to specify one or more input files.";
         return 1;
     }
-    Delta::Log::init(inputFiles.front() + ".log");
+    Delta::Log::init(outputFile + ".log");
     Delta::CompilerProperties props;
     props.inputFiles = inputFiles;
     props.outputFile = outputFile.c_str();

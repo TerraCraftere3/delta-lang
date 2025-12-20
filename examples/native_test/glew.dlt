@@ -24,6 +24,8 @@ fn glPopMatrix() -> void;
 fn glTranslatef(x: float, y: float, z: float) -> void;
 fn glRotatef(angle: float, x: float, y: float, z: float) -> void;
 fn glScalef(x: float, y: float, z: float) -> void;
+fn glMultMatrixf(m: float*) -> void;
+fn glLoadMatrixf(m: float*) -> void;
 
 // Buffer operations
 fn glGenBuffers(n: int, buffers: int*) -> void;
@@ -43,6 +45,11 @@ fn glDrawElements(mode: int, count: int, type: int, indices: void*) -> void;
 // Enable/Disable states
 fn glEnable(cap: int) -> void;
 fn glDisable(cap: int) -> void;
+
+// Depth and culling functions
+fn glDepthFunc(func: int) -> void;
+fn glCullFace(mode: int) -> void;
+fn glFrontFace(mode: int) -> void;
 
 // Shader operations
 fn glCreateShader(shaderType: int) -> int;

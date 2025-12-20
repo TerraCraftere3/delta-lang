@@ -119,8 +119,8 @@ namespace Delta
         {
             std::string alloca_temp = getNextTemp();
             m_output << "  " << alloca_temp << " = alloca " << dataTypeToLLVM(param->type) << ", align " << getTypeAlignment(param->type) << "\n";
-            m_output << "  store " << dataTypeToLLVM(param->type) << " %" << param->ident.value.value() << ", "
-                     << dataTypeToLLVM(param->type) << "* " << alloca_temp << ", align " << getTypeAlignment(param->type) << "\n";
+            m_output << "  store " << dataTypeToLLVM(param->type) << " %" << param->ident.value.value() << ", ptr "
+                     << alloca_temp << ", align " << getTypeAlignment(param->type) << "\n";
 
             Var var(param->ident.value.value(), 0, param->type);
             var.llvm_alloca = alloca_temp;
@@ -277,7 +277,7 @@ namespace Delta
                 size_t length = str_value.length() + 1;
 
                 gen->m_output << "  " << result_temp << " = getelementptr inbounds ["
-                              << length << " x i8], [" << length << " x i8]* @str."
+                              << length << " x i8], ptr @str."
                               << index << ", i64 0, i64 0 ; String literal\n";
 
                 return result_temp;
@@ -295,7 +295,7 @@ namespace Delta
 
                 std::string load_temp = gen->getNextTemp();
                 gen->m_output << "  " << load_temp << " = load " << gen->dataTypeToLLVM((*it).type)
-                              << ", " << gen->dataTypeToLLVM((*it).type) << "* " << (*it).llvm_alloca
+                              << ", ptr " << (*it).llvm_alloca
                               << ", align " << getTypeAlignment((*it).type);
                 gen->m_output << " ; Use Variable " << term_ident->ident.value.value() << "\n";
                 return load_temp;
@@ -383,8 +383,7 @@ namespace Delta
 
                 std::string load_temp = gen->getNextTemp();
                 gen->m_output << "  " << load_temp << " = load "
-                              << gen->dataTypeToLLVM(element_type) << ", "
-                              << gen->dataTypeToLLVM(element_type) << "* " << gep_temp
+                              << gen->dataTypeToLLVM(element_type) << ", ptr " << gep_temp
                               << ", align " << getTypeAlignment(element_type)
                               << " ; Load array element\n";
 
@@ -488,15 +487,13 @@ namespace Delta
                         // Generate GEP to get pointer to member
                         std::string gep_temp = gen->getNextTemp();
                         gen->m_output << "  " << gep_temp << " = getelementptr inbounds "
-                                      << gen->dataTypeToLLVM(struct_type) << ", "
-                                      << gen->dataTypeToLLVM(struct_type) << "* " << var_it->llvm_alloca
+                                      << gen->dataTypeToLLVM(struct_type) << ", ptr " << var_it->llvm_alloca
                                       << ", i32 0, i32 " << member_index << " ; Member access: " << member_name << "\n";
 
                         // Load the member value
                         std::string load_temp = gen->getNextTemp();
                         gen->m_output << "  " << load_temp << " = load "
-                                      << gen->dataTypeToLLVM(member_type) << ", "
-                                      << gen->dataTypeToLLVM(member_type) << "* " << gep_temp
+                                      << gen->dataTypeToLLVM(member_type) << ", ptr " << gep_temp
                                       << ", align " << getTypeAlignment(member_type)
                                       << " ; Load member " << member_name << "\n";
 
@@ -1039,10 +1036,62 @@ namespace Delta
                 // Generate Expression
                 if (statement_let->expression)
                 {
-                    std::string expr_value = gen->generateExpression(statement_let->expression);
-                    gen->m_output << "  store " << gen->dataTypeToLLVM(statement_let->type) << " " << expr_value
-                                  << ", " << gen->dataTypeToLLVM(statement_let->type) << "* " << alloca_temp
-                                  << ", align " << getTypeAlignment(statement_let->type) << "; Set variable \"" << statement_let->ident.value.value() << "\"\n";
+                    // Check if this is a struct literal
+                    bool is_struct_literal = false;
+                    const NodeTermStructLiteral *struct_lit = nullptr;
+                    
+                    if (statement_let->type.base == BaseType::STRUCT)
+                    {
+                        // Check if expression is a struct literal
+                        if (std::holds_alternative<NodeExpressionTerm *>(statement_let->expression->var))
+                        {
+                            NodeExpressionTerm *term = std::get<NodeExpressionTerm *>(statement_let->expression->var);
+                            if (std::holds_alternative<NodeTermStructLiteral *>(term->var))
+                            {
+                                is_struct_literal = true;
+                                struct_lit = std::get<NodeTermStructLiteral *>(term->var);
+                            }
+                        }
+                    }
+
+                    if (is_struct_literal && struct_lit)
+                    {
+                        // Store each field individually
+                        auto struct_it = gen->m_struct_definitions.find(statement_let->type.struct_name);
+                        if (struct_it == gen->m_struct_definitions.end())
+                        {
+                            LOG_ERROR("Unknown struct type: {}", statement_let->type.struct_name);
+                            exit(EXIT_FAILURE);
+                        }
+
+                        const NodeStruct *struct_def = struct_it->second;
+                        
+                        for (size_t i = 0; i < struct_lit->literals.size() && i < struct_def->parameters.size(); i++)
+                        {
+                            // Get pointer to field
+                            std::string gep_temp = gen->getNextTemp();
+                            gen->m_output << "  " << gep_temp << " = getelementptr inbounds "
+                                          << gen->dataTypeToLLVM(statement_let->type) << ", ptr " << alloca_temp
+                                          << ", i32 0, i32 " << i << " ; Field " << i << "\n";
+
+                            // Generate value for this field
+                            std::string field_value = gen->generateTerm(struct_lit->literals[i]);
+                            DataType field_type = struct_def->parameters[i]->type;
+
+                            // Store field value
+                            gen->m_output << "  store " << gen->dataTypeToLLVM(field_type)
+                                          << " " << field_value << ", ptr " << gep_temp
+                                          << ", align " << getTypeAlignment(field_type)
+                                          << " ; Store field " << struct_def->parameters[i]->ident.value.value() << "\n";
+                        }
+                    }
+                    else
+                    {
+                        std::string expr_value = gen->generateExpression(statement_let->expression);
+                        gen->m_output << "  store " << gen->dataTypeToLLVM(statement_let->type) << " " << expr_value
+                                      << ", ptr " << alloca_temp
+                                      << ", align " << getTypeAlignment(statement_let->type) << " ; Set variable \"" << statement_let->ident.value.value() << "\"\n";
+                    }
                 }
 
                 Var var = Var(statement_let->ident.value.value(), 0, statement_let->type);
@@ -1080,7 +1129,7 @@ namespace Delta
                 }
 
                 gen->m_output << "  store " << gen->dataTypeToLLVM(var.type) << " " << expr_value
-                              << ", " << gen->dataTypeToLLVM(var.type) << "* " << var.llvm_alloca
+                              << ", ptr " << var.llvm_alloca
                               << ", align " << getTypeAlignment(var.type) << "; Set variable \"" << assign->ident.value.value() << "\"\n";
             }
 
@@ -1185,7 +1234,7 @@ namespace Delta
                 }
 
                 gen->m_output << "  store " << gen->dataTypeToLLVM(pointee_type) << " " << value
-                              << ", " << gen->dataTypeToLLVM(pointee_type) << "* " << ptr_value
+                              << ", ptr " << ptr_value
                               << ", align " << getTypeAlignment(pointee_type)
                               << " ; Store through pointer\n";
             }
@@ -1227,8 +1276,8 @@ namespace Delta
                               << ", i64 " << index << " ; Array index\n";
 
                 gen->m_output << "  store " << gen->dataTypeToLLVM(element_type)
-                              << " " << value << ", " << gen->dataTypeToLLVM(element_type)
-                              << "* " << gep_temp << ", align " << getTypeAlignment(element_type)
+                              << " " << value << ", ptr " << gep_temp
+                              << ", align " << getTypeAlignment(element_type)
                               << " ; Store array element\n";
             }
 
@@ -1305,14 +1354,13 @@ namespace Delta
                         // Generate GEP to get pointer to member
                         std::string gep_temp = gen->getNextTemp();
                         gen->m_output << "  " << gep_temp << " = getelementptr inbounds "
-                                      << gen->dataTypeToLLVM(struct_type) << ", "
-                                      << gen->dataTypeToLLVM(struct_type) << "* " << var_it->llvm_alloca
+                                      << gen->dataTypeToLLVM(struct_type) << ", ptr " << var_it->llvm_alloca
                                       << ", i32 0, i32 " << member_index << " ; Member access: " << member_name << "\n";
 
                         // Store the value to the member
                         gen->m_output << "  store " << gen->dataTypeToLLVM(member_type)
-                                      << " " << value << ", " << gen->dataTypeToLLVM(member_type)
-                                      << "* " << gep_temp << ", align " << getTypeAlignment(member_type)
+                                      << " " << value << ", ptr " << gep_temp
+                                      << ", align " << getTypeAlignment(member_type)
                                       << " ; Store member " << member_name << "\n";
 
                         return;

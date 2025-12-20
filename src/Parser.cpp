@@ -1127,28 +1127,24 @@ namespace Delta
     {
         std::vector<NodeExpression *> arguments;
 
-        // Parse first argument
+        // Parse first argument (optional - functions can have zero arguments)
         if (auto expr = parseExpression())
         {
             arguments.push_back(expr.value());
-        }
-        else
-        {
-            return std::nullopt;
-        }
-
-        // Parse remaining arguments (comma-separated)
-        while (peek().has_value() && peek().value().type == TokenType::comma)
-        {
-            consume(); // consume comma
-            if (auto expr = parseExpression())
+            
+            // Parse remaining arguments (comma-separated)
+            while (peek().has_value() && peek().value().type == TokenType::comma)
             {
-                arguments.push_back(expr.value());
-            }
-            else
-            {
-                LOG_ERROR("Expected expression after comma in argument list");
-                exit(EXIT_FAILURE);
+                consume(); // consume comma
+                if (auto expr = parseExpression())
+                {
+                    arguments.push_back(expr.value());
+                }
+                else
+                {
+                    LOG_ERROR("Expected expression after comma in argument list");
+                    exit(EXIT_FAILURE);
+                }
             }
         }
 

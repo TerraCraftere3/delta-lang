@@ -13,12 +13,6 @@ fn printFibonacci(n: int) -> void {
     }
 }
 
-struct Test {
-    a: float;
-    b: int;
-    c: double;
-}
-
 fn main() -> int {
     if(_WIN32){
         printf("Running on Windows\n");
@@ -28,8 +22,6 @@ fn main() -> int {
     printf("Compiler Name: %s\nCompiler Version: %s\nStandard Version: %s\n", _DLT_CC_NAME, _DLT_CC_VERSION, _DLT_VERSION);
 
     printFibonacci(30);
-
-    let val: Test;
 
     let win: int = stdOpenWindow("Delta Demo", 800, 600);
     if (win < 0) {
