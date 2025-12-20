@@ -20,11 +20,29 @@ namespace Delta
         collectStringLiterals();
         generateStringLiterals();
 
+        // Register struct definitions for later lookup
+        for (const NodeStruct *struct_decl : m_program.structs)
+        {
+            m_struct_definitions[struct_decl->struct_name.value.value()] = struct_decl;
+        }
+
         // Generate all function definitions
+
+        for (const NodeStruct *struct_decl : m_program.structs)
+        {
+            generateStructDeclaration(struct_decl);
+        }
+
+        m_output << "\n";
 
         for (const NodeExternalDeclaration *external : m_program.externals)
         {
-            addFunction(external->function_name.value.value(), external->parameters, external->return_type, true, external->is_variadic);
+            std::vector<DataType> param_types;
+            for (const NodeParameter *param : external->parameters)
+            {
+                param_types.push_back(param->type);
+            }
+            addFunction(external->function_name.value.value(), param_types, external->return_type, true, external->is_variadic);
         }
 
         for (const NodeFunctionDeclaration *func : m_program.functions)
@@ -101,8 +119,8 @@ namespace Delta
         {
             std::string alloca_temp = getNextTemp();
             m_output << "  " << alloca_temp << " = alloca " << dataTypeToLLVM(param->type) << ", align " << getTypeAlignment(param->type) << "\n";
-            m_output << "  store " << dataTypeToLLVM(param->type) << " %" << param->ident.value.value() << ", "
-                     << dataTypeToLLVM(param->type) << "* " << alloca_temp << ", align " << getTypeAlignment(param->type) << "\n";
+            m_output << "  store " << dataTypeToLLVM(param->type) << " %" << param->ident.value.value() << ", ptr "
+                     << alloca_temp << ", align " << getTypeAlignment(param->type) << "\n";
 
             Var var(param->ident.value.value(), 0, param->type);
             var.llvm_alloca = alloca_temp;
@@ -127,6 +145,18 @@ namespace Delta
 
         end_function();
         m_output << "}\n\n";
+    }
+
+    void Assembler::generateStructDeclaration(const NodeStruct *struct_decl)
+    {
+        m_output << "%struct." << struct_decl->struct_name.value.value() << " = type { ";
+        for (size_t i = 0; i < struct_decl->parameters.size(); i++)
+        {
+            if (i > 0)
+                m_output << ", ";
+            m_output << dataTypeToLLVM(struct_decl->parameters[i]->type);
+        }
+        m_output << " }\n";
     }
 
     std::string float32ToLLVM(const std::string &input)
@@ -247,7 +277,7 @@ namespace Delta
                 size_t length = str_value.length() + 1;
 
                 gen->m_output << "  " << result_temp << " = getelementptr inbounds ["
-                              << length << " x i8], [" << length << " x i8]* @str."
+                              << length << " x i8], ptr @str."
                               << index << ", i64 0, i64 0 ; String literal\n";
 
                 return result_temp;
@@ -265,7 +295,7 @@ namespace Delta
 
                 std::string load_temp = gen->getNextTemp();
                 gen->m_output << "  " << load_temp << " = load " << gen->dataTypeToLLVM((*it).type)
-                              << ", " << gen->dataTypeToLLVM((*it).type) << "* " << (*it).llvm_alloca
+                              << ", ptr " << (*it).llvm_alloca
                               << ", align " << getTypeAlignment((*it).type);
                 gen->m_output << " ; Use Variable " << term_ident->ident.value.value() << "\n";
                 return load_temp;
@@ -353,12 +383,126 @@ namespace Delta
 
                 std::string load_temp = gen->getNextTemp();
                 gen->m_output << "  " << load_temp << " = load "
-                              << gen->dataTypeToLLVM(element_type) << ", "
-                              << gen->dataTypeToLLVM(element_type) << "* " << gep_temp
+                              << gen->dataTypeToLLVM(element_type) << ", ptr " << gep_temp
                               << ", align " << getTypeAlignment(element_type)
                               << " ; Load array element\n";
 
                 return load_temp;
+            }
+
+            std::string operator()(const NodeTermStructLiteral *term_struct_lit) const
+            {
+                // Struct literal: {value1, value2, ...}
+                // Since we don't have the struct name here, we need to create a temporary
+                // struct on the stack and return its address
+                // The caller will need to handle loading/storing this value appropriately
+                
+                // Create a temporary variable to hold the inline struct aggregate
+                // We'll use a generic anonymous struct type for now
+                std::vector<std::string> field_values;
+                std::vector<DataType> field_types;
+
+                for (const NodeExpressionTerm *literal : term_struct_lit->literals)
+                {
+                    std::string field_value = gen->generateTerm(literal);
+                    DataType field_type = gen->inferTermType(literal);
+                    field_values.push_back(field_value);
+                    field_types.push_back(field_type);
+                }
+
+                // For struct literals, we generate a struct aggregate value
+                // Build as { field0, field1, field2, ... }
+                std::string result = "{ ";
+                for (size_t i = 0; i < field_values.size(); i++)
+                {
+                    if (i > 0) result += ", ";
+                    result += gen->dataTypeToLLVM(field_types[i]) + " " + field_values[i];
+                }
+                result += " }";
+
+                return result;
+            }
+
+            std::string operator()(const NodeTermMemberAccess *member_access) const
+            {
+                // Get the struct expression value (should be a variable)
+                DataType struct_type = gen->inferExpressionType(member_access->struct_expr);
+                std::string member_name = member_access->member_name.value.value();
+
+                if (struct_type.base != BaseType::STRUCT)
+                {
+                    LOG_ERROR("Cannot access member of non-struct type");
+                    exit(EXIT_FAILURE);
+                }
+
+                // Find struct definition
+                auto struct_it = gen->m_struct_definitions.find(struct_type.struct_name);
+                if (struct_it == gen->m_struct_definitions.end())
+                {
+                    LOG_ERROR("Unknown struct type: {}", struct_type.struct_name);
+                    exit(EXIT_FAILURE);
+                }
+
+                const NodeStruct *struct_def = struct_it->second;
+
+                // Find member index
+                int member_index = -1;
+                DataType member_type;
+                for (size_t i = 0; i < struct_def->parameters.size(); i++)
+                {
+                    if (struct_def->parameters[i]->ident.value.value() == member_name)
+                    {
+                        member_index = static_cast<int>(i);
+                        member_type = struct_def->parameters[i]->type;
+                        break;
+                    }
+                }
+
+                if (member_index == -1)
+                {
+                    LOG_ERROR("Struct {} has no member named {}", struct_type.struct_name, member_name);
+                    exit(EXIT_FAILURE);
+                }
+
+                // Get the struct variable's address
+                // For now, assume struct_expr is an identifier
+                const NodeExpression *struct_expr = member_access->struct_expr;
+                if (std::holds_alternative<NodeExpressionTerm *>(struct_expr->var))
+                {
+                    NodeExpressionTerm *term = std::get<NodeExpressionTerm *>(struct_expr->var);
+                    if (std::holds_alternative<NodeTermIdentifier *>(term->var))
+                    {
+                        NodeTermIdentifier *ident_term = std::get<NodeTermIdentifier *>(term->var);
+                        std::string var_name = ident_term->ident.value.value();
+
+                        // Find the variable
+                        auto var_it = std::find_if(gen->m_vars.begin(), gen->m_vars.end(),
+                                                    [&](const Var &v) { return v.name == var_name; });
+                        if (var_it == gen->m_vars.end())
+                        {
+                            LOG_ERROR("Undeclared variable: {}", var_name);
+                            exit(EXIT_FAILURE);
+                        }
+
+                        // Generate GEP to get pointer to member
+                        std::string gep_temp = gen->getNextTemp();
+                        gen->m_output << "  " << gep_temp << " = getelementptr inbounds "
+                                      << gen->dataTypeToLLVM(struct_type) << ", ptr " << var_it->llvm_alloca
+                                      << ", i32 0, i32 " << member_index << " ; Member access: " << member_name << "\n";
+
+                        // Load the member value
+                        std::string load_temp = gen->getNextTemp();
+                        gen->m_output << "  " << load_temp << " = load "
+                                      << gen->dataTypeToLLVM(member_type) << ", ptr " << gep_temp
+                                      << ", align " << getTypeAlignment(member_type)
+                                      << " ; Load member " << member_name << "\n";
+
+                        return load_temp;
+                    }
+                }
+
+                LOG_ERROR("Member access only supported for direct struct variables");
+                exit(EXIT_FAILURE);
             }
         };
 
@@ -890,10 +1034,65 @@ namespace Delta
                               << ", align " << getTypeAlignment(statement_let->type) << "; Allocate variable \"" << statement_let->ident.value.value() << "\"\n";
 
                 // Generate Expression
-                std::string expr_value = gen->generateExpression(statement_let->expression);
-                gen->m_output << "  store " << gen->dataTypeToLLVM(statement_let->type) << " " << expr_value
-                              << ", " << gen->dataTypeToLLVM(statement_let->type) << "* " << alloca_temp
-                              << ", align " << getTypeAlignment(statement_let->type) << "; Set variable \"" << statement_let->ident.value.value() << "\"\n";
+                if (statement_let->expression)
+                {
+                    // Check if this is a struct literal
+                    bool is_struct_literal = false;
+                    const NodeTermStructLiteral *struct_lit = nullptr;
+                    
+                    if (statement_let->type.base == BaseType::STRUCT)
+                    {
+                        // Check if expression is a struct literal
+                        if (std::holds_alternative<NodeExpressionTerm *>(statement_let->expression->var))
+                        {
+                            NodeExpressionTerm *term = std::get<NodeExpressionTerm *>(statement_let->expression->var);
+                            if (std::holds_alternative<NodeTermStructLiteral *>(term->var))
+                            {
+                                is_struct_literal = true;
+                                struct_lit = std::get<NodeTermStructLiteral *>(term->var);
+                            }
+                        }
+                    }
+
+                    if (is_struct_literal && struct_lit)
+                    {
+                        // Store each field individually
+                        auto struct_it = gen->m_struct_definitions.find(statement_let->type.struct_name);
+                        if (struct_it == gen->m_struct_definitions.end())
+                        {
+                            LOG_ERROR("Unknown struct type: {}", statement_let->type.struct_name);
+                            exit(EXIT_FAILURE);
+                        }
+
+                        const NodeStruct *struct_def = struct_it->second;
+                        
+                        for (size_t i = 0; i < struct_lit->literals.size() && i < struct_def->parameters.size(); i++)
+                        {
+                            // Get pointer to field
+                            std::string gep_temp = gen->getNextTemp();
+                            gen->m_output << "  " << gep_temp << " = getelementptr inbounds "
+                                          << gen->dataTypeToLLVM(statement_let->type) << ", ptr " << alloca_temp
+                                          << ", i32 0, i32 " << i << " ; Field " << i << "\n";
+
+                            // Generate value for this field
+                            std::string field_value = gen->generateTerm(struct_lit->literals[i]);
+                            DataType field_type = struct_def->parameters[i]->type;
+
+                            // Store field value
+                            gen->m_output << "  store " << gen->dataTypeToLLVM(field_type)
+                                          << " " << field_value << ", ptr " << gep_temp
+                                          << ", align " << getTypeAlignment(field_type)
+                                          << " ; Store field " << struct_def->parameters[i]->ident.value.value() << "\n";
+                        }
+                    }
+                    else
+                    {
+                        std::string expr_value = gen->generateExpression(statement_let->expression);
+                        gen->m_output << "  store " << gen->dataTypeToLLVM(statement_let->type) << " " << expr_value
+                                      << ", ptr " << alloca_temp
+                                      << ", align " << getTypeAlignment(statement_let->type) << " ; Set variable \"" << statement_let->ident.value.value() << "\"\n";
+                    }
+                }
 
                 Var var = Var(statement_let->ident.value.value(), 0, statement_let->type);
                 var.setConstant(statement_let->isConst);
@@ -930,7 +1129,7 @@ namespace Delta
                 }
 
                 gen->m_output << "  store " << gen->dataTypeToLLVM(var.type) << " " << expr_value
-                              << ", " << gen->dataTypeToLLVM(var.type) << "* " << var.llvm_alloca
+                              << ", ptr " << var.llvm_alloca
                               << ", align " << getTypeAlignment(var.type) << "; Set variable \"" << assign->ident.value.value() << "\"\n";
             }
 
@@ -1035,7 +1234,7 @@ namespace Delta
                 }
 
                 gen->m_output << "  store " << gen->dataTypeToLLVM(pointee_type) << " " << value
-                              << ", " << gen->dataTypeToLLVM(pointee_type) << "* " << ptr_value
+                              << ", ptr " << ptr_value
                               << ", align " << getTypeAlignment(pointee_type)
                               << " ; Store through pointer\n";
             }
@@ -1077,9 +1276,99 @@ namespace Delta
                               << ", i64 " << index << " ; Array index\n";
 
                 gen->m_output << "  store " << gen->dataTypeToLLVM(element_type)
-                              << " " << value << ", " << gen->dataTypeToLLVM(element_type)
-                              << "* " << gep_temp << ", align " << getTypeAlignment(element_type)
+                              << " " << value << ", ptr " << gep_temp
+                              << ", align " << getTypeAlignment(element_type)
                               << " ; Store array element\n";
+            }
+
+            void operator()(const NodeStatementMemberAssign *member_assign)
+            {
+                // Get the struct type
+                DataType struct_type = gen->inferExpressionType(member_assign->struct_expr);
+                std::string member_name = member_assign->member_name.value.value();
+
+                if (struct_type.base != BaseType::STRUCT)
+                {
+                    LOG_ERROR("Cannot access member of non-struct type");
+                    exit(EXIT_FAILURE);
+                }
+
+                // Find struct definition
+                auto struct_it = gen->m_struct_definitions.find(struct_type.struct_name);
+                if (struct_it == gen->m_struct_definitions.end())
+                {
+                    LOG_ERROR("Unknown struct type: {}", struct_type.struct_name);
+                    exit(EXIT_FAILURE);
+                }
+
+                const NodeStruct *struct_def = struct_it->second;
+
+                // Find member index
+                int member_index = -1;
+                DataType member_type;
+                for (size_t i = 0; i < struct_def->parameters.size(); i++)
+                {
+                    if (struct_def->parameters[i]->ident.value.value() == member_name)
+                    {
+                        member_index = static_cast<int>(i);
+                        member_type = struct_def->parameters[i]->type;
+                        break;
+                    }
+                }
+
+                if (member_index == -1)
+                {
+                    LOG_ERROR("Struct {} has no member named {}", struct_type.struct_name, member_name);
+                    exit(EXIT_FAILURE);
+                }
+
+                // Get the struct variable's address
+                const NodeExpression *struct_expr = member_assign->struct_expr;
+                if (std::holds_alternative<NodeExpressionTerm *>(struct_expr->var))
+                {
+                    NodeExpressionTerm *term = std::get<NodeExpressionTerm *>(struct_expr->var);
+                    if (std::holds_alternative<NodeTermIdentifier *>(term->var))
+                    {
+                        NodeTermIdentifier *ident_term = std::get<NodeTermIdentifier *>(term->var);
+                        std::string var_name = ident_term->ident.value.value();
+
+                        // Find the variable
+                        auto var_it = std::find_if(gen->m_vars.begin(), gen->m_vars.end(),
+                                                    [&](const Var &v) { return v.name == var_name; });
+                        if (var_it == gen->m_vars.end())
+                        {
+                            LOG_ERROR("Undeclared variable: {}", var_name);
+                            exit(EXIT_FAILURE);
+                        }
+
+                        // Generate value expression
+                        std::string value = gen->generateExpression(member_assign->value_expr);
+                        DataType value_type = gen->inferExpressionType(member_assign->value_expr);
+
+                        // Convert value to member type if needed
+                        if (value_type != member_type)
+                        {
+                            value = gen->generateTypeConversion(value, value_type, member_type);
+                        }
+
+                        // Generate GEP to get pointer to member
+                        std::string gep_temp = gen->getNextTemp();
+                        gen->m_output << "  " << gep_temp << " = getelementptr inbounds "
+                                      << gen->dataTypeToLLVM(struct_type) << ", ptr " << var_it->llvm_alloca
+                                      << ", i32 0, i32 " << member_index << " ; Member access: " << member_name << "\n";
+
+                        // Store the value to the member
+                        gen->m_output << "  store " << gen->dataTypeToLLVM(member_type)
+                                      << " " << value << ", ptr " << gep_temp
+                                      << ", align " << getTypeAlignment(member_type)
+                                      << " ; Store member " << member_name << "\n";
+
+                        return;
+                    }
+                }
+
+                LOG_ERROR("Member assignment only supported for direct struct variables");
+                exit(EXIT_FAILURE);
             }
         };
 
@@ -1119,63 +1408,68 @@ namespace Delta
 
     std::string Assembler::dataTypeToLLVM(DataType type)
     {
-        switch (type)
+        std::string base;
+        switch (type.base)
         {
-        case DataType::INT8:
-            return "i8";
-        case DataType::INT16:
-            return "i16";
-        case DataType::INT32:
-            return "i32";
-        case DataType::INT64:
-            return "i64";
-        case DataType::FLOAT32:
-            return "float";
-        case DataType::FLOAT64:
-            return "double";
-        case DataType::VOID:
-            return "void";
-        // Pointer types
-        case DataType::INT8_PTR:
-            return "i8*";
-        case DataType::INT16_PTR:
-            return "i16*";
-        case DataType::INT32_PTR:
-            return "i32*";
-        case DataType::INT64_PTR:
-            return "i64*";
-        case DataType::FLOAT32_PTR:
-            return "float*";
-        case DataType::FLOAT64_PTR:
-            return "double*";
-        case DataType::VOID_PTR:
-            return "i8*"; // void* == i8*
-        default:
-            return "i32";
+        case BaseType::INT8:
+            base = "i8";
+            break;
+        case BaseType::INT16:
+            base = "i16";
+            break;
+        case BaseType::INT32:
+            base = "i32";
+            break;
+        case BaseType::INT64:
+            base = "i64";
+            break;
+        case BaseType::FLOAT32:
+            base = "float";
+            break;
+        case BaseType::FLOAT64:
+            base = "double";
+            break;
+        case BaseType::VOID:
+            base = (type.pointer_level > 0) ? "i8" : "void"; // void* -> i8*
+            break;
+        case BaseType::STRUCT:
+        {
+            base = std::string("%struct.") + type.struct_name;
         }
+        break;
+        default:
+            base = "i32";
+            break;
+        }
+
+        if (type.pointer_level >= 1)
+        {
+            return "ptr";
+        }
+        return base;
     }
 
     void Assembler::generateDefaultValue(DataType type)
     {
-        switch (type)
+        if (isPointerType(type))
         {
-        case DataType::INT8:
-        case DataType::INT16:
-        case DataType::INT32:
-        case DataType::INT64:
+            m_output << "null";
+            return;
+        }
+
+        switch (type.base)
+        {
+        case BaseType::INT8:
+        case BaseType::INT16:
+        case BaseType::INT32:
+        case BaseType::INT64:
             m_output << "0";
             break;
-        case DataType::FLOAT32:
+        case BaseType::FLOAT32:
+        case BaseType::FLOAT64:
             m_output << "0.0";
-            break;
-        case DataType::FLOAT64:
-            m_output << "0.0";
-            break;
-        case DataType::VOID:
-            // Should not happen
             break;
         default:
-            m_output << "0";
             break;
         }
     }
@@ -1342,6 +1636,12 @@ namespace Delta
             m_output << "  " << bool_temp << " = fcmp one " << dataTypeToLLVM(type)
                      << " " << value << ", 0.0 ; Float to Boolean\n";
         }
+        else if (isPointerType(type))
+        {
+            // Compare pointer with null
+            m_output << "  " << bool_temp << " = icmp ne " << dataTypeToLLVM(type)
+                     << " " << value << ", null ; Ptr to Boolean\n";
+        }
         else
         {
             // Compare integer with 0
@@ -1356,14 +1656,21 @@ namespace Delta
     {
         if (isPointerType(left) && isPointerType(right))
         {
+            if (left.pointer_level != right.pointer_level)
+            {
+                LOG_ERROR("Incompatible pointer depths in expression");
+                exit(EXIT_FAILURE);
+            }
+
             if (left == right)
                 return left;
-            // void* is compatible with any pointer
-            if (left == DataType::VOID_PTR)
+
+            // allow void* (any depth) with typed pointers of same depth
+            if (left.base == BaseType::VOID)
                 return right;
-            if (right == DataType::VOID_PTR)
+            if (right.base == BaseType::VOID)
                 return left;
-            // Otherwise, they're incompatible - this might need special handling
+
             LOG_ERROR("Incompatible pointer types in expression");
             exit(EXIT_FAILURE);
         }
@@ -1551,6 +1858,51 @@ namespace Delta
             {
                 return term_cast->target_type;
             }
+
+            DataType operator()(const NodeTermStructLiteral *term_struct_lit) const
+            {
+                // Struct literal type is determined by the context
+                // For now, return a generic struct type - the actual struct name
+                // should be resolved from the assignment context
+                // Return a marker type that indicates this is a struct literal
+                DataType struct_type(BaseType::STRUCT, 0);
+                struct_type.struct_name = "struct_literal";
+                return struct_type;
+            }
+
+            DataType operator()(const NodeTermMemberAccess *member_access) const
+            {
+                DataType struct_type = gen->inferExpressionType(member_access->struct_expr);
+                std::string member_name = member_access->member_name.value.value();
+
+                if (struct_type.base != BaseType::STRUCT)
+                {
+                    LOG_ERROR("Cannot access member of non-struct type");
+                    exit(EXIT_FAILURE);
+                }
+
+                // Find struct definition
+                auto struct_it = gen->m_struct_definitions.find(struct_type.struct_name);
+                if (struct_it == gen->m_struct_definitions.end())
+                {
+                    LOG_ERROR("Unknown struct type: {}", struct_type.struct_name);
+                    exit(EXIT_FAILURE);
+                }
+
+                const NodeStruct *struct_def = struct_it->second;
+
+                // Find member type
+                for (size_t i = 0; i < struct_def->parameters.size(); i++)
+                {
+                    if (struct_def->parameters[i]->ident.value.value() == member_name)
+                    {
+                        return struct_def->parameters[i]->type;
+                    }
+                }
+
+                LOG_ERROR("Struct {} has no member named {}", struct_type.struct_name, member_name);
+                exit(EXIT_FAILURE);
+            }
         };
 
         TermTypeVisitor visitor(this);
@@ -1719,12 +2071,15 @@ namespace Delta
 
     DataType Assembler::getPromotedType(DataType type)
     {
-        switch (type)
+        if (isPointerType(type))
+            return type;
+
+        switch (type.base)
         {
-        case DataType::INT8:
-        case DataType::INT16:
+        case BaseType::INT8:
+        case BaseType::INT16:
             return DataType::INT32;
-        case DataType::FLOAT32:
+        case BaseType::FLOAT32:
             return DataType::FLOAT64;
         default:
             return type;
@@ -1840,7 +2195,8 @@ namespace Delta
 
             void operator()(const NodeStatementLet *statement_let)
             {
-                gen->collectStringLiteralsFromExpression(statement_let->expression);
+                if (statement_let->expression)
+                    gen->collectStringLiteralsFromExpression(statement_let->expression);
             }
 
             void operator()(const NodeStatementAssign *assign)
@@ -1890,6 +2246,12 @@ namespace Delta
                 gen->collectStringLiteralsFromExpression(array_assign->index_expr);
                 gen->collectStringLiteralsFromExpression(array_assign->value_expr);
             }
+
+            void operator()(const NodeStatementMemberAssign *member_assign)
+            {
+                gen->collectStringLiteralsFromExpression(member_assign->struct_expr);
+                gen->collectStringLiteralsFromExpression(member_assign->value_expr);
+            }
         };
 
         StringCollectionStatementVisitor visitor(this);
@@ -1938,6 +2300,11 @@ namespace Delta
                 }
             }
 
+            void operator()(const NodeTermStructLiteral *term_struct_lit) { 
+                for(auto lit : term_struct_lit->literals){
+                    gen->collectStringLiteralsFromTerm(lit);
+                }
+             }
             void operator()(const NodeTermIntegerLiteral *) { /* No strings here */ }
             void operator()(const NodeTermFloatLiteral *) { /* No strings here */ }
             void operator()(const NodeTermDoubleLiteral *) { /* No strings here */ }
@@ -1972,6 +2339,11 @@ namespace Delta
             {
                 gen->collectStringLiteralsFromExpression(array_access->array_expr);
                 gen->collectStringLiteralsFromExpression(array_access->index_expr);
+            }
+
+            void operator()(const NodeTermMemberAccess *member_access)
+            {
+                gen->collectStringLiteralsFromExpression(member_access->struct_expr);
             }
         };
 

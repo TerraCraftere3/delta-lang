@@ -1,7 +1,95 @@
-external int glewInit();
-external void glClear(int);
-external void glClearColor(float, float, float, float);
-external void glViewport(int, int, int64, int64);
+// GLEW and basic functions
+fn glewInit() -> int;
+
+// Buffer and Clearing
+fn glClear(mask: int) -> void;
+fn glClearColor(red: float, green: float, blue: float, alpha: float) -> void;
+fn glViewport(x: int, y: int, width: int64, height: int64) -> void;
+
+// Vertex and Drawing
+fn glBegin(mode: int) -> void;
+fn glEnd() -> void;
+fn glVertex2f(x: float, y: float) -> void;
+fn glVertex3f(x: float, y: float, z: float) -> void;
+fn glColor3f(red: float, green: float, blue: float) -> void;
+fn glColor4f(red: float, green: float, blue: float, alpha: float) -> void;
+fn glNormal3f(x: float, y: float, z: float) -> void;
+fn glTexCoord2f(s: float, t: float) -> void;
+
+// Matrix operations
+fn glMatrixMode(mode: int) -> void;
+fn glLoadIdentity() -> void;
+fn glPushMatrix() -> void;
+fn glPopMatrix() -> void;
+fn glTranslatef(x: float, y: float, z: float) -> void;
+fn glRotatef(angle: float, x: float, y: float, z: float) -> void;
+fn glScalef(x: float, y: float, z: float) -> void;
+fn glMultMatrixf(m: float*) -> void;
+fn glLoadMatrixf(m: float*) -> void;
+
+// Buffer operations
+fn glGenBuffers(n: int, buffers: int*) -> void;
+fn glBindBuffer(target: int, buffer: int) -> void;
+fn glBufferData(target: int, size: int64, data: void*, usage: int) -> void;
+fn glDeleteBuffers(n: int, buffers: int*) -> void;
+
+// Vertex Array Objects
+fn glGenVertexArrays(n: int, arrays: int*) -> void;
+fn glBindVertexArray(array: int) -> void;
+fn glDeleteVertexArrays(n: int, arrays: int*) -> void;
+
+// Drawing commands
+fn glDrawArrays(mode: int, first: int, count: int) -> void;
+fn glDrawElements(mode: int, count: int, type: int, indices: void*) -> void;
+
+// Enable/Disable states
+fn glEnable(cap: int) -> void;
+fn glDisable(cap: int) -> void;
+
+// Depth and culling functions
+fn glDepthFunc(func: int) -> void;
+fn glCullFace(mode: int) -> void;
+fn glFrontFace(mode: int) -> void;
+
+// Shader operations
+fn glCreateShader(shaderType: int) -> int;
+fn glShaderSource(shader: int, count: int, string: char**, length: int*) -> void;
+fn glCompileShader(shader: int) -> void;
+fn glGetShaderInfoLog(shader: int, maxLength: int, length: int*, infoLog: char*) -> void;
+fn glDeleteShader(shader: int) -> void;
+
+// Program operations
+fn glCreateProgram() -> int;
+fn glAttachShader(program: int, shader: int) -> void;
+fn glLinkProgram(program: int) -> void;
+fn glGetProgramInfoLog(program: int, maxLength: int, length: int*, infoLog: char*) -> void;
+fn glDeleteProgram(program: int) -> void;
+fn glUseProgram(program: int) -> void;
+
+// Attribute and Uniform locations
+fn glGetAttribLocation(program: int, name: char*) -> int;
+fn glGetUniformLocation(program: int, name: char*) -> int;
+
+// Vertex Attribute Pointers
+fn glEnableVertexAttribArray(index: int) -> void;
+fn glDisableVertexAttribArray(index: int) -> void;
+fn glVertexAttribPointer(index: int, size: int, type: int, normalized: char, stride: int, pointer: void*) -> void;
+
+// Uniform setters
+fn glUniform1f(location: int, v0: float) -> void;
+fn glUniform2f(location: int, v0: float, v1: float) -> void;
+fn glUniform3f(location: int, v0: float, v1: float, v2: float) -> void;
+fn glUniform4f(location: int, v0: float, v1: float, v2: float, v3: float) -> void;
+fn glUniform1i(location: int, v0: int) -> void;
+fn glUniformMatrix4fv(location: int, count: int, transpose: char, value: float*) -> void;
+
+// Texture operations
+fn glGenTextures(n: int, textures: int*) -> void;
+fn glBindTexture(target: int, texture: int) -> void;
+fn glTexImage2D(target: int, level: int, internalformat: int, width: int, height: int, border: int, format: int, type: int, data: void*) -> void;
+fn glTexParameteri(target: int, pname: int, param: int) -> void;
+fn glDeleteTextures(n: int, textures: int*) -> void;
+fn glActiveTexture(texture: int) -> void;
 
 #define GL_ZERO 0
 #define GL_FALSE 0

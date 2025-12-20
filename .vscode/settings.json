@@ -2,13 +2,15 @@
     "cmake.debugConfig": {
         "args": [
             "-i",
-            "..\\examples\\wasm_test\\example.dlt",
+            "..\\examples\\native_test\\example.dltu",
+            "-i",
+            "..\\examples\\native_test\\fibonacci.dltu",
             "-o",
-            "..\\examples\\wasm_test\\example.wasm",
-            "-T",
-            "wasm",
-            "--verbose",
+            "..\\examples\\native_test\\example.exe",
+            "-L",
+            "..\\examples\\native_test\\glew32.lib",
             "--run",
+            "--verbose"
         ]
     },
     "files.associations": {
@@ -97,5 +99,6 @@
         "xutility": "cpp",
         "windows.h": "c",
         "stdbool.h": "c"
-    }
+    },
+    "iis.configDir": ""
 }

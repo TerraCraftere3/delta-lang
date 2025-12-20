@@ -7,7 +7,20 @@
 
 namespace Delta
 {
+
+    struct NodeParameter
+    {
+        Token ident;
+        DataType type;
+#ifdef DELTA_NODE_ID
+        const char *id = "Parameter";
+#endif
+    };
+
+
     struct NodeExpression;
+    struct NodeExpressionTerm;
+    
     struct NodeTermDoubleLiteral
     {
         Token double_literal;
@@ -37,6 +50,14 @@ namespace Delta
         Token string_literal;
 #ifdef DELTA_NODE_ID
         const char *id = "String Literal";
+#endif
+    };
+
+    struct NodeTermStructLiteral
+    {
+        std::vector<NodeExpressionTerm*> literals;
+#ifdef DELTA_NODE_ID
+        const char *id = "Struct Literal";
 #endif
     };
 
@@ -87,6 +108,15 @@ namespace Delta
         NodeExpression *index_expr;
 #ifdef DELTA_NODE_ID
         const char *id = "Array Access";
+#endif
+    };
+
+    struct NodeTermMemberAccess
+    {
+        NodeExpression *struct_expr;
+        Token member_name;
+#ifdef DELTA_NODE_ID
+        const char *id = "Member Access";
 #endif
     };
 
@@ -214,13 +244,15 @@ namespace Delta
             NodeTermFloatLiteral *,
             NodeTermDoubleLiteral *,
             NodeTermStringLiteral *,
+            NodeTermStructLiteral *,
             NodeTermIdentifier *,
             NodeTermParen *,
             NodeTermFunctionCall *,
             NodeTermCast *,
             NodeTermAddressOf *,
             NodeTermDereference *,
-            NodeTermArrayAccess *>
+            NodeTermArrayAccess *,
+            NodeTermMemberAccess *>
             var;
 #ifdef DELTA_NODE_ID
         const char *id = "Term Expression";
@@ -338,21 +370,22 @@ namespace Delta
 #endif
     };
 
+    struct NodeStatementMemberAssign
+    {
+        NodeExpression *struct_expr;
+        Token member_name;
+        NodeExpression *value_expr;
+#ifdef DELTA_NODE_ID
+        const char *id = "Member Assign";
+#endif
+    };
+
     struct NodeStatementWhile
     {
         NodeExpression *expr;
         NodeScope *scope;
 #ifdef DELTA_NODE_ID
         const char *id = "While Loop";
-#endif
-    };
-
-    struct NodeParameter
-    {
-        Token ident;
-        DataType type;
-#ifdef DELTA_NODE_ID
-        const char *id = "Parameter";
 #endif
     };
 
@@ -370,12 +403,17 @@ namespace Delta
     struct NodeExternalDeclaration
     {
         Token function_name;
-        std::vector<DataType> parameters;
+        std::vector<NodeParameter *> parameters;
         DataType return_type;
         bool is_variadic; // any amount of variables, like printf(str, ...)
 #ifdef DELTA_NODE_ID
         const char *id = "External Declaration";
 #endif
+    };
+
+    struct NodeStruct{
+        Token struct_name;
+        std::vector<NodeParameter *> parameters;
     };
 
     struct NodeStatement
@@ -390,7 +428,8 @@ namespace Delta
             NodeStatementReturn *,
             NodeExpression *,
             NodeStatementPointerAssign *,
-            NodeStatementArrayAssign *>
+            NodeStatementArrayAssign *,
+            NodeStatementMemberAssign *>
             var;
 #ifdef DELTA_NODE_ID
         const char *id = "Statement";
@@ -401,6 +440,7 @@ namespace Delta
     {
         std::vector<NodeExternalDeclaration *> externals;
         std::vector<NodeFunctionDeclaration *> functions;
+        std::vector<NodeStruct *> structs;
         std::vector<NodeStatement *> statements;
 #ifdef DELTA_NODE_ID
         const char *id = "Program";

@@ -1,1 +1,2 @@
-external void stdSleep(int);
+fn stdSleep(milliseconds: int) -> void;
+fn stdGetTimeMS() -> int64;

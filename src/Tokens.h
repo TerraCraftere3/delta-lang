@@ -13,7 +13,7 @@ namespace Delta
         endif,          // endif
         exit,           // exit
         while_,         // while
-        data_type,      // int64, float32, bool, etc.
+        struct_,        // struct
         let,            // let
         equals,         // =
         int_literal,    // integer like 10, etc
@@ -49,6 +49,7 @@ namespace Delta
         less_equals,    // <=
         double_equals,  // ==
         and_,           // &
+        dot,            // .
         ellipsis,       // ...
         hashtag,        // #
         exclamation,    // !

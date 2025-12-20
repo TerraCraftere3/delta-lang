@@ -1,4 +1,4 @@
-# The Official Delta Compiler
+# 🚀 The Official Delta Compiler
 [![CMake](https://github.com/TerraCraftere3/delta-lang/actions/workflows/cmake_windows.yml/badge.svg)](https://github.com/TerraCraftere3/delta-lang/actions/workflows/cmake_windows.yml) 
 ![Top language](https://img.shields.io/github/languages/top/TerraCraftere3/delta-lang?color=yellow&logo=cplusplus)
 ![Language count](https://img.shields.io/github/languages/count/TerraCraftere3/delta-lang?color=blue)
@@ -7,21 +7,36 @@
 
 Delta is a Programming Language that is compiled to LLVM Intermediate Representation for native performance. It has a custom standard library with simple window management and some c functions. It also has support for custom libraries (for example glew in the example) using external definitions.
 
-## How to Build
+## 🛠️ How to Build
 - Clone the repository using `git clone --recursive https://github.com/TerraCraftere3/delta-lang` into any folder you want
-### Terminal
+### 💻 Terminal
 - Open the cloned repo in a terminal and enter the following commands:
     - `mkdir build`
     - `cd build`
     - `cmake .. -G "Visual Studio 17 2022"` (Adjust the Generator to your Visual Studio Version)
     - `cmake --build . --config Release` or open the generated Solution File
-### VSCode
+### 🧩 VSCode
 - Open the cloned repo in vscode
 - Press CTRL + Shift + P
 - Enter "CMake: Debug" and press enter
 - The Project will build and run the example project
 
-## Structure
+## ▶️ Usage
+You can compile files using the `delta` command. e.g.:
+```
+delta -i example.dltu -i fibonacci.dltu -o example.exe --verbose --run
+```
+
+Here are the possible arguments for the compiler:
+- `-i [input_file].dltu`: Adds a new Compile Unit to the Compiler
+- `-o [output_file]`: Sets the output file for the Compiler
+- `-L [library_file]`: Adds a linker library to the Compiler
+- `--verbose`: Activates Verbose Logging
+- `--run`: Runs the program after compilation
+
+You usually use .dltu files for delta compile units and .dlt for headers (headers need to be .dlt files) 
+
+## 🗂️ Structure
 | Folder        | Usage                                                   |
 | ------------- | ------------------------------------------------------- |
 | ``.github``   | Contains workflows and github properties                |
@@ -34,23 +49,23 @@ Delta is a Programming Language that is compiled to LLVM Intermediate Representa
 | ``stdlib``    | The Standard Library shipped with the compiler          |
 | ``vendor``    | External Libraries like spdlog                          |
 
-## Usage
-### Variables
-```
+## ▶️ Usage
+### 🧮 Variables
+```c++
 let a: int = 42; // Setting Variable
 let b: short = 3;
 let c: long = a + b;  
 c = 2 * c; // Updating Variable
 ```
 
-### Maths 
-```
+### ➕ Maths 
+```c++
 let d: int = a * (b + 2);
 let e: int = d - 128;
 ```
 
-### Scopes
-```
+### 📦 Scopes
+```c++
 let a: int = 3;
 {
     let b: int = 9;
@@ -59,8 +74,8 @@ let b: int = 3; // Can redefine because scope is closed
 ```
 You cannot shadow variables that are outside scopes
 
-### IF Statements
-```
+### ❓ IF Statements
+```c++
 if(statement_a){
     ...
 }elif(statement_b){
@@ -71,8 +86,8 @@ if(statement_a){
 ```
 You cannot shadow variables that are outside scopes
 
-### Comments
-```
+### 📝 Comments
+```c++
 // This is an example comment
 let a: int = 3
 
@@ -82,22 +97,22 @@ let a: int = 3
 }*/
 ```
 
-### Constants
-```
+### 🔒 Constants
+```c++
 // Constant values cant be changed after declaration
 let const ZERO: int = 0;
 ```
 
-### Types
-```
+### 🧩 Types
+```c++
 let a: int = 10;
 let b: float = 1.2345f;
 let pi: double = 3.14;
 ```
-Any integer type is compatible with another integer type, so are other types (like floats in the future).
+Any integer type is compatible with another integer type, so are other types.
 
-### Functions
-```
+### 🧪 Functions
+```c++
 fn add(a: int, b: int) -> int {
     return a + b;
 }
@@ -105,15 +120,15 @@ fn add(a: int, b: int) -> int {
 let result: int = add(3, 5);
 ```
 
-### Casting
-```
+### 🔄 Casting
+```c++
 let a: int = 10;
 let b: float = (float) a;
 ```
 
-### Pointer
-```
-fn modifyInt(int* ptr, int newValue) -> void{
+### 📍 Pointer
+```c++
+fn modifyInt(ptr: int*, newValue: int) -> void{
     *ptr = newValue;
 }
 
@@ -121,19 +136,19 @@ let x: int = 10;
 modifyInt(&x, 42); // sets the value of x to 42
 ```
 
-### Chars
-```
+### 🔤 Chars
+```c++
 let c: char = 'H';
 ```
 
-### Strings
-```
+### 📜 Strings
+```c++
 let const str: char* = "Hello World\n";
 printf(str);
 ```
 
-### Arrays
-```
+### 🧾 Arrays
+```c++
 let array: int* = malloc(8 * 4); // Allocates an array of 8 * int32
 array[0] = 4;
 array[1] = 16;
@@ -141,17 +156,17 @@ array[1] = 16;
 array[7] = 3;
 ```
 
-### Main Function
+### 🧠 Main Function
 
-```
+```c++
 fn main() -> int{
     return 0;
 }
 ```
 The return value of main() is used as the exit code of the program
 
-### Includes
-```
+### 📎 Includes
+```c++
 #include <stdio> // includes io functions like printf
 #include <stdgraphics>
 
@@ -160,25 +175,50 @@ fn main() -> int{
 }
 ```
 
-### Definitions
+### 🏗️ Structs
+```c++
+struct Precision{
+    a: int;
+    b: float;
+    c: double;
+}
+
+fn main() -> int{
+    let PIPrecision: Precision = {3.14f, 4, 3.1415};
+    let foo: Precision;
+    foo.a = 10;
+    foo.b = 10.0f
+    foo.c = 10.0001;
+    return 0;
+}
 ```
+
+### 🧱 Definitions
+```c++
 #define PI 3.14159265359
-#define someFunction windowsBackend_someFunctionCall()
+#define someFunction windowsBackend_someFunctionCall
 ```
 The name of a definition cant be the same as an existing token
 
-## Grammar
+## 📐 Grammar
 (LaTeX Expression might not render correctly in Github)
 
 $$
 \begin{align}
-[\text{Prog}] &\to [\text{FuncDecl}]^* \space [\text{Statement}]^* \space\textit{List of Functions and Statements}
+[\text{Prog}] &\to [\text{FuncDecl}]^* \space [\text{FuncHeader}]* \space [\text{Statement}]^* \space\textit{List of Functions and Statements}
 \\
 [\text{FuncDecl}] &\to 
 \begin{cases}
 fn \space \text{Identifier}([\text{ParamList}]?) \space \text{->} \space [\text{Type}][\text{Scope}]
 \\
 fn \space \text{Identifier}([\text{ParamList}]?) \space [\text{Scope}] & \textit{Default to void type}
+\end{cases}
+\\
+[\text{FuncHeader}] &\to 
+\begin{cases}
+fn \space \text{Identifier}([\text{ParamList}]?) \space \text{->} \space [\text{Type}];
+\\
+fn \space \text{Identifier}([\text{ParamList}]?); & \textit{Default to void type}
 \end{cases}
 \\
 [\text{ParamList}] &\to \text{Param}^*
@@ -257,6 +297,8 @@ fn \space \text{Identifier}([\text{ParamList}]?) \space [\text{Scope}] & \textit
     \\
     \text{String Literal}  & \textit{Equals to const char*}
     \\
+    \text{\{[\text{Term}], [\text{Term}], ...\}} & \textit{Struct Literal}
+    \\
     \text{Identifier} & \textit{Variable}
     \\
     [\text{Expr}]
@@ -291,22 +333,14 @@ fn \space \text{Identifier}([\text{ParamList}]?) \space [\text{Scope}] & \textit
     \\
     \text{float64} & | & \text{double} & \textit{8 Byte Float}
     \\
-    \text{int8*} & | & \text{char*} & \textit{Can be used as String}
+    [\text{Ident}] & & & \textit{Used for structs}
     \\
-    \text{int16*} & | & \text{short*}
-    \\
-    \text{int32*} & | & \text{int*}
-    \\
-    \text{int64*} & | & \text{long*}
-    \\
-    \text{float32*} & | & \text{float*}
-    \\
-    \text{float64*} & | & \text{double*}
+    [\text{Type}]* & & & \textit{Pointer to a Type}
 \end{cases}
 \end{align}
 $$
 
-### Grammar Rules
+### 📏 Grammar Rules
 - Nonterminals: $` [\text{Category / Element}] `$ - Can continue to have subnodes
 - Terminals: $` \text{Element} `$ - Can NOT have subnodes
 - Alternations: $` \text{float64} \space | \space \text{double} `$ - Means that two values are the same

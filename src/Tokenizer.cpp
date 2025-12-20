@@ -1,6 +1,5 @@
 #include "Tokenizer.h"
 
-#include "Types.h"
 #include "Log.h"
 #include "Strings.h"
 
@@ -55,6 +54,11 @@ namespace Delta
                     tokens.push_back({TokenType::define, line_count});
                     buf.clear();
                 }
+                else if (buf == "struct")
+                {
+                    tokens.push_back({TokenType::struct_, line_count});
+                    buf.clear();
+                }
                 /*else if (buf == "exit") // DEPRECATED
                 {
                     tokens.push_back({TokenType::exit, line_count});
@@ -64,17 +68,7 @@ namespace Delta
                 {
                     tokens.push_back({TokenType::while_, line_count});
                     buf.clear();
-                }
-                else if (isValidDataType(buf))
-                {
-                    while (peek().has_value() && peek().value() == '*')
-                    {
-                        buf.push_back(consume());
-                    }
-
-                    tokens.push_back({TokenType::data_type, line_count, buf});
-                    buf.clear();
-                }
+                } // No dedicated data_type token anymore; treat as identifier
                 else if (buf == "if")
                 {
                     tokens.push_back({TokenType::if_, line_count});
@@ -157,6 +151,14 @@ namespace Delta
                             tokens.push_back({TokenType::double_literal, line_count, buf});
                         }
                     }
+                    // Check if integer has 'f' suffix -> treat as float
+                    else if (peek().has_value() && (peek().value() == 'f' || peek().value() == 'F'))
+                    {
+                        consume(); // eat the 'f'
+                        buf.push_back('.'); // add decimal point for LLVM
+                        buf.push_back('0'); // make it x.0
+                        tokens.push_back({TokenType::float_literal, line_count, buf});
+                    }
                     else
                     {
                         tokens.push_back({TokenType::int_literal, line_count, buf});
@@ -172,6 +174,13 @@ namespace Delta
                 consume(); // '.'
                 consume(); // '.'
                 tokens.push_back({TokenType::ellipsis, line_count});
+            }
+
+            // .
+            else if (peek().value() == '.')
+            {
+                consume(); // .
+                tokens.push_back({TokenType::dot, line_count});
             }
 
             // // single line comment

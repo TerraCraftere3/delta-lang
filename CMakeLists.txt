@@ -2,8 +2,8 @@ cmake_minimum_required(VERSION 3.16)
 project(delta LANGUAGES CXX C)
 
 set(DELTA_COMPILER_NAME "Official Delta Compiler")
-set(DELTA_COMPILER_VERSION "2025.0.1")
-set(DELTA_STDLIB_VERSION "2025.0")
+set(DELTA_COMPILER_VERSION "2025.1.0")
+set(DELTA_STDLIB_VERSION "2025.1")
 
 if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
     message(STATUS "No build type specified, forcing Release")
@@ -98,3 +98,9 @@ target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_20)
 # spdlog
 add_subdirectory(vendor/spdlog)
 target_link_libraries(${PROJECT_NAME} PRIVATE spdlog::spdlog)
+
+
+enable_testing()
+add_test(NAME NativeTest COMMAND $<TARGET_FILE:${PROJECT_NAME}> -i ${CMAKE_CURRENT_SOURCE_DIR}/examples/native_test/example.dltu -i ${CMAKE_CURRENT_SOURCE_DIR}/examples/native_test/fibonacci.dltu -o ${CMAKE_CURRENT_SOURCE_DIR}/examples/native_test/example.exe -L ${CMAKE_CURRENT_SOURCE_DIR}/examples/native_test/glew32.lib --verbose)
+add_test(NAME RotatingCubeTest COMMAND $<TARGET_FILE:${PROJECT_NAME}> -i ${CMAKE_CURRENT_SOURCE_DIR}/examples/native_test/rotating_cube.dltu -o ${CMAKE_CURRENT_SOURCE_DIR}/examples/native_test/rotating_cube.exe -L ${CMAKE_CURRENT_SOURCE_DIR}/examples/native_test/glew32.lib --verbose)
+add_test(NAME WasmTest COMMAND $<TARGET_FILE:${PROJECT_NAME}> -i ${CMAKE_CURRENT_SOURCE_DIR}/examples/wasm_test/example.dlt -o ${CMAKE_CURRENT_SOURCE_DIR}/examples/wasm_test/example.wasm --verbose -T wasm)

@@ -70,6 +70,7 @@ namespace Delta
         void generateStringLiterals();
         std::string generateFunctionCall(const NodeTermFunctionCall *func_call);
         void generateFunctionDeclaration(const NodeFunctionDeclaration *func_decl);
+        void generateStructDeclaration(const NodeStruct *struct_decl);
 
     private:
         // LLVM IR specific helpers
@@ -130,6 +131,7 @@ namespace Delta
         std::vector<Function> m_functions{};
         std::set<std::string> m_used_external_functions{}; // Track which external functions are used
         std::vector<std::string> m_string_literals;
+        std::map<std::string, const NodeStruct *> m_struct_definitions{}; // Track struct definitions by name
 
         // Function context
         std::string m_current_function = "";

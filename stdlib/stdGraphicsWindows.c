@@ -1,11 +1,10 @@
 #ifdef _WIN32
-#pragma message("Compiling stdGraphics.c for Windows")
+#pragma message("Compiling stdgraphics for Windows")
 #include <windows.h>
 #include <stdbool.h>
 #include <string.h>
 #include <stdio.h>
 #include <GL/gl.h>
-#include "stdGraphics.h"
 
 #define MAX_WINDOWS 16
 
@@ -176,15 +175,10 @@ void stdSwapBuffers(int window) {
     SwapBuffers(g_windows[window].hdc);
 }
 
-bool stdIsWindowOpen(int window) {
+bool stdIsWindowOpen(int window)
+{
     if (window < 0 || window >= MAX_WINDOWS) return false;
     return g_windows[window].open;
-}
-
-void stdKeepWindowOpen(int window) {
-    while(stdIsWindowOpen(window)){
-        stdUpdateWindow(window);
-    }
 }
 
 void stdUpdateWindow(int window) {
@@ -195,6 +189,12 @@ void stdUpdateWindow(int window) {
     while (PeekMessage(&msg, g_windows[window].hwnd, 0, 0, PM_REMOVE)) {
         TranslateMessage(&msg);
         DispatchMessage(&msg);
+    }
+}
+
+void stdKeepWindowOpen(int window) {
+    while(stdIsWindowOpen(window)){
+        stdUpdateWindow(window);
     }
 }
 
