@@ -176,6 +176,43 @@ namespace Delta
             }
             try_consume(TokenType::semicolon, "';'", peek().value().line);
         }
+        // Member Assignment: identifier.member = expr (check before simple assignment)
+        // (This is handled separately to avoid conflict with simple assignment)
+        else if (peek().value().type == TokenType::identifier && peek(2).has_value() && peek(2).value().type == TokenType::dot)
+        {
+            auto ident_tok = consume(); // identifier
+            consume(); // consume '.'
+            if (!peek().has_value() || peek().value().type != TokenType::identifier)
+            {
+                LOG_ERROR("Expected member name after '.'");
+                exit(EXIT_FAILURE);
+            }
+            auto member_name = consume();
+            try_consume(TokenType::equals, "'='", peek(0).value().line);
+            auto value_expr = parseExpression();
+            if (!value_expr.has_value())
+            {
+                LOG_ERROR("Expected Value Expression");
+                exit(EXIT_FAILURE);
+            }
+            try_consume(TokenType::semicolon, "';'", peek(0).value().line);
+            
+            // Create the base expression from identifier
+            auto base_term = m_allocator.alloc<NodeTermIdentifier>();
+            base_term->ident = ident_tok;
+            auto base_term_expr = m_allocator.alloc<NodeExpressionTerm>();
+            base_term_expr->var = base_term;
+            auto base_expr = m_allocator.alloc<NodeExpression>();
+            base_expr->var = base_term_expr;
+            
+            auto *stmt_assign = m_allocator.alloc<NodeStatementMemberAssign>();
+            stmt_assign->struct_expr = base_expr;
+            stmt_assign->member_name = member_name;
+            stmt_assign->value_expr = value_expr.value();
+            auto *stmt = m_allocator.alloc<NodeStatement>();
+            stmt->var = stmt_assign;
+            statement = stmt;
+        }
         // Assignment: identifier = expr
         else if (peek().value().type == TokenType::identifier && peek(2).has_value() && peek(2).value().type == TokenType::equals)
         {
@@ -383,7 +420,7 @@ namespace Delta
             }
             else
             {
-                Error::throwExpected("'=', ';' or Array Acecss", peek(0).value().line);
+                Error::throwExpected("'=', ';' or Array Access", peek(0).value().line);
             }
         }
 
@@ -984,14 +1021,44 @@ namespace Delta
             node_term->var = func_call;
             return node_term;
         }
-        // Identifier (variable)
+        // Identifier (variable) or Member Access (identifier.member)
         else if (auto id = try_consume(TokenType::identifier))
         {
-            auto term_ident = m_allocator.alloc<NodeTermIdentifier>();
-            term_ident->ident = id.value();
-            auto node_term = m_allocator.alloc<NodeExpressionTerm>();
-            node_term->var = term_ident;
-            return node_term;
+            // Check if this is member access: identifier.member
+            if (peek().has_value() && peek().value().type == TokenType::dot)
+            {
+                consume(); // consume '.'
+                if (!peek().has_value() || peek().value().type != TokenType::identifier)
+                {
+                    LOG_ERROR("Expected member name after '.'" );
+                    exit(EXIT_FAILURE);
+                }
+                auto member_name = consume();
+                
+                // Create base expression from the identifier
+                auto base_term = m_allocator.alloc<NodeTermIdentifier>();
+                base_term->ident = id.value();
+                auto base_term_expr = m_allocator.alloc<NodeExpressionTerm>();
+                base_term_expr->var = base_term;
+                auto base_expr = m_allocator.alloc<NodeExpression>();
+                base_expr->var = base_term_expr;
+                
+                // Create member access node
+                auto term_member_access = m_allocator.alloc<NodeTermMemberAccess>();
+                term_member_access->struct_expr = base_expr;
+                term_member_access->member_name = member_name;
+                auto node_term = m_allocator.alloc<NodeExpressionTerm>();
+                node_term->var = term_member_access;
+                return node_term;
+            }
+            else
+            {
+                auto term_ident = m_allocator.alloc<NodeTermIdentifier>();
+                term_ident->ident = id.value();
+                auto node_term = m_allocator.alloc<NodeExpressionTerm>();
+                node_term->var = term_ident;
+                return node_term;
+            }
         }
         // Parenthesized expression: (expr)
         else if (auto open_paren = try_consume(TokenType::open_paren))

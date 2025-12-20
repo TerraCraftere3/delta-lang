@@ -6,4 +6,8 @@ struct Foo {
 
 fn main() -> int {
     let val: Foo = {3.14f, 42, 15.0};
+
+    val.a = 325f;
+
+    return (int)val.a + val.b;
 }

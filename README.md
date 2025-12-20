@@ -177,14 +177,18 @@ fn main() -> int{
 
 ### 🏗️ Structs
 ```c++
-struct Foo{
-    a: float;
-    b: int;
+struct Precision{
+    a: int;
+    b: float;
     c: double;
 }
 
 fn main() -> int{
-    let foo: Foo;
+    let PIPrecision: Precision = {3.14f, 4, 3.1415};
+    let foo: Precision;
+    foo.a = 10;
+    foo.b = 10.0f
+    foo.c = 10.0001;
     return 0;
 }
 ```

@@ -111,6 +111,15 @@ namespace Delta
 #endif
     };
 
+    struct NodeTermMemberAccess
+    {
+        NodeExpression *struct_expr;
+        Token member_name;
+#ifdef DELTA_NODE_ID
+        const char *id = "Member Access";
+#endif
+    };
+
     struct NodeTermFunctionCall
     {
         Token function_name;
@@ -242,7 +251,8 @@ namespace Delta
             NodeTermCast *,
             NodeTermAddressOf *,
             NodeTermDereference *,
-            NodeTermArrayAccess *>
+            NodeTermArrayAccess *,
+            NodeTermMemberAccess *>
             var;
 #ifdef DELTA_NODE_ID
         const char *id = "Term Expression";
@@ -360,6 +370,16 @@ namespace Delta
 #endif
     };
 
+    struct NodeStatementMemberAssign
+    {
+        NodeExpression *struct_expr;
+        Token member_name;
+        NodeExpression *value_expr;
+#ifdef DELTA_NODE_ID
+        const char *id = "Member Assign";
+#endif
+    };
+
     struct NodeStatementWhile
     {
         NodeExpression *expr;
@@ -408,7 +428,8 @@ namespace Delta
             NodeStatementReturn *,
             NodeExpression *,
             NodeStatementPointerAssign *,
-            NodeStatementArrayAssign *>
+            NodeStatementArrayAssign *,
+            NodeStatementMemberAssign *>
             var;
 #ifdef DELTA_NODE_ID
         const char *id = "Statement";

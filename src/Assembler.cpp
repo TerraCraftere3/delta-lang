@@ -423,6 +423,90 @@ namespace Delta
 
                 return result;
             }
+
+            std::string operator()(const NodeTermMemberAccess *member_access) const
+            {
+                // Get the struct expression value (should be a variable)
+                DataType struct_type = gen->inferExpressionType(member_access->struct_expr);
+                std::string member_name = member_access->member_name.value.value();
+
+                if (struct_type.base != BaseType::STRUCT)
+                {
+                    LOG_ERROR("Cannot access member of non-struct type");
+                    exit(EXIT_FAILURE);
+                }
+
+                // Find struct definition
+                auto struct_it = gen->m_struct_definitions.find(struct_type.struct_name);
+                if (struct_it == gen->m_struct_definitions.end())
+                {
+                    LOG_ERROR("Unknown struct type: {}", struct_type.struct_name);
+                    exit(EXIT_FAILURE);
+                }
+
+                const NodeStruct *struct_def = struct_it->second;
+
+                // Find member index
+                int member_index = -1;
+                DataType member_type;
+                for (size_t i = 0; i < struct_def->parameters.size(); i++)
+                {
+                    if (struct_def->parameters[i]->ident.value.value() == member_name)
+                    {
+                        member_index = static_cast<int>(i);
+                        member_type = struct_def->parameters[i]->type;
+                        break;
+                    }
+                }
+
+                if (member_index == -1)
+                {
+                    LOG_ERROR("Struct {} has no member named {}", struct_type.struct_name, member_name);
+                    exit(EXIT_FAILURE);
+                }
+
+                // Get the struct variable's address
+                // For now, assume struct_expr is an identifier
+                const NodeExpression *struct_expr = member_access->struct_expr;
+                if (std::holds_alternative<NodeExpressionTerm *>(struct_expr->var))
+                {
+                    NodeExpressionTerm *term = std::get<NodeExpressionTerm *>(struct_expr->var);
+                    if (std::holds_alternative<NodeTermIdentifier *>(term->var))
+                    {
+                        NodeTermIdentifier *ident_term = std::get<NodeTermIdentifier *>(term->var);
+                        std::string var_name = ident_term->ident.value.value();
+
+                        // Find the variable
+                        auto var_it = std::find_if(gen->m_vars.begin(), gen->m_vars.end(),
+                                                    [&](const Var &v) { return v.name == var_name; });
+                        if (var_it == gen->m_vars.end())
+                        {
+                            LOG_ERROR("Undeclared variable: {}", var_name);
+                            exit(EXIT_FAILURE);
+                        }
+
+                        // Generate GEP to get pointer to member
+                        std::string gep_temp = gen->getNextTemp();
+                        gen->m_output << "  " << gep_temp << " = getelementptr inbounds "
+                                      << gen->dataTypeToLLVM(struct_type) << ", "
+                                      << gen->dataTypeToLLVM(struct_type) << "* " << var_it->llvm_alloca
+                                      << ", i32 0, i32 " << member_index << " ; Member access: " << member_name << "\n";
+
+                        // Load the member value
+                        std::string load_temp = gen->getNextTemp();
+                        gen->m_output << "  " << load_temp << " = load "
+                                      << gen->dataTypeToLLVM(member_type) << ", "
+                                      << gen->dataTypeToLLVM(member_type) << "* " << gep_temp
+                                      << ", align " << getTypeAlignment(member_type)
+                                      << " ; Load member " << member_name << "\n";
+
+                        return load_temp;
+                    }
+                }
+
+                LOG_ERROR("Member access only supported for direct struct variables");
+                exit(EXIT_FAILURE);
+            }
         };
 
         TermVisitor visitor(this);
@@ -1147,6 +1231,97 @@ namespace Delta
                               << "* " << gep_temp << ", align " << getTypeAlignment(element_type)
                               << " ; Store array element\n";
             }
+
+            void operator()(const NodeStatementMemberAssign *member_assign)
+            {
+                // Get the struct type
+                DataType struct_type = gen->inferExpressionType(member_assign->struct_expr);
+                std::string member_name = member_assign->member_name.value.value();
+
+                if (struct_type.base != BaseType::STRUCT)
+                {
+                    LOG_ERROR("Cannot access member of non-struct type");
+                    exit(EXIT_FAILURE);
+                }
+
+                // Find struct definition
+                auto struct_it = gen->m_struct_definitions.find(struct_type.struct_name);
+                if (struct_it == gen->m_struct_definitions.end())
+                {
+                    LOG_ERROR("Unknown struct type: {}", struct_type.struct_name);
+                    exit(EXIT_FAILURE);
+                }
+
+                const NodeStruct *struct_def = struct_it->second;
+
+                // Find member index
+                int member_index = -1;
+                DataType member_type;
+                for (size_t i = 0; i < struct_def->parameters.size(); i++)
+                {
+                    if (struct_def->parameters[i]->ident.value.value() == member_name)
+                    {
+                        member_index = static_cast<int>(i);
+                        member_type = struct_def->parameters[i]->type;
+                        break;
+                    }
+                }
+
+                if (member_index == -1)
+                {
+                    LOG_ERROR("Struct {} has no member named {}", struct_type.struct_name, member_name);
+                    exit(EXIT_FAILURE);
+                }
+
+                // Get the struct variable's address
+                const NodeExpression *struct_expr = member_assign->struct_expr;
+                if (std::holds_alternative<NodeExpressionTerm *>(struct_expr->var))
+                {
+                    NodeExpressionTerm *term = std::get<NodeExpressionTerm *>(struct_expr->var);
+                    if (std::holds_alternative<NodeTermIdentifier *>(term->var))
+                    {
+                        NodeTermIdentifier *ident_term = std::get<NodeTermIdentifier *>(term->var);
+                        std::string var_name = ident_term->ident.value.value();
+
+                        // Find the variable
+                        auto var_it = std::find_if(gen->m_vars.begin(), gen->m_vars.end(),
+                                                    [&](const Var &v) { return v.name == var_name; });
+                        if (var_it == gen->m_vars.end())
+                        {
+                            LOG_ERROR("Undeclared variable: {}", var_name);
+                            exit(EXIT_FAILURE);
+                        }
+
+                        // Generate value expression
+                        std::string value = gen->generateExpression(member_assign->value_expr);
+                        DataType value_type = gen->inferExpressionType(member_assign->value_expr);
+
+                        // Convert value to member type if needed
+                        if (value_type != member_type)
+                        {
+                            value = gen->generateTypeConversion(value, value_type, member_type);
+                        }
+
+                        // Generate GEP to get pointer to member
+                        std::string gep_temp = gen->getNextTemp();
+                        gen->m_output << "  " << gep_temp << " = getelementptr inbounds "
+                                      << gen->dataTypeToLLVM(struct_type) << ", "
+                                      << gen->dataTypeToLLVM(struct_type) << "* " << var_it->llvm_alloca
+                                      << ", i32 0, i32 " << member_index << " ; Member access: " << member_name << "\n";
+
+                        // Store the value to the member
+                        gen->m_output << "  store " << gen->dataTypeToLLVM(member_type)
+                                      << " " << value << ", " << gen->dataTypeToLLVM(member_type)
+                                      << "* " << gep_temp << ", align " << getTypeAlignment(member_type)
+                                      << " ; Store member " << member_name << "\n";
+
+                        return;
+                    }
+                }
+
+                LOG_ERROR("Member assignment only supported for direct struct variables");
+                exit(EXIT_FAILURE);
+            }
         };
 
         StatementVisitor visitor(this);
@@ -1646,6 +1821,40 @@ namespace Delta
                 struct_type.struct_name = "struct_literal";
                 return struct_type;
             }
+
+            DataType operator()(const NodeTermMemberAccess *member_access) const
+            {
+                DataType struct_type = gen->inferExpressionType(member_access->struct_expr);
+                std::string member_name = member_access->member_name.value.value();
+
+                if (struct_type.base != BaseType::STRUCT)
+                {
+                    LOG_ERROR("Cannot access member of non-struct type");
+                    exit(EXIT_FAILURE);
+                }
+
+                // Find struct definition
+                auto struct_it = gen->m_struct_definitions.find(struct_type.struct_name);
+                if (struct_it == gen->m_struct_definitions.end())
+                {
+                    LOG_ERROR("Unknown struct type: {}", struct_type.struct_name);
+                    exit(EXIT_FAILURE);
+                }
+
+                const NodeStruct *struct_def = struct_it->second;
+
+                // Find member type
+                for (size_t i = 0; i < struct_def->parameters.size(); i++)
+                {
+                    if (struct_def->parameters[i]->ident.value.value() == member_name)
+                    {
+                        return struct_def->parameters[i]->type;
+                    }
+                }
+
+                LOG_ERROR("Struct {} has no member named {}", struct_type.struct_name, member_name);
+                exit(EXIT_FAILURE);
+            }
         };
 
         TermTypeVisitor visitor(this);
@@ -1989,6 +2198,12 @@ namespace Delta
                 gen->collectStringLiteralsFromExpression(array_assign->index_expr);
                 gen->collectStringLiteralsFromExpression(array_assign->value_expr);
             }
+
+            void operator()(const NodeStatementMemberAssign *member_assign)
+            {
+                gen->collectStringLiteralsFromExpression(member_assign->struct_expr);
+                gen->collectStringLiteralsFromExpression(member_assign->value_expr);
+            }
         };
 
         StringCollectionStatementVisitor visitor(this);
@@ -2076,6 +2291,11 @@ namespace Delta
             {
                 gen->collectStringLiteralsFromExpression(array_access->array_expr);
                 gen->collectStringLiteralsFromExpression(array_access->index_expr);
+            }
+
+            void operator()(const NodeTermMemberAccess *member_access)
+            {
+                gen->collectStringLiteralsFromExpression(member_access->struct_expr);
             }
         };
 

@@ -151,6 +151,14 @@ namespace Delta
                             tokens.push_back({TokenType::double_literal, line_count, buf});
                         }
                     }
+                    // Check if integer has 'f' suffix -> treat as float
+                    else if (peek().has_value() && (peek().value() == 'f' || peek().value() == 'F'))
+                    {
+                        consume(); // eat the 'f'
+                        buf.push_back('.'); // add decimal point for LLVM
+                        buf.push_back('0'); // make it x.0
+                        tokens.push_back({TokenType::float_literal, line_count, buf});
+                    }
                     else
                     {
                         tokens.push_back({TokenType::int_literal, line_count, buf});
