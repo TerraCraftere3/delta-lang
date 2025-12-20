@@ -1,3 +1,1 @@
-int stdExecute(char* cmd){
-    return system(cmd);
-}
+// This file is now empty - all wrappers moved to stdwrappers.c

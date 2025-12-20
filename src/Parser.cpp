@@ -434,13 +434,14 @@ namespace Delta
         while (peek().has_value())
         {
             // Try to parse function (either external or definition)
-            if (peek().has_value() && peek().value().type == TokenType::function &&
-                peek(2).has_value() && peek(2).value().type == TokenType::identifier &&
-                peek(3).has_value() && peek(3).value().type == TokenType::open_paren)
+            if (peek().has_value() && peek().value().type == TokenType::function)
             {
                 auto function_token = consume();
-                auto function_name = consume();
-                auto open_paren = consume();
+                
+                // Parse qualified function name (e.g., std::io::println or just println)
+                QualifiedName function_name = parseQualifiedName();
+                
+                auto open_paren = try_consume(TokenType::open_paren, "'('", function_token.line);
 
                 std::vector<NodeParameter *> parameters;
                 bool is_variadic = false;
@@ -991,38 +992,71 @@ namespace Delta
                 // Parenthesized expression path handled later in this function
             }
         }
-        // Function call: identifier(args)
-        else if (peek().has_value() && peek().value().type == TokenType::identifier &&
-                 peek(2).has_value() && peek(2).value().type == TokenType::open_paren)
+        // Function call: identifier(args) or namespace::identifier(args)
+        else if (peek().has_value() && peek().value().type == TokenType::identifier)
         {
-            auto function_name = consume();
-            auto open_paren = consume();
-
-            auto *func_call = m_allocator.alloc<NodeTermFunctionCall>();
-            func_call->function_name = function_name;
-
-            // Parse argument list
-            if (peek().has_value() && peek().value().type != TokenType::close_paren)
+            // Look ahead to see if this is a function call or namespace-qualified call
+            int lookahead = 2;
+            bool is_function_call = false;
+            
+            // Check for pattern: id ( or id::id ( or id::id::id ( etc
+            if (peek(lookahead).has_value() && peek(lookahead).value().type == TokenType::open_paren)
             {
-                if (auto arg_list = parseArgumentList())
+                is_function_call = true;
+            }
+            else
+            {
+                // Check for namespace qualifiers
+                while (peek(lookahead).has_value() && peek(lookahead).value().type == TokenType::double_colon)
                 {
-                    func_call->arguments = arg_list.value();
-                }
-                else
-                {
-                    LOG_ERROR("Invalid argument list");
-                    exit(EXIT_FAILURE);
+                    lookahead++; // skip ::
+                    if (peek(lookahead).has_value() && peek(lookahead).value().type == TokenType::identifier)
+                    {
+                        lookahead++; // skip identifier
+                        if (peek(lookahead).has_value() && peek(lookahead).value().type == TokenType::open_paren)
+                        {
+                            is_function_call = true;
+                            break;
+                        }
+                    }
+                    else
+                    {
+                        break;
+                    }
                 }
             }
+            
+            if (is_function_call)
+            {
+                QualifiedName function_name = parseQualifiedName();
+                auto open_paren = consume();
 
-            try_consume(TokenType::close_paren, "')'", open_paren.line);
+                auto *func_call = m_allocator.alloc<NodeTermFunctionCall>();
+                func_call->function_name = function_name;
 
-            auto node_term = m_allocator.alloc<NodeExpressionTerm>();
-            node_term->var = func_call;
-            return node_term;
+                // Parse argument list
+                if (peek().has_value() && peek().value().type != TokenType::close_paren)
+                {
+                    if (auto arg_list = parseArgumentList())
+                    {
+                        func_call->arguments = arg_list.value();
+                    }
+                    else
+                    {
+                        LOG_ERROR("Invalid argument list");
+                        exit(EXIT_FAILURE);
+                    }
+                }
+
+                try_consume(TokenType::close_paren, "')'", open_paren.line);
+
+                auto node_term = m_allocator.alloc<NodeExpressionTerm>();
+                node_term->var = func_call;
+                return node_term;
+            }
         }
         // Identifier (variable) or Member Access (identifier.member)
-        else if (auto id = try_consume(TokenType::identifier))
+        if (auto id = try_consume(TokenType::identifier))
         {
             // Check if this is member access: identifier.member
             if (peek().has_value() && peek().value().type == TokenType::dot)
@@ -1186,5 +1220,41 @@ namespace Delta
         {
             return std::nullopt;
         }
+    }
+
+    QualifiedName Parser::parseQualifiedName()
+    {
+        QualifiedName qname;
+        
+        if (!peek().has_value() || peek().value().type != TokenType::identifier)
+        {
+            LOG_ERROR("Expected identifier in qualified name");
+            exit(EXIT_FAILURE);
+        }
+        
+        // Parse first identifier
+        auto first_ident = consume();
+        
+        // Check if there are namespace qualifiers (::)
+        while (peek().has_value() && peek().value().type == TokenType::double_colon)
+        {
+            consume(); // consume ::
+            
+            // Add current identifier to namespaces list
+            qname.namespaces.push_back(first_ident.value.value());
+            
+            if (!peek().has_value() || peek().value().type != TokenType::identifier)
+            {
+                LOG_ERROR("Expected identifier after '::'");
+                exit(EXIT_FAILURE);
+            }
+            
+            first_ident = consume();
+        }
+        
+        // The last identifier is the actual name
+        qname.name = first_ident.value.value();
+        
+        return qname;
     }
 }

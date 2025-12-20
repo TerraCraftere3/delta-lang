@@ -7,6 +7,39 @@
 
 namespace Delta
 {
+    // Represents a qualified name like "foo::bar" or "std::io::println"
+    struct QualifiedName
+    {
+        std::vector<std::string> namespaces; // e.g., ["std", "io"]
+        std::string name;                     // e.g., "println"
+        
+        std::string toString() const
+        {
+            std::string result;
+            for (const auto& ns : namespaces)
+            {
+                if (!result.empty()) result += "::";
+                result += ns;
+            }
+            if (!result.empty() && !name.empty()) result += "::";
+            result += name;
+            return result;
+        }
+        
+        // Get the mangled name for LLVM (e.g., "std_io_println")
+        std::string toMangledName() const
+        {
+            std::string result;
+            for (const auto& ns : namespaces)
+            {
+                if (!result.empty()) result += "_";
+                result += ns;
+            }
+            if (!result.empty() && !name.empty()) result += "_";
+            result += name;
+            return result;
+        }
+    };
 
     struct NodeParameter
     {
@@ -122,7 +155,7 @@ namespace Delta
 
     struct NodeTermFunctionCall
     {
-        Token function_name;
+        QualifiedName function_name;
         std::vector<NodeExpression *> arguments;
 #ifdef DELTA_NODE_ID
         const char *id = "Function Call";
@@ -391,7 +424,7 @@ namespace Delta
 
     struct NodeFunctionDeclaration
     {
-        Token function_name;
+        QualifiedName function_name;
         std::vector<NodeParameter *> parameters;
         DataType return_type;
         NodeScope *body;
@@ -402,7 +435,7 @@ namespace Delta
 
     struct NodeExternalDeclaration
     {
-        Token function_name;
+        QualifiedName function_name;
         std::vector<NodeParameter *> parameters;
         DataType return_type;
         bool is_variadic; // any amount of variables, like printf(str, ...)

@@ -101,7 +101,7 @@ namespace Delta
     {
         std::stringstream output;
         output << Indent(indention) << DEBUG_NODE_PREFIX << "Call \"";
-        output << node->function_name.value.value();
+        output << node->function_name.toMangledName();
         output << "\"\n";
         for (auto expression : node->arguments)
         {
@@ -258,7 +258,7 @@ namespace Delta
     {
         std::stringstream output;
         output << Indent(indention) << DEBUG_NODE_PREFIX;
-        output << "Define \"" << typeToString(node->return_type) << " " << node->function_name.value.value();
+        output << "Define \"" << typeToString(node->return_type) << " " << node->function_name.toMangledName();
         output << "(";
         bool firstArg = true;
         for (auto argument : node->parameters)
@@ -277,7 +277,7 @@ namespace Delta
     {
         std::stringstream output;
         output << Indent(indention) << DEBUG_NODE_PREFIX;
-        output << "External \"" << typeToString(node->return_type) << " " << node->function_name.value.value();
+        output << "External \"" << typeToString(node->return_type) << " " << node->function_name.toMangledName();
         output << "(";
         bool firstArg = true;
         for (auto argument : node->parameters)

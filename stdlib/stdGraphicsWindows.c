@@ -47,7 +47,7 @@ static LRESULT CALLBACK StdWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lP
     }
 }
 
-int stdOpenWindow(char *title, int width, int height) {
+int std_openWindow(char *title, int width, int height) {
     HINSTANCE hInstance = GetModuleHandle(NULL);
 
     WNDCLASS wc = {0};
@@ -98,7 +98,7 @@ int stdOpenWindow(char *title, int width, int height) {
     return -1;
 }
 
-bool stdCreateOpenGLContext(int window) {
+bool std_createOpenGLContext(int window) {
     if (window < 0 || window >= MAX_WINDOWS) return false;
     if (!g_windows[window].open) return false;
     if (g_windows[window].has_context) return true; // Already has context
@@ -159,7 +159,7 @@ bool stdCreateOpenGLContext(int window) {
     return true;
 }
 
-bool stdMakeContextCurrent(int window) {
+bool std_makeContextCurrent(int window) {
     if (window < 0 || window >= MAX_WINDOWS) return false;
     if (!g_windows[window].open) return false;
     if (!g_windows[window].has_context) return false;
@@ -167,7 +167,7 @@ bool stdMakeContextCurrent(int window) {
     return wglMakeCurrent(g_windows[window].hdc, g_windows[window].hglrc);
 }
 
-void stdSwapBuffers(int window) {
+void std_swapBuffers(int window) {
     if (window < 0 || window >= MAX_WINDOWS) return;
     if (!g_windows[window].open) return;
     if (!g_windows[window].has_context) return;
@@ -175,13 +175,13 @@ void stdSwapBuffers(int window) {
     SwapBuffers(g_windows[window].hdc);
 }
 
-bool stdIsWindowOpen(int window)
+bool std_isWindowOpen(int window)
 {
     if (window < 0 || window >= MAX_WINDOWS) return false;
     return g_windows[window].open;
 }
 
-void stdUpdateWindow(int window) {
+void std_updateWindow(int window) {
     if (window < 0 || window >= MAX_WINDOWS) return;
     if (!g_windows[window].open) return;
 
@@ -192,20 +192,20 @@ void stdUpdateWindow(int window) {
     }
 }
 
-void stdKeepWindowOpen(int window) {
-    while(stdIsWindowOpen(window)){
-        stdUpdateWindow(window);
+void std_keepWindowOpen(int window) {
+    while(std_isWindowOpen(window)){
+        std_updateWindow(window);
     }
 }
 
-void stdSetWindowTitle(int window, char *title) {
+void std_setWindowTitle(int window, char *title) {
     if (window < 0 || window >= MAX_WINDOWS) return;
     if (!g_windows[window].open) return;
 
     SetWindowText(g_windows[window].hwnd, title);
 }
 
-void stdSetWindowSize(int window, int width, int height) {
+void std_setWindowSize(int window, int width, int height) {
     if (window < 0 || window >= MAX_WINDOWS) return;
     if (!g_windows[window].open) return;
 
@@ -219,7 +219,7 @@ void stdSetWindowSize(int window, int width, int height) {
     SetWindowPos(hwnd, NULL, 0, 0, wr.right - wr.left, wr.bottom - wr.top, SWP_NOMOVE | SWP_NOZORDER);
 }
 
-void stdGetWindowSize(int window, int* width, int* height) {
+void std_getWindowSize(int window, int* width, int* height) {
     if (window < 0 || window >= MAX_WINDOWS) return;
     if (!g_windows[window].open) {
         *width = 0;
@@ -235,7 +235,7 @@ void stdGetWindowSize(int window, int* width, int* height) {
     *height = rect.bottom - rect.top;
 }
 
-void stdDestroyWindow(int window) {
+void std_destroyWindow(int window) {
     if (window < 0 || window >= MAX_WINDOWS) return;
     if (!g_windows[window].open) return;
 
@@ -251,28 +251,28 @@ void stdDestroyWindow(int window) {
     g_windows[window].open = false;
 }
 
-void stdCloseWindow(int window) {
+void std_closeWindow(int window) {
     if (window < 0 || window >= MAX_WINDOWS) return;
     if (!g_windows[window].open) return;
 
     PostMessage(g_windows[window].hwnd, WM_CLOSE, 0, 0);
 }
 
-void stdMaximizeWindow(int window) {
+void std_maximizeWindow(int window) {
     if (window < 0 || window >= MAX_WINDOWS) return;
     if (!g_windows[window].open) return;
 
     ShowWindow(g_windows[window].hwnd, SW_MAXIMIZE);
 }
 
-void stdMinimizeWindow(int window) {
+void std_minimizeWindow(int window) {
     if (window < 0 || window >= MAX_WINDOWS) return;
     if (!g_windows[window].open) return;
 
     ShowWindow(g_windows[window].hwnd, SW_MINIMIZE);
 }
 
-bool stdIsKeyPressed(int window, char ascii_code) {
+bool std_isKeyPressed(int window, char ascii_code) {
     if (window < 0 || window >= MAX_WINDOWS) return false;
     if (!g_windows[window].open) return false;
 

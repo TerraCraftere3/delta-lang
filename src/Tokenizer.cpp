@@ -59,6 +59,11 @@ namespace Delta
                     tokens.push_back({TokenType::struct_, line_count});
                     buf.clear();
                 }
+                else if (buf == "namespace")
+                {
+                    tokens.push_back({TokenType::namespace_, line_count});
+                    buf.clear();
+                }
                 /*else if (buf == "exit") // DEPRECATED
                 {
                     tokens.push_back({TokenType::exit, line_count});
@@ -388,6 +393,14 @@ namespace Delta
                 consume();
                 tokens.push_back({TokenType::hashtag, line_count});
             }
+            // ::
+            else if (peek().value() == ':' && peek(2).has_value() && peek(2).value() == ':')
+            {
+                consume(); // ':'
+                consume(); // ':'
+                tokens.push_back({TokenType::double_colon, line_count});
+            }
+            // :
             else if (peek().value() == ':')
             {
                 consume();

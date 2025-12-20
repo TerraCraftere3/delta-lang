@@ -1,22 +1,22 @@
 #include <stdbool>
 
-fn stdOpenWindow(title: char*, width: int, height: int) -> int;
+fn std::openWindow(title: char*, width: int, height: int) -> int;
 
-fn stdIsWindowOpen(window: int) -> bool;
-fn stdKeepWindowOpen(window: int) -> void;
-fn stdUpdateWindow(window: int) -> void;
+fn std::isWindowOpen(window: int) -> bool;
+fn std::keepWindowOpen(window: int) -> void;
+fn std::updateWindow(window: int) -> void;
 
-fn stdSetWindowTitle(window: int, title: char*) -> void;
-fn stdSetWindowSize(window: int, width: int, height: int) -> void;
-fn stdGetWindowSize(window: int, width: int*, height: int*) -> void;
+fn std::setWindowTitle(window: int, title: char*) -> void;
+fn std::setWindowSize(window: int, width: int, height: int) -> void;
+fn std::getWindowSize(window: int, width: int*, height: int*) -> void;
 
-fn stdDestroyWindow(window: int) -> void;
-fn stdCloseWindow(window: int) -> void;
-fn stdMaximizeWindow(window: int) -> void;
-fn stdMinimizeWindow(window: int) -> void;
+fn std::destroyWindow(window: int) -> void;
+fn std::closeWindow(window: int) -> void;
+fn std::maximizeWindow(window: int) -> void;
+fn std::minimizeWindow(window: int) -> void;
 
-fn stdIsKeyPressed(window: int, key: char) -> bool;
+fn std::isKeyPressed(window: int, key: char) -> bool;
 
-fn stdCreateOpenGLContext(window: int) -> bool;
-fn stdMakeContextCurrent(window: int) -> bool;
-fn stdSwapBuffers(window: int) -> void;
+fn std::createOpenGLContext(window: int) -> bool;
+fn std::makeContextCurrent(window: int) -> bool;
+fn std::swapBuffers(window: int) -> void;

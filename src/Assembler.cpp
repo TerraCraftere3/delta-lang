@@ -42,7 +42,7 @@ namespace Delta
             {
                 param_types.push_back(param->type);
             }
-            addFunction(external->function_name.value.value(), param_types, external->return_type, true, external->is_variadic);
+            addFunction(external->function_name.toMangledName(), param_types, external->return_type, true, external->is_variadic);
         }
 
         for (const NodeFunctionDeclaration *func : m_program.functions)
@@ -63,7 +63,7 @@ namespace Delta
         {
             std::string return_type = dataTypeToLLVM(func->return_type);
             m_output << "declare " << return_type << " @"
-                     << func->function_name.value.value() << "(";
+                     << func->function_name.toMangledName() << "(";
 
             for (size_t i = 0; i < func->parameters.size(); i++)
             {
@@ -86,13 +86,14 @@ namespace Delta
             param_types.push_back(param->type);
         }
 
-        Function func(func_decl->function_name.value.value(), param_types,
-                      func_decl->return_type, func_decl->function_name.value.value());
+        std::string mangled_name = func_decl->function_name.toMangledName();
+        Function func(mangled_name, param_types,
+                      func_decl->return_type, mangled_name);
         m_functions.push_back(func);
 
         // Generate function definition
         std::string return_type = dataTypeToLLVM(func_decl->return_type);
-        m_output << "define " << return_type << " @" << func_decl->function_name.value.value() << "(";
+        m_output << "define " << return_type << " @" << mangled_name << "(";
 
         // Parameters
         for (size_t i = 0; i < func_decl->parameters.size(); i++)
@@ -106,7 +107,7 @@ namespace Delta
         m_output << ") {\n";
 
         // Setup function context
-        begin_function(func_decl->function_name.value.value());
+        begin_function(mangled_name);
         m_current_function_return_type = func_decl->return_type;
         m_current_block_id = 0;
         m_temp_counter = 0;
@@ -512,7 +513,7 @@ namespace Delta
 
     std::string Assembler::generateFunctionCall(const NodeTermFunctionCall *func_call)
     {
-        std::string func_name = func_call->function_name.value.value();
+        std::string func_name = func_call->function_name.toMangledName();
 
         validateFunctionCall(func_name, func_call->arguments);
 
@@ -567,7 +568,7 @@ namespace Delta
                 m_output << dataTypeToLLVM(arg_types[i]) << " " << arg_values[i];
             }
 
-            m_output << ") ; Call " << func_call->function_name.value.value() << "()\n";
+            m_output << ") ; Call " << func_call->function_name.toString() << "()\n";
             return "";
         }
         else
@@ -583,7 +584,7 @@ namespace Delta
                 m_output << dataTypeToLLVM(arg_types[i]) << " " << arg_values[i];
             }
 
-            m_output << ") ; Call " << func_call->function_name.value.value() << "()\n";
+            m_output << ") ; Call " << func_call->function_name.toString() << "()\n";
             return result_temp;
         }
     }
@@ -1845,10 +1846,10 @@ namespace Delta
 
             DataType operator()(const NodeTermFunctionCall *func_call) const
             {
-                Function *func = gen->findFunction(func_call->function_name.value.value());
+                Function *func = gen->findFunction(func_call->function_name.toMangledName());
                 if (!func)
                 {
-                    LOG_ERROR("Unknown function: {}", func_call->function_name.value.value());
+                    LOG_ERROR("Unknown function: {}", func_call->function_name.toString());
                     exit(EXIT_FAILURE);
                 }
                 return func->return_type;

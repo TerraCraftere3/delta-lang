@@ -199,7 +199,9 @@ namespace Delta
             {
                 linkArguments += " " + Files::getAbsolutePath(link);
             }
+            // Link necessary Windows and CRT libraries
             linkArguments += " -luser32 -lgdi32 -lkernel32 -lopengl32";
+            linkArguments += " -lucrt -lvcruntime -lmsvcrt";
 #endif
         }
 

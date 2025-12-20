@@ -1,6 +1,6 @@
-fn sin(x: double) -> double;
-fn cos(x: double) -> double;
-fn tan(x: double) -> double;
-fn sqrt(x: double) -> double;
-fn pow(x: double, y: double) -> double;
-fn fabs(x: double) -> double;
+fn std::sin(x: double) -> double;
+fn std::cos(x: double) -> double;
+fn std::tan(x: double) -> double;
+fn std::sqrt(x: double) -> double;
+fn std::pow(x: double, y: double) -> double;
+fn std::fabs(x: double) -> double;

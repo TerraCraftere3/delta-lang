@@ -14,6 +14,7 @@ namespace Delta
         exit,           // exit
         while_,         // while
         struct_,        // struct
+        namespace_,     // namespace
         let,            // let
         equals,         // =
         int_literal,    // integer like 10, etc
@@ -54,6 +55,7 @@ namespace Delta
         hashtag,        // #
         exclamation,    // !
         colon,          // :
+        double_colon,   // ::
     };
 
     struct Token

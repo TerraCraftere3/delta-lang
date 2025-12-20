@@ -2,11 +2,11 @@
 #pragma message("Compiling stdtime for Windows")
 #include <windows.h>
 
-void stdSleep(int milliseconds) {
+void std_sleep(int milliseconds) {
     Sleep(milliseconds);
 }
 
-long long stdGetTimeMS(void) {
+long long std_getTimeMS(void) {
     LARGE_INTEGER frequency;
     LARGE_INTEGER counter;
     QueryPerformanceFrequency(&frequency);

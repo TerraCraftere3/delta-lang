@@ -26,6 +26,7 @@ namespace Delta
         std::optional<NodeParameter *> parseParameter();
         std::optional<std::vector<NodeExpression *>> parseArgumentList();
         std::optional<DataType> parseTypeSpec();
+        QualifiedName parseQualifiedName();
 
         std::optional<Token> peek(int count = 1) const;
         Token consume();

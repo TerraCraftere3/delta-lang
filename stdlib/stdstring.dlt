@@ -1,10 +1,10 @@
 #include <stdtypes>
 
-fn strlen(s: char*) -> int64;
-fn strcpy(dest: char*, src: char*) -> char*;
-fn strncpy(dest: char*, src: char*, n: size_t) -> char*;
-fn strcat(dest: char*, src: char*) -> char*;
-fn strcmp(s1: char*, s2: char*) -> int;
-fn strncmp(s1: char*, s2: char*, n: size_t) -> int;
-fn strchr(s: char*, c: int) -> char*;
-fn strstr(haystack: char*, needle: char*) -> char*;
+fn std::strlen(s: char*) -> int64;
+fn std::strcpy(dest: char*, src: char*) -> char*;
+fn std::strncpy(dest: char*, src: char*, n: size_t) -> char*;
+fn std::strcat(dest: char*, src: char*) -> char*;
+fn std::strcmp(s1: char*, s2: char*) -> int;
+fn std::strncmp(s1: char*, s2: char*, n: size_t) -> int;
+fn std::strchr(s: char*, c: int) -> char*;
+fn std::strstr(haystack: char*, needle: char*) -> char*;
