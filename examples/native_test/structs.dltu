@@ -1,0 +1,9 @@
+struct Foo {
+    a: float;
+    b: int;
+    c: double;
+}
+
+fn main() -> int {
+    let val: Foo = {3.14f, 42, 15.0};
+}

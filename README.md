@@ -293,6 +293,8 @@ fn \space \text{Identifier}([\text{ParamList}]?); & \textit{Default to void type
     \\
     \text{String Literal}  & \textit{Equals to const char*}
     \\
+    \text{\{[\text{Term}], [\text{Term}], ...\}} & \textit{Struct Literal}
+    \\
     \text{Identifier} & \textit{Variable}
     \\
     [\text{Expr}]
@@ -327,17 +329,9 @@ fn \space \text{Identifier}([\text{ParamList}]?); & \textit{Default to void type
     \\
     \text{float64} & | & \text{double} & \textit{8 Byte Float}
     \\
-    \text{int8*} & | & \text{char*} & \textit{Can be used as String}
+    [\text{Ident}] & & & \textit{Used for structs}
     \\
-    \text{int16*} & | & \text{short*}
-    \\
-    \text{int32*} & | & \text{int*}
-    \\
-    \text{int64*} & | & \text{long*}
-    \\
-    \text{float32*} & | & \text{float*}
-    \\
-    \text{float64*} & | & \text{double*}
+    [\text{Type}]* & & & \textit{Pointer to a Type}
 \end{cases}
 \end{align}
 $$

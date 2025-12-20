@@ -19,6 +19,7 @@ namespace Delta
         std::optional<NodeIfPred *> parseIfPred();
         std::optional<NodeStatement *> parseStatement();
         std::optional<NodeExpression *> parseExpression(int min_prec = 0);
+        std::optional<NodeExpressionTerm *> parseTermLiterals();
         std::optional<NodeExpressionTerm *> parseTerm();
 
         std::optional<std::vector<NodeParameter *>> parseParameterList();

@@ -1,0 +1,11 @@
+- Node Program
+	- Structs
+		- Foo
+			- float32 a
+			- int32 b
+			- float64 c
+	- Functions
+		- Define "int32 main()"
+			- Let "struct val"
+				- [struct Delta::NodeTermStructLiteral * __ptr64] NODE NOT IMPLEMENTED
+	- Statements

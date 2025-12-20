@@ -20,6 +20,12 @@ namespace Delta
         collectStringLiterals();
         generateStringLiterals();
 
+        // Register struct definitions for later lookup
+        for (const NodeStruct *struct_decl : m_program.structs)
+        {
+            m_struct_definitions[struct_decl->struct_name.value.value()] = struct_decl;
+        }
+
         // Generate all function definitions
 
         for (const NodeStruct *struct_decl : m_program.structs)
@@ -383,6 +389,39 @@ namespace Delta
                               << " ; Load array element\n";
 
                 return load_temp;
+            }
+
+            std::string operator()(const NodeTermStructLiteral *term_struct_lit) const
+            {
+                // Struct literal: {value1, value2, ...}
+                // Since we don't have the struct name here, we need to create a temporary
+                // struct on the stack and return its address
+                // The caller will need to handle loading/storing this value appropriately
+                
+                // Create a temporary variable to hold the inline struct aggregate
+                // We'll use a generic anonymous struct type for now
+                std::vector<std::string> field_values;
+                std::vector<DataType> field_types;
+
+                for (const NodeExpressionTerm *literal : term_struct_lit->literals)
+                {
+                    std::string field_value = gen->generateTerm(literal);
+                    DataType field_type = gen->inferTermType(literal);
+                    field_values.push_back(field_value);
+                    field_types.push_back(field_type);
+                }
+
+                // For struct literals, we generate a struct aggregate value
+                // Build as { field0, field1, field2, ... }
+                std::string result = "{ ";
+                for (size_t i = 0; i < field_values.size(); i++)
+                {
+                    if (i > 0) result += ", ";
+                    result += gen->dataTypeToLLVM(field_types[i]) + " " + field_values[i];
+                }
+                result += " }";
+
+                return result;
             }
         };
 
@@ -1596,6 +1635,17 @@ namespace Delta
             {
                 return term_cast->target_type;
             }
+
+            DataType operator()(const NodeTermStructLiteral *term_struct_lit) const
+            {
+                // Struct literal type is determined by the context
+                // For now, return a generic struct type - the actual struct name
+                // should be resolved from the assignment context
+                // Return a marker type that indicates this is a struct literal
+                DataType struct_type(BaseType::STRUCT, 0);
+                struct_type.struct_name = "struct_literal";
+                return struct_type;
+            }
         };
 
         TermTypeVisitor visitor(this);
@@ -1987,6 +2037,11 @@ namespace Delta
                 }
             }
 
+            void operator()(const NodeTermStructLiteral *term_struct_lit) { 
+                for(auto lit : term_struct_lit->literals){
+                    gen->collectStringLiteralsFromTerm(lit);
+                }
+             }
             void operator()(const NodeTermIntegerLiteral *) { /* No strings here */ }
             void operator()(const NodeTermFloatLiteral *) { /* No strings here */ }
             void operator()(const NodeTermDoubleLiteral *) { /* No strings here */ }

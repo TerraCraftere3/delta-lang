@@ -7,7 +7,20 @@
 
 namespace Delta
 {
+
+    struct NodeParameter
+    {
+        Token ident;
+        DataType type;
+#ifdef DELTA_NODE_ID
+        const char *id = "Parameter";
+#endif
+    };
+
+
     struct NodeExpression;
+    struct NodeExpressionTerm;
+    
     struct NodeTermDoubleLiteral
     {
         Token double_literal;
@@ -37,6 +50,14 @@ namespace Delta
         Token string_literal;
 #ifdef DELTA_NODE_ID
         const char *id = "String Literal";
+#endif
+    };
+
+    struct NodeTermStructLiteral
+    {
+        std::vector<NodeExpressionTerm*> literals;
+#ifdef DELTA_NODE_ID
+        const char *id = "Struct Literal";
 #endif
     };
 
@@ -214,6 +235,7 @@ namespace Delta
             NodeTermFloatLiteral *,
             NodeTermDoubleLiteral *,
             NodeTermStringLiteral *,
+            NodeTermStructLiteral *,
             NodeTermIdentifier *,
             NodeTermParen *,
             NodeTermFunctionCall *,
@@ -344,15 +366,6 @@ namespace Delta
         NodeScope *scope;
 #ifdef DELTA_NODE_ID
         const char *id = "While Loop";
-#endif
-    };
-
-    struct NodeParameter
-    {
-        Token ident;
-        DataType type;
-#ifdef DELTA_NODE_ID
-        const char *id = "Parameter";
 #endif
     };
 

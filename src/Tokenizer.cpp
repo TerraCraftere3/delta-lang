@@ -54,7 +54,8 @@ namespace Delta
                     tokens.push_back({TokenType::define, line_count});
                     buf.clear();
                 }
-                else if(buf == "struct"){
+                else if (buf == "struct")
+                {
                     tokens.push_back({TokenType::struct_, line_count});
                     buf.clear();
                 }
@@ -67,7 +68,7 @@ namespace Delta
                 {
                     tokens.push_back({TokenType::while_, line_count});
                     buf.clear();
-                }                // No dedicated data_type token anymore; treat as identifier
+                } // No dedicated data_type token anymore; treat as identifier
                 else if (buf == "if")
                 {
                     tokens.push_back({TokenType::if_, line_count});
@@ -165,6 +166,13 @@ namespace Delta
                 consume(); // '.'
                 consume(); // '.'
                 tokens.push_back({TokenType::ellipsis, line_count});
+            }
+
+            // .
+            else if (peek().value() == '.')
+            {
+                consume(); // .
+                tokens.push_back({TokenType::dot, line_count});
             }
 
             // // single line comment

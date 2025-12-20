@@ -2,9 +2,7 @@
     "cmake.debugConfig": {
         "args": [
             "-i",
-            "..\\examples\\native_test\\example.dltu",
-            "-i",
-            "..\\examples\\native_test\\fibonacci.dltu",
+            "..\\examples\\native_test\\structs.dltu",
             "-o",
             "..\\examples\\native_test\\example.exe",
             "-L",

@@ -181,7 +181,7 @@ namespace Delta
         {
             auto assign = m_allocator.alloc<NodeStatementAssign>();
             assign->ident = consume(); // identifier
-            auto eq = consume();       // ==
+            auto eq = consume(); // =
             if (auto expr = parseExpression())
             {
                 assign->expression = expr.value();
@@ -762,10 +762,97 @@ namespace Delta
         return expr_lhs;
     }
 
-    std::optional<NodeExpressionTerm *> Parser::parseTerm()
+    std::optional<NodeExpressionTerm *> Parser::parseTermLiterals()
     {
         // Integer literal: 42
         if (auto int_lit = try_consume(TokenType::int_literal))
+        {
+            auto term_int_lit = m_allocator.alloc<NodeTermIntegerLiteral>();
+            term_int_lit->int_literal = int_lit.value();
+            auto node_term = m_allocator.alloc<NodeExpressionTerm>();
+            node_term->var = term_int_lit;
+            return node_term;
+        }
+        // Float literal: 3.14f
+        else if (auto float_lit = try_consume(TokenType::float_literal))
+        {
+            auto term_float_lit = m_allocator.alloc<NodeTermFloatLiteral>();
+            term_float_lit->float_literal = float_lit.value();
+            auto node_term = m_allocator.alloc<NodeExpressionTerm>();
+            node_term->var = term_float_lit;
+            return node_term;
+        }
+        // Double literal: 1.2345
+        else if (auto double_lit = try_consume(TokenType::double_literal))
+        {
+            auto term_double_lit = m_allocator.alloc<NodeTermDoubleLiteral>();
+            term_double_lit->double_literal = double_lit.value();
+            auto node_term = m_allocator.alloc<NodeExpressionTerm>();
+            node_term->var = term_double_lit;
+            return node_term;
+        }
+        // String literal: "Hello World"
+        else if (auto string_lit = try_consume(TokenType::string_literal))
+        {
+            auto term_string_lit = m_allocator.alloc<NodeTermStringLiteral>();
+            term_string_lit->string_literal = string_lit.value();
+            auto node_term = m_allocator.alloc<NodeExpressionTerm>();
+            node_term->var = term_string_lit;
+            return node_term;
+        }
+        // Char literal: 'A'
+        else if (peek().has_value() && peek().value().type == TokenType::apostrophe &&
+                 peek(2).has_value() && peek(2).value().type == TokenType::identifier &&
+                 peek(3).has_value() && peek(3).value().type == TokenType::apostrophe)
+        {
+            consume();                           // '
+            auto char_literal_token = consume(); // Char
+            consume();                           // '
+            auto char_str = char_literal_token.value.value();
+            char c = char_str.at(0);
+            int asciivalue = (int)c; // Convert to ascii
+
+            Token int_lit;
+            int_lit.type = TokenType::int_literal;
+            int_lit.value = std::to_string(asciivalue);
+
+            auto term_int_lit = m_allocator.alloc<NodeTermIntegerLiteral>();
+            term_int_lit->int_literal = int_lit;
+            auto node_term = m_allocator.alloc<NodeExpressionTerm>();
+            node_term->var = term_int_lit;
+            return node_term;
+        }
+    }
+
+    std::optional<NodeExpressionTerm *> Parser::parseTerm()
+    {
+        if(try_consume(TokenType::open_curly)){
+            auto term_struct_lit = m_allocator.alloc<NodeTermStructLiteral>();
+            
+            while(peek().has_value() && peek().value().type != TokenType::close_curly){
+                auto field_term = parseTerm();
+                if (!field_term.has_value())
+                {
+                    LOG_ERROR("Expected term in struct literal");
+                    exit(EXIT_FAILURE);
+                }
+                term_struct_lit->literals.push_back(field_term.value());
+                
+                // Consume comma if present (optional for last field)
+                if (peek().has_value() && peek().value().type == TokenType::comma)
+                {
+                    consume();
+                }
+            }
+
+            try_consume(TokenType::close_curly, "}", peek().value().line);
+
+            auto node_term = m_allocator.alloc<NodeExpressionTerm>();
+            node_term->var = term_struct_lit;
+            return node_term;
+        }
+        // Integer literal: 42
+        else if (auto int_lit = try_consume(TokenType::int_literal))
         {
             auto term_int_lit = m_allocator.alloc<NodeTermIntegerLiteral>();
             term_int_lit->int_literal = int_lit.value();

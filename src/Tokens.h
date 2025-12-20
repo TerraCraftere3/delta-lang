@@ -49,6 +49,7 @@ namespace Delta
         less_equals,    // <=
         double_equals,  // ==
         and_,           // &
+        dot,            // .
         ellipsis,       // ...
         hashtag,        // #
         exclamation,    // !
