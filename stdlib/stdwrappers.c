@@ -7,66 +7,6 @@
 #include <math.h>
 #include <stdarg.h>
 
-// stdio wrappers
-int std_printf(const char* format, ...) {
-    va_list args;
-    va_start(args, format);
-    int result = vprintf(format, args);
-    va_end(args);
-    return result;
-}
-
-int std_fprintf(FILE* stream, const char* format, ...) {
-    va_list args;
-    va_start(args, format);
-    int result = vfprintf(stream, format, args);
-    va_end(args);
-    return result;
-}
-
-int std_sprintf(char* str, const char* format, ...) {
-    va_list args;
-    va_start(args, format);
-    int result = vsprintf(str, format, args);
-    va_end(args);
-    return result;
-}
-
-int std_scanf(const char* format, ...) {
-    va_list args;
-    va_start(args, format);
-    int result = vscanf(format, args);
-    va_end(args);
-    return result;
-}
-
-void* std_fopen(const char* filename, const char* mode) {
-    return fopen(filename, mode);
-}
-
-int std_fclose(void* stream) {
-    return fclose((FILE*)stream);
-}
-
-size_t std_fread(void* ptr, size_t size, size_t nmemb, void* stream) {
-    return fread(ptr, size, nmemb, (FILE*)stream);
-}
-
-size_t std_fwrite(const void* ptr, size_t size, size_t nmemb, void* stream) {
-    return fwrite(ptr, size, nmemb, (FILE*)stream);
-}
-
-int std_fseek(void* stream, size_t offset, int whence) {
-    return fseek((FILE*)stream, (long)offset, whence);
-}
-
-long long std_ftell(void* stream) {
-    return (long long)ftell((FILE*)stream);
-}
-
-int std_execute(char* cmd) {
-    return system(cmd);
-}
 
 // math wrappers
 double std_sin(double x) {

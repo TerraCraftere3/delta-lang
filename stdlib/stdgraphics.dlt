@@ -1,22 +1,22 @@
 #include <stdbool>
 
-fn std::openWindow(title: char*, width: int, height: int) -> int;
+fn std::gfx::openWindow(title: char*, width: int, height: int) -> int;
 
-fn std::isWindowOpen(window: int) -> bool;
-fn std::keepWindowOpen(window: int) -> void;
-fn std::updateWindow(window: int) -> void;
+fn std::gfx::isWindowOpen(window: int) -> bool;
+fn std::gfx::keepWindowOpen(window: int) -> void;
+fn std::gfx::updateWindow(window: int) -> void;
 
-fn std::setWindowTitle(window: int, title: char*) -> void;
-fn std::setWindowSize(window: int, width: int, height: int) -> void;
-fn std::getWindowSize(window: int, width: int*, height: int*) -> void;
+fn std::gfx::setWindowTitle(window: int, title: char*) -> void;
+fn std::gfx::setWindowSize(window: int, width: int, height: int) -> void;
+fn std::gfx::getWindowSize(window: int, width: int*, height: int*) -> void;
 
-fn std::destroyWindow(window: int) -> void;
-fn std::closeWindow(window: int) -> void;
-fn std::maximizeWindow(window: int) -> void;
-fn std::minimizeWindow(window: int) -> void;
+fn std::gfx::destroyWindow(window: int) -> void;
+fn std::gfx::closeWindow(window: int) -> void;
+fn std::gfx::maximizeWindow(window: int) -> void;
+fn std::gfx::minimizeWindow(window: int) -> void;
 
-fn std::isKeyPressed(window: int, key: char) -> bool;
+fn std::gfx::isKeyPressed(window: int, key: char) -> bool;
 
-fn std::createOpenGLContext(window: int) -> bool;
-fn std::makeContextCurrent(window: int) -> bool;
-fn std::swapBuffers(window: int) -> void;
+fn std::gfx::createOpenGLContext(window: int) -> bool;
+fn std::gfx::makeContextCurrent(window: int) -> bool;
+fn std::gfx::swapBuffers(window: int) -> void;
