@@ -1,0 +1,40 @@
+#include <stdio>
+
+fn main() -> int {
+    std::io::printf("=== While Loop ===");
+    std::io::printf("\n");
+    let i: int = 0;
+    while (i < 5) {
+        std::io::printf("i = ");
+        std::io::printf("%d", i);
+        std::io::printf("\n");
+        i++;
+    }
+    
+    std::io::printf("\n");
+    std::io::printf("=== Countdown ===");
+    std::io::printf("\n");
+    let count: int = 10;
+    while (count > 0) {
+        std::io::printf("%d", count);
+        std::io::printf("... ");
+        count--;
+    }
+    std::io::printf("Liftoff!");
+    std::io::printf("\n");
+    
+    std::io::printf("\n");
+    std::io::printf("=== Sum of first 10 numbers ===");
+    std::io::printf("\n");
+    let sum: int = 0;
+    let n: int = 1;
+    while (n <= 10) {
+        sum = sum + n;
+        n++;
+    }
+    std::io::printf("Sum: ");
+    std::io::printf("%d", sum);
+    std::io::printf("\n");
+    
+    return 0;
+}

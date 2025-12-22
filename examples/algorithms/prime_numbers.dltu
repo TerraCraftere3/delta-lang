@@ -1,0 +1,59 @@
+#include <stdio>
+
+fn isPrime(n: int) -> int {
+    if (n <= 1) {
+        return 0;
+    }
+    if (n <= 3) {
+        return 1;
+    }
+    
+    let i: int = 2;
+    while (i * i <= n) {
+        let remainder: int = n - (i * (n / i));
+        if (remainder == 0) {
+            return 0;
+        }
+        i++;
+    }
+    return 1;
+}
+
+fn countPrimes(limit: int) -> int {
+    let count: int = 0;
+    let i: int = 2;
+    while (i <= limit) {
+        if (isPrime(i) == 1) {
+            count++;
+        }
+        i++;
+    }
+    return count;
+}
+
+fn main() -> int {
+    std::io::printf("=== Prime Number Checker ===\n");
+    std::io::printf("\n");
+    
+    std::io::printf("First 20 prime numbers:\n");
+    let found: int = 0;
+    let num: int = 2;
+    while (found < 20) {
+        if (isPrime(num) == 1) {
+            std::io::printf("%d ", num);
+            found++;
+            let remainder: int = found - (10 * (found / 10));
+            if (remainder == 0) {
+                std::io::printf("\n");
+            }
+        }
+        num++;
+    }
+    std::io::printf("\n");
+    
+    std::io::printf("\n");
+    std::io::printf("Prime count up to 100: %d\n", countPrimes(100));
+    std::io::printf("Prime count up to 500: %d\n", countPrimes(500));
+    
+    return 0;
+}

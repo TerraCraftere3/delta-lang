@@ -2,13 +2,13 @@
     "cmake.debugConfig": {
         "args": [
             "-i",
-            "..\\examples\\native_test\\example.dltu",
+            "..\\examples\\opengl\\example.dltu",
             "-i",
-            "..\\examples\\native_test\\fibonacci.dltu",
+            "..\\examples\\opengl\\fibonacci.dltu",
             "-o",
-            "..\\examples\\native_test\\example.exe",
+            "..\\examples\\opengl\\example.exe",
             "-L",
-            "..\\examples\\native_test\\glew32.lib",
+            "..\\examples\\opengl\\glew32.lib",
             "--run",
             "--verbose"
         ]

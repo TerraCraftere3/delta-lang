@@ -101,5 +101,4 @@ target_link_libraries(${PROJECT_NAME} PRIVATE spdlog::spdlog)
 
 
 enable_testing()
-add_test(NAME OpenGLNative COMMAND $<TARGET_FILE:${PROJECT_NAME}> -i ${CMAKE_CURRENT_SOURCE_DIR}/examples/opengl/example.dltu -i ${CMAKE_CURRENT_SOURCE_DIR}/examples/opengl/fibonacci.dltu -o ${CMAKE_CURRENT_SOURCE_DIR}/examples/opengl/example.exe -L ${CMAKE_CURRENT_SOURCE_DIR}/examples/opengl/glew32.lib --verbose --link)
-add_test(NAME WebWASM COMMAND $<TARGET_FILE:${PROJECT_NAME}> -i ${CMAKE_CURRENT_SOURCE_DIR}/examples/web/example.dlt -o ${CMAKE_CURRENT_SOURCE_DIR}/examples/web/example.wasm --verbose -T wasm --link)
+add_subdirectory(examples)

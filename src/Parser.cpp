@@ -26,6 +26,31 @@ namespace Delta
             type_str.push_back('*');
         }
 
+        // Handle array dimensions: int[5][10] etc
+        while (peek().has_value() && peek().value().type == TokenType::open_square)
+        {
+            consume(); // consume '['
+            // Parse the array size expression (could be a number or expression)
+            if (peek().has_value() && peek().value().type != TokenType::close_square)
+            {
+                // Skip the dimension expression - we're just parsing the type for now
+                // In a full implementation, we'd track array dimensions in the type
+                int bracket_depth = 1;
+                while (bracket_depth > 0 && peek().has_value())
+                {
+                    if (peek().value().type == TokenType::open_square)
+                        bracket_depth++;
+                    else if (peek().value().type == TokenType::close_square)
+                        bracket_depth--;
+                    if (bracket_depth > 0)
+                        consume();
+                    else
+                        break;
+                }
+            }
+            try_consume(TokenType::close_square, "']'", type_ident.line);
+        }
+
         DataType dt = stringToType(type_str);
         if (dt.base == BaseType::ERRORTYPE)
         {
@@ -175,6 +200,45 @@ namespace Delta
                 statement = stmt;
             }
             try_consume(TokenType::semicolon, "';'", peek().value().line);
+        }
+        // Array Assign: arr[index] = value (check before simple assignment)
+        else if (peek().has_value() && peek().value().type == TokenType::identifier &&
+                 peek(2).has_value() && peek(2).value().type == TokenType::open_square)
+        {
+            // This is array assignment: id[index] = value
+            auto id_token = consume(); // consume identifier
+            try_consume(TokenType::open_square, "'['", peek(0).value().line);
+            auto index_expr = parseExpression();
+            if (!index_expr.has_value())
+            {
+                LOG_ERROR("Expected Index Expression");
+                exit(EXIT_FAILURE);
+            }
+            try_consume(TokenType::close_square, "']'", peek(0).value().line);
+            try_consume(TokenType::equals, "'='", peek(0).value().line);
+            auto value_expr = parseExpression();
+            if (!value_expr.has_value())
+            {
+                LOG_ERROR("Expected Value Expression");
+                exit(EXIT_FAILURE);
+            }
+            try_consume(TokenType::semicolon, "';'", peek(0).value().line);
+            
+            // Create the array expression from identifier
+            auto term_id = m_allocator.alloc<NodeTermIdentifier>();
+            term_id->ident = id_token;
+            auto expr_term = m_allocator.alloc<NodeExpressionTerm>();
+            expr_term->var = term_id;
+            auto array_expr = m_allocator.alloc<NodeExpression>();
+            array_expr->var = expr_term;
+            
+            auto *stmt_assign = m_allocator.alloc<NodeStatementArrayAssign>();
+            stmt_assign->array_expr = array_expr;
+            stmt_assign->index_expr = index_expr.value();
+            stmt_assign->value_expr = value_expr.value();
+            auto *stmt = m_allocator.alloc<NodeStatement>();
+            stmt->var = stmt_assign;
+            statement = stmt;
         }
         // Member Assignment: identifier.member = expr (check before simple assignment)
         // (This is handled separately to avoid conflict with simple assignment)
@@ -361,7 +425,6 @@ namespace Delta
             stmt->var = stmt_if;
             statement = stmt;
         }
-        // Array Assign: expr[expr] = expr
         // Pointer Assign: *ptr = value
         // Expression: a + b, func(), etc
         else if (auto expr = parseExpression())
@@ -392,35 +455,9 @@ namespace Delta
                     exit(EXIT_FAILURE);
                 }
             }
-            // Array Assign: expr[expr] = expr
-            else if (auto open_square = try_consume(TokenType::open_square))
-            {
-                auto index_expr = parseExpression();
-                if (!index_expr.has_value())
-                {
-                    LOG_ERROR("Expected Index Expression");
-                    exit(EXIT_FAILURE);
-                }
-                try_consume(TokenType::close_square, "']'", peek(0).value().line);
-                try_consume(TokenType::equals, "'='", peek(0).value().line);
-                auto value_expr = parseExpression();
-                if (!value_expr.has_value())
-                {
-                    LOG_ERROR("Expected Value Expression");
-                    exit(EXIT_FAILURE);
-                }
-                try_consume(TokenType::semicolon, "';'", peek(0).value().line);
-                auto *stmt_assign = m_allocator.alloc<NodeStatementArrayAssign>();
-                stmt_assign->array_expr = expr.value();       // ptr
-                stmt_assign->index_expr = index_expr.value(); // [index]
-                stmt_assign->value_expr = value_expr.value(); // = value
-                auto *stmt = m_allocator.alloc<NodeStatement>();
-                stmt->var = stmt_assign;
-                statement = stmt;
-            }
             else
             {
-                Error::throwExpected("'=', ';' or Array Access", peek(0).value().line);
+                Error::throwExpected("'=', ';'", peek(0).value().line);
             }
         }
 
@@ -686,6 +723,37 @@ namespace Delta
         if (!term_lhs.has_value())
         {
             return std::nullopt;
+        }
+
+        // Handle postfix array access: expr[index]
+        while (peek().has_value() && peek().value().type == TokenType::open_square)
+        {
+            auto open_square = consume(); // consume '['
+            // Parse the index expression - we need a full expression but stop at ]
+            // Save current position and parse, then check for ]
+            auto index_expr = parseExpression(0); // Parse with normal precedence
+            if (!index_expr.has_value())
+            {
+                LOG_ERROR("Expected Index Expression");
+                exit(EXIT_FAILURE);
+            }
+            if (!peek().has_value() || peek().value().type != TokenType::close_square)
+            {
+                LOG_ERROR("Expected ']' after array index");
+                exit(EXIT_FAILURE);
+            }
+            consume(); // consume ']'
+            
+            // Create array access term
+            auto node_term_access = m_allocator.alloc<NodeTermArrayAccess>();
+            auto current_expr = m_allocator.alloc<NodeExpression>();
+            current_expr->var = term_lhs.value();
+            node_term_access->array_expr = current_expr;
+            node_term_access->index_expr = index_expr.value();
+            
+            // Update term_lhs for potential chained access
+            term_lhs = m_allocator.alloc<NodeExpressionTerm>();
+            term_lhs.value()->var = node_term_access;
         }
 
         auto expr_lhs = m_allocator.alloc<NodeExpression>();

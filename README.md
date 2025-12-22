@@ -171,7 +171,7 @@ The return value of main() is used as the exit code of the program
 #include <stdgraphics>
 
 fn main() -> int{
-    printf("Hello World");
+    std::io::printf("Hello World");
 }
 ```
 
