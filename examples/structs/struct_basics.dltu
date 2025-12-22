@@ -1,0 +1,89 @@
+#include <stdio>
+#include <stdtypes>
+
+struct Point {
+    x: int;
+    y: int;
+}
+
+struct Person {
+    age: int;
+    height: int;
+    initial: char;
+}
+
+struct Rectangle {
+    top_left: Point;
+    width: int;
+    height: int;
+}
+
+fn main() -> int {
+    std::io::printf("=== Struct Basics ===");
+    std::io::printf("\n");
+    std::io::printf("\n");
+    
+    // Create a simple Point struct
+    let p1: Point = {10, 20};
+    
+    std::io::printf("Point p1:");
+    std::io::printf("\n");
+    std::io::printf("  x = ");
+    std::io::printf("%d", p1.x);
+    std::io::printf("\n");
+    std::io::printf("  y = ");
+    std::io::printf("%d", p1.y);
+    std::io::printf("\n");
+    std::io::printf("\n");
+    
+    // Create a Person struct
+    let person: Person = {25, 180, 'J'};
+    
+    std::io::printf("Person:");
+    std::io::printf("\n");
+    std::io::printf("  age = ");
+    std::io::printf("%d", person.age);
+    std::io::printf("\n");
+    std::io::printf("  height = ");
+    std::io::printf("%d", person.height);
+    std::io::printf(" cm\n");
+    std::io::printf("  initial = ");
+    std::io::printf("%c", person.initial);
+    std::io::printf("\n");
+    std::io::printf("\n");
+    
+    // Modify struct fields
+    p1.x = 50;
+    p1.y = 75;
+    
+    std::io::printf("Modified Point p1:");
+    std::io::printf("\n");
+    std::io::printf("  x = ");
+    std::io::printf("%d", p1.x);
+    std::io::printf("\n");
+    std::io::printf("  y = ");
+    std::io::printf("%d", p1.y);
+    std::io::printf("\n");
+    std::io::printf("\n");
+    
+    // Create nested struct
+    let origin: Point = {0, 0};
+    let rect: Rectangle = {origin, 100, 50};
+    
+    /*std::io::printf("Rectangle:");
+    std::io::printf("\n");
+    std::io::printf("  top_left.x = ");
+    std::io::printf("%d", rect.top_left.x);
+    std::io::printf("\n");
+    std::io::printf("  top_left.y = ");
+    std::io::printf("%d", rect.top_left.y);
+    std::io::printf("\n");                   // COMING IN THE FUTURE
+    std::io::printf("  width = ");           // CANT ACCESS VARIABLES RN
+    std::io::printf("%d", rect.width);
+    std::io::printf("\n");
+    std::io::printf("  height = ");
+    std::io::printf("%d", rect.height);
+    std::io::printf("\n");*/
+    
+    return 0;
+}

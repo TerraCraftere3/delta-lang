@@ -23,3 +23,6 @@ add_test(NAME Strings-CharacterAnalysis COMMAND $<TARGET_FILE:${PROJECT_NAME}> -
 # Pointer Examples
 add_test(NAME Pointers-PointerBasics COMMAND $<TARGET_FILE:${PROJECT_NAME}> -i ${CMAKE_CURRENT_SOURCE_DIR}/pointers/pointer_basics.dltu -o ${CMAKE_CURRENT_SOURCE_DIR}/pointers/pointer_basics.exe ${COMPILER_ARGS})
 add_test(NAME Pointers-PointerFunctions COMMAND $<TARGET_FILE:${PROJECT_NAME}> -i ${CMAKE_CURRENT_SOURCE_DIR}/pointers/pointer_functions.dltu -o ${CMAKE_CURRENT_SOURCE_DIR}/pointers/pointer_functions.exe ${COMPILER_ARGS})
+
+# Struct Examples
+add_test(NAME Structs-StructBasics COMMAND $<TARGET_FILE:${PROJECT_NAME}> -i ${CMAKE_CURRENT_SOURCE_DIR}/structs/struct_basics.dltu -o ${CMAKE_CURRENT_SOURCE_DIR}/structs/struct_basics.exe ${COMPILER_ARGS})
