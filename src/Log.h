@@ -1,8 +1,8 @@
 #pragma once
 
-#include "spdlog/spdlog.h"
-#include "spdlog/sinks/stdout_color_sinks.h"
 #include "spdlog/sinks/basic_file_sink.h"
+#include "spdlog/sinks/stdout_color_sinks.h"
+#include "spdlog/spdlog.h"
 
 #include "Error.h"
 
@@ -17,7 +17,7 @@ namespace Delta
     public:
         static std::shared_ptr<spdlog::logger> s_Logger;
     };
-}
+} // namespace Delta
 
 #define LOG_INFO(...) ::Delta::Log::s_Logger->info(__VA_ARGS__)
 #define LOG_WARN(...) ::Delta::Log::s_Logger->warn(__VA_ARGS__)

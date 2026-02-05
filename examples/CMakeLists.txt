@@ -26,3 +26,13 @@ add_test(NAME Pointers-PointerFunctions COMMAND $<TARGET_FILE:${PROJECT_NAME}> -
 
 # Struct Examples
 add_test(NAME Structs-StructBasics COMMAND $<TARGET_FILE:${PROJECT_NAME}> -i ${CMAKE_CURRENT_SOURCE_DIR}/structs/struct_basics.dltu -o ${CMAKE_CURRENT_SOURCE_DIR}/structs/struct_basics.exe ${COMPILER_ARGS})
+
+# Optimization Examples
+add_test(NAME O0-Optimization COMMAND $<TARGET_FILE:${PROJECT_NAME}> -i ${CMAKE_CURRENT_SOURCE_DIR}/optimizations/combined.dltu -o ${CMAKE_CURRENT_SOURCE_DIR}/optimizations/optimization_O0.exe ${COMPILER_ARGS} -O0)
+add_test(NAME O0-Seperated-Optimzation COMMAND $<TARGET_FILE:${PROJECT_NAME}> -i ${CMAKE_CURRENT_SOURCE_DIR}/optimizations/base.dltu -i ${CMAKE_CURRENT_SOURCE_DIR}/optimizations/fibonacci.dltu -o ${CMAKE_CURRENT_SOURCE_DIR}/optimizations/optimization_O0_seperated.exe ${COMPILER_ARGS} -O0)
+add_test(NAME O1-Optimization COMMAND $<TARGET_FILE:${PROJECT_NAME}> -i ${CMAKE_CURRENT_SOURCE_DIR}/optimizations/combined.dltu -o ${CMAKE_CURRENT_SOURCE_DIR}/optimizations/optimization_O1.exe ${COMPILER_ARGS} -O1)
+add_test(NAME 01-Seperated-Optimzation COMMAND $<TARGET_FILE:${PROJECT_NAME}> -i ${CMAKE_CURRENT_SOURCE_DIR}/optimizations/base.dltu -i ${CMAKE_CURRENT_SOURCE_DIR}/optimizations/fibonacci.dltu -o ${CMAKE_CURRENT_SOURCE_DIR}/optimizations/optimization_O1_seperated.exe ${COMPILER_ARGS} -O1)
+add_test(NAME O2-Optimization COMMAND $<TARGET_FILE:${PROJECT_NAME}> -i ${CMAKE_CURRENT_SOURCE_DIR}/optimizations/combined.dltu -o ${CMAKE_CURRENT_SOURCE_DIR}/optimizations/optimization_O2.exe ${COMPILER_ARGS} -O2)
+add_test(NAME O2-Seperated-Optimzation COMMAND $<TARGET_FILE:${PROJECT_NAME}> -i ${CMAKE_CURRENT_SOURCE_DIR}/optimizations/base.dltu -i ${CMAKE_CURRENT_SOURCE_DIR}/optimizations/fibonacci.dltu -o ${CMAKE_CURRENT_SOURCE_DIR}/optimizations/optimization_O2_seperated.exe ${COMPILER_ARGS} -O2)
+add_test(NAME O3-Optimization COMMAND $<TARGET_FILE:${PROJECT_NAME}> -i ${CMAKE_CURRENT_SOURCE_DIR}/optimizations/combined.dltu -o ${CMAKE_CURRENT_SOURCE_DIR}/optimizations/optimization_O3.exe ${COMPILER_ARGS} -O3)
+add_test(NAME O3-Seperated-Optimzation COMMAND $<TARGET_FILE:${PROJECT_NAME}> -i ${CMAKE_CURRENT_SOURCE_DIR}/optimizations/base.dltu -i ${CMAKE_CURRENT_SOURCE_DIR}/optimizations/fibonacci.dltu -o ${CMAKE_CURRENT_SOURCE_DIR}/optimizations/optimization_O3_seperated.exe ${COMPILER_ARGS} -O3)

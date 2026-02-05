@@ -1,15 +1,15 @@
 #include "Compiler.h"
-#include "Log.h"
-#include "Files.h"
-#include "Tokenizer.h"
-#include "Preprocessor.h"
-#include "Parser.h"
-#include "Assembler.h"
-#include "Error.h"
-#include "Debug.h"
-#include "Wasm.h"
 #include <fstream>
 #include <sstream>
+#include "Assembler.h"
+#include "Debug.h"
+#include "Error.h"
+#include "Files.h"
+#include "Log.h"
+#include "Parser.h"
+#include "Preprocessor.h"
+#include "Tokenizer.h"
+#include "Wasm.h"
 
 #ifdef _WIN32
 #include <windows.h>
@@ -17,18 +17,15 @@
 
 namespace Delta
 {
-    int runProgram(const std::string &programPath)
+    int runProgram(const std::string& programPath)
     {
 #ifdef _WIN32
         STARTUPINFO si = {sizeof(si)};
         PROCESS_INFORMATION pi;
 
-        BOOL success = CreateProcess(
-            nullptr,
-            const_cast<char *>(programPath.c_str()), // command line
-            nullptr, nullptr, FALSE,
-            CREATE_NEW_CONSOLE, nullptr, nullptr,
-            &si, &pi);
+        BOOL success = CreateProcess(nullptr,
+                                     const_cast<char*>(programPath.c_str()), // command line
+                                     nullptr, nullptr, FALSE, CREATE_NEW_CONSOLE, nullptr, nullptr, &si, &pi);
 
         if (!success)
             return -1;
@@ -45,9 +42,11 @@ namespace Delta
 #endif
     }
 
-    bool Compiler::generateWasmHtml(const std::string &htmlPath, const std::string &wasmFile)
+    bool Compiler::generateWasmHtml(const std::string& htmlPath, const std::string& wasmFile)
     {
-        std::string html = std::string(wasm_template).replace(std::string(wasm_template).find("{WASM_FILE_PATH}"), std::string("{WASM_FILE_PATH}").length(), wasmFile);
+        std::string html = std::string(wasm_template)
+                               .replace(std::string(wasm_template).find("{WASM_FILE_PATH}"),
+                                        std::string("{WASM_FILE_PATH}").length(), wasmFile);
 
         if (!Files::writeFile(htmlPath, html))
         {
@@ -59,7 +58,7 @@ namespace Delta
         return true;
     }
 
-    bool Compiler::openInBrowser(const std::string &htmlPath)
+    bool Compiler::openInBrowser(const std::string& htmlPath)
     {
         LOG_INFO("Starting local HTTP server for: {}", htmlPath);
 
@@ -94,7 +93,7 @@ namespace Delta
 #endif
     }
 
-    int Compiler::compile(const CompilerProperties &props)
+    int Compiler::compile(const CompilerProperties& props)
     {
         Log::setVerbose(props.verbose);
         std::string outputPath = Files::getAbsolutePath(props.outputFile);
@@ -117,10 +116,18 @@ namespace Delta
             return 1;
         }
 
-        std::string linkPath = isWasm ? Files::joinPaths(programPath, "wasm-ld.exe") : Files::joinPaths(programPath, "clang.exe");
+        std::string linkPath =
+            isWasm ? Files::joinPaths(programPath, "wasm-ld.exe") : Files::joinPaths(programPath, "clang.exe");
         if (!Files::fileExists(linkPath))
         {
             LOG_ERROR("Linker executable not found at: {}", linkPath);
+            return 1;
+        }
+
+        std::string optimizePath = Files::joinPaths(programPath, "opt.exe");
+        if (!Files::fileExists(optimizePath))
+        {
+            LOG_ERROR("LLVM Optimizer executable not found at: {}", optimizePath);
             return 1;
         }
 
@@ -142,7 +149,7 @@ namespace Delta
                 return 1;
             }
         }
-        auto writeParseFile = [&](const std::string &parseFile, const std::string &content) -> bool
+        auto writeParseFile = [&](const std::string& parseFile, const std::string& content) -> bool
         {
             if (!Files::writeFile(parseFile, content))
             {
@@ -151,7 +158,7 @@ namespace Delta
             }
             return true;
         };
-        auto writeAsmFile = [&](const std::string &asmFile, const std::string &content) -> bool
+        auto writeAsmFile = [&](const std::string& asmFile, const std::string& content) -> bool
         {
             if (!Files::writeFile(asmFile, content))
             {
@@ -161,7 +168,7 @@ namespace Delta
             return true;
         };
 
-        auto runCommand = [&](const std::string &cmd) -> bool
+        auto runCommand = [&](const std::string& cmd) -> bool
         {
             LOG_TRACE("Running command: cmd /C {}", cmd);
             if (std::system(("cmd /C " + cmd).c_str()) != 0)
@@ -172,12 +179,29 @@ namespace Delta
             return true;
         };
 
+        auto getOptLevelFlag = [&](OptimizationLevel level) -> const char*
+        {
+            switch (level)
+            {
+                case OPTIMIZATION_O1:
+                    return "-O1";
+                case OPTIMIZATION_O2:
+                    return "-O2";
+                case OPTIMIZATION_O3:
+                    return "-O3";
+                case OPTIMIZATION_O0:
+                default:
+                    return "-O0";
+            }
+        };
+
         // Output extensions and flags
         std::string objExtension = isWasm ? ".wasm.o" : ".obj";
         std::string outputExtension = isWasm ? ".wasm" : ".exe";
         std::vector<std::string> objectFiles;
 
-        std::string stdlibIncludePath = Files::joinPaths(Files::getDirectory(Files::getDirectory(Files::getProgramPath())), "stdlib");
+        std::string stdlibIncludePath =
+            Files::joinPaths(Files::getDirectory(Files::getDirectory(Files::getProgramPath())), "stdlib");
         std::vector<std::string> includeDirs = {stdlibIncludePath};
         // Add user include dirs
         includeDirs.insert(includeDirs.end(), props.includeDirs.begin(), props.includeDirs.end());
@@ -210,7 +234,7 @@ namespace Delta
 #endif
 
         // Compile each input file into an object file
-        for (const auto &inFile : props.inputFiles)
+        for (const auto& inFile : props.inputFiles)
         {
             std::string inputPath = Files::getAbsolutePath(inFile);
             LOG_INFO("Compiling {}...", inputPath);
@@ -235,6 +259,7 @@ namespace Delta
             std::string baseName = Files::getFileNameWithoutExtension(inputPath);
             std::string parseFile = Files::joinPaths(intDir, baseName + ".ast.txt");
             std::string asmFile = Files::joinPaths(intDir, baseName + ".ll");
+            std::string optimizedFile = Files::joinPaths(intDir, baseName + ".optimized.ll");
             std::string objFile = Files::joinPaths(intDir, baseName + objExtension);
 
             std::string assemblyPrefix = "; Generated by Delta Compiler\n";
@@ -258,8 +283,23 @@ namespace Delta
                 if (!writeAsmFile(asmFile, fileAssembly))
                     return 1;
 
+                const char* optLevelFlag = getOptLevelFlag(props.optimizationLevel);
+                if (props.optimizationLevel == OPTIMIZATION_O0)
+                {
+                    if (!writeAsmFile(optimizedFile, fileAssembly))
+                        return 1;
+                }
+                else
+                {
+                    std::string optimizeCommand =
+                        "\"" + optimizePath + "\" " + optLevelFlag + " -S " + asmFile + " -o " + optimizedFile;
+                    if (!runCommand(optimizeCommand))
+                        return 1;
+                }
+
                 // Assemble to object
-                std::string assembleCommand = "\"" + llcLink + "\" " + llcArguments + " " + asmFile + " -o " + objFile;
+                std::string assembleCommand =
+                    "\"" + llcLink + "\" " + llcArguments + " " + optimizedFile + " -o " + objFile;
                 if (!runCommand(assembleCommand))
                     return 1;
 
@@ -281,7 +321,7 @@ namespace Delta
 
         // Link step
         std::string linkCommand = "\"" + linkPath + "\"";
-        for (const auto &obj : objectFiles)
+        for (const auto& obj : objectFiles)
         {
             linkCommand += " " + obj;
         }
@@ -321,4 +361,4 @@ namespace Delta
 
         return 0;
     }
-}
+} // namespace Delta

@@ -3,7 +3,7 @@
 
 namespace Delta
 {
-    std::string nodeDebugPrint(NodeStatementReturn *node, int indention)
+    std::string nodeDebugPrint(NodeStatementReturn* node, int indention)
     {
         std::stringstream output;
         output << Indent(indention) << DEBUG_NODE_PREFIX << "Return\n";
@@ -11,7 +11,7 @@ namespace Delta
         return output.str();
     }
 
-    std::string nodeDebugPrint(NodeStatementIf *node, int indention)
+    std::string nodeDebugPrint(NodeStatementIf* node, int indention)
     {
         std::stringstream output;
         output << Indent(indention) << DEBUG_NODE_PREFIX << "If\n";
@@ -27,7 +27,7 @@ namespace Delta
         return output.str();
     }
 
-    std::string nodeDebugPrint(NodeStatementWhile *node, int indention)
+    std::string nodeDebugPrint(NodeStatementWhile* node, int indention)
     {
         std::stringstream output;
         output << Indent(indention) << DEBUG_NODE_PREFIX << "While\n";
@@ -41,14 +41,13 @@ namespace Delta
         return output.str();
     }
 
-    std::string nodeDebugPrint(NodeIfPred *node, int indention)
+    std::string nodeDebugPrint(NodeIfPred* node, int indention)
     {
-        std::string output = std::visit([&](auto &obj)
-                                        { return nodeDebugPrint(obj, indention); }, node->var);
+        std::string output = std::visit([&](auto& obj) { return nodeDebugPrint(obj, indention); }, node->var);
         return output;
     }
 
-    std::string nodeDebugPrint(NodeIfPredElif *node, int indention)
+    std::string nodeDebugPrint(NodeIfPredElif* node, int indention)
     {
         std::stringstream output;
         output << Indent(indention) << DEBUG_NODE_PREFIX << "Elif\n";
@@ -64,7 +63,7 @@ namespace Delta
         return output.str();
     }
 
-    std::string nodeDebugPrint(NodeIfPredElse *node, int indention)
+    std::string nodeDebugPrint(NodeIfPredElse* node, int indention)
     {
         std::stringstream output;
         output << Indent(indention) << DEBUG_NODE_PREFIX << "Else\n";
@@ -74,7 +73,7 @@ namespace Delta
         return output.str();
     }
 
-    std::string nodeDebugPrint(NodeTermDereference *node, int indention)
+    std::string nodeDebugPrint(NodeTermDereference* node, int indention)
     {
         std::stringstream output;
         output << Indent(indention) << DEBUG_NODE_PREFIX << "Dereference\n";
@@ -82,22 +81,21 @@ namespace Delta
         return output.str();
     }
 
-    std::string nodeDebugPrint(NodeTermAddressOf *node, int indention)
+    std::string nodeDebugPrint(NodeTermAddressOf* node, int indention)
     {
         std::stringstream output;
-        output << Indent(indention) << DEBUG_NODE_PREFIX << "Address of \""
-               << node->ident.value.value() << "\"\n";
+        output << Indent(indention) << DEBUG_NODE_PREFIX << "Address of \"" << node->ident.value.value() << "\"\n";
         return output.str();
     }
 
-    std::string nodeDebugPrint(NodeTermParen *node, int indention)
+    std::string nodeDebugPrint(NodeTermParen* node, int indention)
     {
         std::stringstream output;
         output << nodeDebugPrint(node->expr, indention);
         return output.str();
     }
 
-    std::string nodeDebugPrint(NodeTermFunctionCall *node, int indention)
+    std::string nodeDebugPrint(NodeTermFunctionCall* node, int indention)
     {
         std::stringstream output;
         output << Indent(indention) << DEBUG_NODE_PREFIX << "Call \"";
@@ -110,7 +108,7 @@ namespace Delta
         return output.str();
     }
 
-    std::string nodeDebugPrint(NodeTermCast *node, int indention)
+    std::string nodeDebugPrint(NodeTermCast* node, int indention)
     {
         std::stringstream output;
         output << Indent(indention) << DEBUG_NODE_PREFIX << "Cast ";
@@ -120,93 +118,85 @@ namespace Delta
         return output.str();
     }
 
-    std::string nodeDebugPrint(NodeTermIntegerLiteral *node, int indention)
+    std::string nodeDebugPrint(NodeTermIntegerLiteral* node, int indention)
     {
         std::stringstream output;
         output << Indent(indention) << DEBUG_NODE_PREFIX << "Literal: " << node->int_literal.value.value() << "\n";
         return output.str();
     }
 
-    std::string nodeDebugPrint(NodeTermStringLiteral *node, int indention)
+    std::string nodeDebugPrint(NodeTermStringLiteral* node, int indention)
     {
         std::stringstream output;
-        output << Indent(indention) << DEBUG_NODE_PREFIX << "Literal: \"" << escape(node->string_literal.value.value()) << "\"\n";
+        output << Indent(indention) << DEBUG_NODE_PREFIX << "Literal: \"" << escape(node->string_literal.value.value())
+               << "\"\n";
         return output.str();
     }
 
-    std::string nodeDebugPrint(NodeTermFloatLiteral *node, int indention)
+    std::string nodeDebugPrint(NodeTermFloatLiteral* node, int indention)
     {
         std::stringstream output;
         output << Indent(indention) << DEBUG_NODE_PREFIX << "Literal: " << node->float_literal.value.value() << "f\n";
         return output.str();
     }
 
-    std::string nodeDebugPrint(NodeTermDoubleLiteral *node, int indention)
+    std::string nodeDebugPrint(NodeTermDoubleLiteral* node, int indention)
     {
         std::stringstream output;
         output << Indent(indention) << DEBUG_NODE_PREFIX << "Literal: " << node->double_literal.value.value() << "\n";
         return output.str();
     }
 
-    std::string nodeDebugPrint(NodeTermIdentifier *node, int indention)
+    std::string nodeDebugPrint(NodeTermIdentifier* node, int indention)
     {
         std::stringstream output;
         output << Indent(indention) << DEBUG_NODE_PREFIX << "Variable \"" << node->ident.value.value() << "\"\n";
         return output.str();
     }
 
-    std::string nodeDebugPrint(NodeExpressionBinary *node, int indention)
+    std::string nodeDebugPrint(NodeExpressionBinary* node, int indention)
     {
-        std::string output = std::visit([&](auto &obj)
-                                        { return nodeDebugPrint(obj, indention); }, node->var);
+        std::string output = std::visit([&](auto& obj) { return nodeDebugPrint(obj, indention); }, node->var);
         return output;
     }
 
-    std::string nodeDebugPrint(NodeExpressionTerm *node, int indention)
+    std::string nodeDebugPrint(NodeExpressionTerm* node, int indention)
     {
-        std::string output = std::visit([&](auto &obj)
-                                        { return nodeDebugPrint(obj, indention); }, node->var);
+        std::string output = std::visit([&](auto& obj) { return nodeDebugPrint(obj, indention); }, node->var);
         return output;
     }
 
-    std::string nodeDebugPrint(NodeExpression *node, int indention)
+    std::string nodeDebugPrint(NodeExpression* node, int indention)
     {
-        std::string output = std::visit([&](auto &obj)
-                                        { return nodeDebugPrint(obj, indention); }, node->var);
+        std::string output = std::visit([&](auto& obj) { return nodeDebugPrint(obj, indention); }, node->var);
         return output;
     }
 
-    std::string nodeDebugPrint(NodeStatementArrayAssign *node, int indention)
+    std::string nodeDebugPrint(NodeStatementArrayAssign* node, int indention)
     {
         std::stringstream output;
         output << Indent(indention) << DEBUG_NODE_PREFIX << "Pointer Assign\n";
-        output << Indent(indention + 1) << DEBUG_NODE_PREFIX
-               << "Array Expression\n";
+        output << Indent(indention + 1) << DEBUG_NODE_PREFIX << "Array Expression\n";
         output << nodeDebugPrint(node->array_expr, indention + 2);
-        output << Indent(indention + 1) << DEBUG_NODE_PREFIX
-               << "Index Expression\n";
+        output << Indent(indention + 1) << DEBUG_NODE_PREFIX << "Index Expression\n";
         output << nodeDebugPrint(node->index_expr, indention + 2);
-        output << Indent(indention + 1) << DEBUG_NODE_PREFIX
-               << "Value Expression\n";
+        output << Indent(indention + 1) << DEBUG_NODE_PREFIX << "Value Expression\n";
         output << nodeDebugPrint(node->value_expr, indention + 2);
         return output.str();
     }
 
-    std::string nodeDebugPrint(NodeStatementPointerAssign *node,
-                               int indention)
+    std::string nodeDebugPrint(NodeStatementPointerAssign* node, int indention)
     {
         std::stringstream output;
         output << Indent(indention) << DEBUG_NODE_PREFIX << "Pointer Assign\n";
-        output << Indent(indention + 1) << DEBUG_NODE_PREFIX
-               << "Pointer Expression\n";
+        output << Indent(indention + 1) << DEBUG_NODE_PREFIX << "Pointer Expression\n";
         output << nodeDebugPrint(node->ptr_expr, indention + 2);
-        output << Indent(indention + 1) << DEBUG_NODE_PREFIX
-               << "Value Expression\n";
+        output << Indent(indention + 1) << DEBUG_NODE_PREFIX << "Value Expression\n";
         output << nodeDebugPrint(node->value_expr, indention + 2);
         return output.str();
     }
 
-    std::string nodeDebugPrint(NodeStatementExit *node, int indention)
+    std::string nodeDebugPrint(NodeStatementExit* node, int indention)
     {
         std::stringstream output;
         output << Indent(indention) << DEBUG_NODE_PREFIX << "Exit\n";
@@ -214,7 +204,7 @@ namespace Delta
         return output.str();
     }
 
-    std::string nodeDebugPrint(NodeStatementLet *node, int indention)
+    std::string nodeDebugPrint(NodeStatementLet* node, int indention)
     {
         std::stringstream output;
         output << Indent(indention) << DEBUG_NODE_PREFIX;
@@ -229,7 +219,7 @@ namespace Delta
         return output.str();
     }
 
-    std::string nodeDebugPrint(NodeStatementAssign *node, int indention)
+    std::string nodeDebugPrint(NodeStatementAssign* node, int indention)
     {
         std::stringstream output;
         output << Indent(indention) << DEBUG_NODE_PREFIX << "Assign \"" << node->ident.value.value() << "\"\n";
@@ -237,14 +227,13 @@ namespace Delta
         return output.str();
     }
 
-    std::string nodeDebugPrint(NodeStatement *node, int indention)
+    std::string nodeDebugPrint(NodeStatement* node, int indention)
     {
-        std::string output = std::visit([&](auto &obj)
-                                        { return nodeDebugPrint(obj, indention); }, node->var);
+        std::string output = std::visit([&](auto& obj) { return nodeDebugPrint(obj, indention); }, node->var);
         return output;
     }
 
-    std::string nodeDebugPrint(NodeScope *node, int indention)
+    std::string nodeDebugPrint(NodeScope* node, int indention)
     {
         std::stringstream output;
         for (auto statements : node->statements)
@@ -254,7 +243,7 @@ namespace Delta
         return output.str();
     }
 
-    std::string nodeDebugPrint(NodeFunctionDeclaration *node, int indention)
+    std::string nodeDebugPrint(NodeFunctionDeclaration* node, int indention)
     {
         std::stringstream output;
         output << Indent(indention) << DEBUG_NODE_PREFIX;
@@ -273,7 +262,7 @@ namespace Delta
         return output.str();
     }
 
-    std::string nodeDebugPrint(NodeExternalDeclaration *node, int indention)
+    std::string nodeDebugPrint(NodeExternalDeclaration* node, int indention)
     {
         std::stringstream output;
         output << Indent(indention) << DEBUG_NODE_PREFIX;
@@ -297,16 +286,16 @@ namespace Delta
         return output.str();
     }
 
-    std::string nodeDebugPrint(NodeStruct *node, int indention)
+    std::string nodeDebugPrint(NodeStruct* node, int indention)
     {
-
         std::stringstream output;
         output << Indent(indention) << DEBUG_NODE_PREFIX;
         output << node->struct_name.value.value();
         for (auto argument : node->parameters)
         {
             output << "\n"
-                   << Indent(indention + 1) << DEBUG_NODE_PREFIX << typeToString(argument->type) << " " << argument->ident.value.value();
+                   << Indent(indention + 1) << DEBUG_NODE_PREFIX << typeToString(argument->type) << " "
+                   << argument->ident.value.value();
         }
         output << "\n";
         return output.str();

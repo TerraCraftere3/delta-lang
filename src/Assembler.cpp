@@ -1,13 +1,11 @@
 #include "Assembler.h"
 
-#include "Log.h"
 #include <algorithm>
+#include "Log.h"
 
 namespace Delta
 {
-    Assembler::Assembler(NodeProgram root) : m_program(root), m_current_block_id(0), m_temp_counter(0)
-    {
-    }
+    Assembler::Assembler(NodeProgram root) : m_program(root), m_current_block_id(0), m_temp_counter(0) {}
 
     std::string Assembler::generate()
     {
@@ -21,31 +19,32 @@ namespace Delta
         generateStringLiterals();
 
         // Register struct definitions for later lookup
-        for (const NodeStruct *struct_decl : m_program.structs)
+        for (const NodeStruct* struct_decl : m_program.structs)
         {
             m_struct_definitions[struct_decl->struct_name.value.value()] = struct_decl;
         }
 
         // Generate all function definitions
 
-        for (const NodeStruct *struct_decl : m_program.structs)
+        for (const NodeStruct* struct_decl : m_program.structs)
         {
             generateStructDeclaration(struct_decl);
         }
 
         m_output << "\n";
 
-        for (const NodeExternalDeclaration *external : m_program.externals)
+        for (const NodeExternalDeclaration* external : m_program.externals)
         {
             std::vector<DataType> param_types;
-            for (const NodeParameter *param : external->parameters)
+            for (const NodeParameter* param : external->parameters)
             {
                 param_types.push_back(param->type);
             }
-            addFunction(external->function_name.toMangledName(), param_types, external->return_type, true, external->is_variadic);
+            addFunction(external->function_name.toMangledName(), param_types, external->return_type, true,
+                        external->is_variadic);
         }
 
-        for (const NodeFunctionDeclaration *func : m_program.functions)
+        for (const NodeFunctionDeclaration* func : m_program.functions)
         {
             generateFunctionDeclaration(func);
         }
@@ -59,11 +58,10 @@ namespace Delta
     {
         m_output << "; Function declarations\n";
 
-        for (const NodeFunctionDeclaration *func : m_program.functions)
+        for (const NodeFunctionDeclaration* func : m_program.functions)
         {
             std::string return_type = dataTypeToLLVM(func->return_type);
-            m_output << "declare " << return_type << " @"
-                     << func->function_name.toMangledName() << "(";
+            m_output << "declare " << return_type << " @" << func->function_name.toMangledName() << "(";
 
             for (size_t i = 0; i < func->parameters.size(); i++)
             {
@@ -77,18 +75,17 @@ namespace Delta
         m_output << "\n";
     }
 
-    void Assembler::generateFunctionDeclaration(const NodeFunctionDeclaration *func_decl)
+    void Assembler::generateFunctionDeclaration(const NodeFunctionDeclaration* func_decl)
     {
         // Register function
         std::vector<DataType> param_types;
-        for (const NodeParameter *param : func_decl->parameters)
+        for (const NodeParameter* param : func_decl->parameters)
         {
             param_types.push_back(param->type);
         }
 
         std::string mangled_name = func_decl->function_name.toMangledName();
-        Function func(mangled_name, param_types,
-                      func_decl->return_type, mangled_name);
+        Function func(mangled_name, param_types, func_decl->return_type, mangled_name);
         m_functions.push_back(func);
 
         // Generate function definition
@@ -100,7 +97,7 @@ namespace Delta
         {
             if (i > 0)
                 m_output << ", ";
-            const NodeParameter *param = func_decl->parameters[i];
+            const NodeParameter* param = func_decl->parameters[i];
             m_output << dataTypeToLLVM(param->type) << " %" << param->ident.value.value();
         }
 
@@ -116,10 +113,11 @@ namespace Delta
         m_output << "entry:\n";
 
         // Allocate space for parameters as local variables
-        for (const NodeParameter *param : func_decl->parameters)
+        for (const NodeParameter* param : func_decl->parameters)
         {
             std::string alloca_temp = getNextTemp();
-            m_output << "  " << alloca_temp << " = alloca " << dataTypeToLLVM(param->type) << ", align " << getTypeAlignment(param->type) << "\n";
+            m_output << "  " << alloca_temp << " = alloca " << dataTypeToLLVM(param->type) << ", align "
+                     << getTypeAlignment(param->type) << "\n";
             m_output << "  store " << dataTypeToLLVM(param->type) << " %" << param->ident.value.value() << ", ptr "
                      << alloca_temp << ", align " << getTypeAlignment(param->type) << "\n";
 
@@ -148,7 +146,7 @@ namespace Delta
         m_output << "}\n\n";
     }
 
-    void Assembler::generateStructDeclaration(const NodeStruct *struct_decl)
+    void Assembler::generateStructDeclaration(const NodeStruct* struct_decl)
     {
         m_output << "%struct." << struct_decl->struct_name.value.value() << " = type { ";
         for (size_t i = 0; i < struct_decl->parameters.size(); i++)
@@ -160,7 +158,7 @@ namespace Delta
         m_output << " }\n";
     }
 
-    std::string float32ToLLVM(const std::string &input)
+    std::string float32ToLLVM(const std::string& input)
     {
         float value = std::stof(input);
 
@@ -184,7 +182,7 @@ namespace Delta
         return oss.str();
     }
 
-    std::string float64ToLLVM(const std::string &input)
+    std::string float64ToLLVM(const std::string& input)
     {
         double value = std::stod(input);
 
@@ -207,16 +205,16 @@ namespace Delta
         return oss.str();
     }
 
-    std::string Assembler::generateTerm(const NodeExpressionTerm *term)
+    std::string Assembler::generateTerm(const NodeExpressionTerm* term)
     {
         struct TermVisitor
         {
-            Assembler *gen;
-            TermVisitor(Assembler *gen) : gen(gen) {}
+            Assembler* gen;
+            TermVisitor(Assembler* gen) : gen(gen) {}
 
-            std::string operator()(const NodeTermIntegerLiteral *term_int_lit) const
+            std::string operator()(const NodeTermIntegerLiteral* term_int_lit) const
             {
-                const std::string &val = term_int_lit->int_literal.value.value();
+                const std::string& val = term_int_lit->int_literal.value.value();
 
                 try
                 {
@@ -238,29 +236,28 @@ namespace Delta
 
                     return std::to_string(number);
                 }
-                catch (const std::exception &)
+                catch (const std::exception&)
                 {
                     return val;
                 }
             }
 
-            std::string operator()(const NodeTermFloatLiteral *term_float_lit) const
+            std::string operator()(const NodeTermFloatLiteral* term_float_lit) const
             {
                 return float32ToLLVM(term_float_lit->float_literal.value.value());
             }
 
-            std::string operator()(const NodeTermDoubleLiteral *term_double_lit) const
+            std::string operator()(const NodeTermDoubleLiteral* term_double_lit) const
             {
                 return float64ToLLVM(term_double_lit->double_literal.value.value());
             }
 
-            std::string operator()(const NodeTermStringLiteral *term_str_lit) const
+            std::string operator()(const NodeTermStringLiteral* term_str_lit) const
             {
                 std::string str_value = term_str_lit->string_literal.value.value();
 
                 // Find or add string to global list
-                auto it = std::find(gen->m_string_literals.begin(),
-                                    gen->m_string_literals.end(), str_value);
+                auto it = std::find(gen->m_string_literals.begin(), gen->m_string_literals.end(), str_value);
                 size_t index;
 
                 if (it == gen->m_string_literals.end())
@@ -277,17 +274,16 @@ namespace Delta
                 std::string result_temp = gen->getNextTemp();
                 size_t length = str_value.length() + 1;
 
-                gen->m_output << "  " << result_temp << " = getelementptr inbounds ["
-                              << length << " x i8], ptr @str."
+                gen->m_output << "  " << result_temp << " = getelementptr inbounds [" << length << " x i8], ptr @str."
                               << index << ", i64 0, i64 0 ; String literal\n";
 
                 return result_temp;
             }
 
-            std::string operator()(const NodeTermIdentifier *term_ident) const
+            std::string operator()(const NodeTermIdentifier* term_ident) const
             {
-                auto it = std::find_if(gen->m_vars.cbegin(), gen->m_vars.cend(), [&](const Var &var)
-                                       { return var.name == term_ident->ident.value.value(); });
+                auto it = std::find_if(gen->m_vars.cbegin(), gen->m_vars.cend(),
+                                       [&](const Var& var) { return var.name == term_ident->ident.value.value(); });
                 if (it == gen->m_vars.cend())
                 {
                     LOG_ERROR("Undeclared identifier {}", term_ident->ident.value.value());
@@ -295,24 +291,23 @@ namespace Delta
                 }
 
                 std::string load_temp = gen->getNextTemp();
-                gen->m_output << "  " << load_temp << " = load " << gen->dataTypeToLLVM((*it).type)
-                              << ", ptr " << (*it).llvm_alloca
-                              << ", align " << getTypeAlignment((*it).type);
+                gen->m_output << "  " << load_temp << " = load " << gen->dataTypeToLLVM((*it).type) << ", ptr "
+                              << (*it).llvm_alloca << ", align " << getTypeAlignment((*it).type);
                 gen->m_output << " ; Use Variable " << term_ident->ident.value.value() << "\n";
                 return load_temp;
             }
 
-            std::string operator()(const NodeTermParen *term_paren) const
+            std::string operator()(const NodeTermParen* term_paren) const
             {
                 return gen->generateExpression(term_paren->expr);
             }
 
-            std::string operator()(const NodeTermFunctionCall *func_call) const
+            std::string operator()(const NodeTermFunctionCall* func_call) const
             {
                 return gen->generateFunctionCall(func_call);
             }
 
-            std::string operator()(const NodeTermCast *term_cast) const
+            std::string operator()(const NodeTermCast* term_cast) const
             {
                 std::string value = gen->generateExpression(term_cast->expr);
                 DataType from_type = gen->inferExpressionType(term_cast->expr);
@@ -321,14 +316,11 @@ namespace Delta
                 return gen->generateTypeConversion(value, from_type, to_type);
             }
 
-            std::string operator()(const NodeTermAddressOf *term_addr) const
+            std::string operator()(const NodeTermAddressOf* term_addr) const
             {
                 // &variable - get address of variable
                 auto it = std::find_if(gen->m_vars.cbegin(), gen->m_vars.cend(),
-                                       [&](const Var &var)
-                                       {
-                                           return var.name == term_addr->ident.value.value();
-                                       });
+                                       [&](const Var& var) { return var.name == term_addr->ident.value.value(); });
                 if (it == gen->m_vars.cend())
                 {
                     LOG_ERROR("Undeclared identifier {}", term_addr->ident.value.value());
@@ -338,7 +330,7 @@ namespace Delta
                 return (*it).llvm_alloca;
             }
 
-            std::string operator()(const NodeTermDereference *term_deref) const
+            std::string operator()(const NodeTermDereference* term_deref) const
             {
                 std::string ptr_value = gen->generateExpression(term_deref->expr);
                 DataType ptr_type = gen->inferExpressionType(term_deref->expr);
@@ -352,7 +344,7 @@ namespace Delta
                 return ptr_value;
             }
 
-            std::string operator()(const NodeTermArrayAccess *array_access) const
+            std::string operator()(const NodeTermArrayAccess* array_access) const
             {
                 std::string array_ptr = gen->generateExpression(array_access->array_expr);
                 std::string index = gen->generateExpression(array_access->index_expr);
@@ -377,33 +369,30 @@ namespace Delta
                 }
 
                 std::string gep_temp = gen->getNextTemp();
-                gen->m_output << "  " << gep_temp << " = getelementptr "
-                              << gen->dataTypeToLLVM(element_type) << ", "
-                              << gen->dataTypeToLLVM(array_type) << " " << array_ptr
-                              << ", i64 " << index << " ; Array index\n";
+                gen->m_output << "  " << gep_temp << " = getelementptr " << gen->dataTypeToLLVM(element_type) << ", "
+                              << gen->dataTypeToLLVM(array_type) << " " << array_ptr << ", i64 " << index
+                              << " ; Array index\n";
 
                 std::string load_temp = gen->getNextTemp();
-                gen->m_output << "  " << load_temp << " = load "
-                              << gen->dataTypeToLLVM(element_type) << ", ptr " << gep_temp
-                              << ", align " << getTypeAlignment(element_type)
-                              << " ; Load array element\n";
+                gen->m_output << "  " << load_temp << " = load " << gen->dataTypeToLLVM(element_type) << ", ptr "
+                              << gep_temp << ", align " << getTypeAlignment(element_type) << " ; Load array element\n";
 
                 return load_temp;
             }
 
-            std::string operator()(const NodeTermStructLiteral *term_struct_lit) const
+            std::string operator()(const NodeTermStructLiteral* term_struct_lit) const
             {
                 // Struct literal: {value1, value2, ...}
                 // Since we don't have the struct name here, we need to create a temporary
                 // struct on the stack and return its address
                 // The caller will need to handle loading/storing this value appropriately
-                
+
                 // Create a temporary variable to hold the inline struct aggregate
                 // We'll use a generic anonymous struct type for now
                 std::vector<std::string> field_values;
                 std::vector<DataType> field_types;
 
-                for (const NodeExpressionTerm *literal : term_struct_lit->literals)
+                for (const NodeExpressionTerm* literal : term_struct_lit->literals)
                 {
                     std::string field_value = gen->generateTerm(literal);
                     DataType field_type = gen->inferTermType(literal);
@@ -416,7 +405,8 @@ namespace Delta
                 std::string result = "{ ";
                 for (size_t i = 0; i < field_values.size(); i++)
                 {
-                    if (i > 0) result += ", ";
+                    if (i > 0)
+                        result += ", ";
                     result += gen->dataTypeToLLVM(field_types[i]) + " " + field_values[i];
                 }
                 result += " }";
@@ -424,7 +414,7 @@ namespace Delta
                 return result;
             }
 
-            std::string operator()(const NodeTermMemberAccess *member_access) const
+            std::string operator()(const NodeTermMemberAccess* member_access) const
             {
                 // Get the struct expression value (should be a variable)
                 DataType struct_type = gen->inferExpressionType(member_access->struct_expr);
@@ -444,7 +434,7 @@ namespace Delta
                     exit(EXIT_FAILURE);
                 }
 
-                const NodeStruct *struct_def = struct_it->second;
+                const NodeStruct* struct_def = struct_it->second;
 
                 // Find member index
                 int member_index = -1;
@@ -467,18 +457,18 @@ namespace Delta
 
                 // Get the struct variable's address
                 // For now, assume struct_expr is an identifier
-                const NodeExpression *struct_expr = member_access->struct_expr;
-                if (std::holds_alternative<NodeExpressionTerm *>(struct_expr->var))
+                const NodeExpression* struct_expr = member_access->struct_expr;
+                if (std::holds_alternative<NodeExpressionTerm*>(struct_expr->var))
                 {
-                    NodeExpressionTerm *term = std::get<NodeExpressionTerm *>(struct_expr->var);
-                    if (std::holds_alternative<NodeTermIdentifier *>(term->var))
+                    NodeExpressionTerm* term = std::get<NodeExpressionTerm*>(struct_expr->var);
+                    if (std::holds_alternative<NodeTermIdentifier*>(term->var))
                     {
-                        NodeTermIdentifier *ident_term = std::get<NodeTermIdentifier *>(term->var);
+                        NodeTermIdentifier* ident_term = std::get<NodeTermIdentifier*>(term->var);
                         std::string var_name = ident_term->ident.value.value();
 
                         // Find the variable
                         auto var_it = std::find_if(gen->m_vars.begin(), gen->m_vars.end(),
-                                                    [&](const Var &v) { return v.name == var_name; });
+                                                   [&](const Var& v) { return v.name == var_name; });
                         if (var_it == gen->m_vars.end())
                         {
                             LOG_ERROR("Undeclared variable: {}", var_name);
@@ -493,10 +483,9 @@ namespace Delta
 
                         // Load the member value
                         std::string load_temp = gen->getNextTemp();
-                        gen->m_output << "  " << load_temp << " = load "
-                                      << gen->dataTypeToLLVM(member_type) << ", ptr " << gep_temp
-                                      << ", align " << getTypeAlignment(member_type)
-                                      << " ; Load member " << member_name << "\n";
+                        gen->m_output << "  " << load_temp << " = load " << gen->dataTypeToLLVM(member_type) << ", ptr "
+                                      << gep_temp << ", align " << getTypeAlignment(member_type) << " ; Load member "
+                                      << member_name << "\n";
 
                         return load_temp;
                     }
@@ -511,13 +500,13 @@ namespace Delta
         return std::visit(visitor, term->var);
     }
 
-    std::string Assembler::generateFunctionCall(const NodeTermFunctionCall *func_call)
+    std::string Assembler::generateFunctionCall(const NodeTermFunctionCall* func_call)
     {
         std::string func_name = func_call->function_name.toMangledName();
 
         validateFunctionCall(func_name, func_call->arguments);
 
-        Function *func = findFunction(func_name);
+        Function* func = findFunction(func_name);
         if (!func)
         {
             LOG_ERROR("Unknown function: {}", func_name);
@@ -534,7 +523,7 @@ namespace Delta
 
         for (size_t i = 0; i < func_call->arguments.size(); i++)
         {
-            const NodeExpression *arg = func_call->arguments[i];
+            const NodeExpression* arg = func_call->arguments[i];
             std::string arg_val = generateExpression(arg);
             DataType arg_type = inferExpressionType(arg);
 
@@ -574,8 +563,8 @@ namespace Delta
         else
         {
             std::string result_temp = getNextTemp();
-            m_output << "  " << result_temp << " = call " << dataTypeToLLVM(func->return_type)
-                     << " @" << func_name << "(";
+            m_output << "  " << result_temp << " = call " << dataTypeToLLVM(func->return_type) << " @" << func_name
+                     << "(";
 
             for (size_t i = 0; i < arg_values.size(); i++)
             {
@@ -589,14 +578,14 @@ namespace Delta
         }
     }
 
-    std::string Assembler::generateBinaryExpression(const NodeExpressionBinary *bin_expr)
+    std::string Assembler::generateBinaryExpression(const NodeExpressionBinary* bin_expr)
     {
         struct BinaryExpressionVisitor
         {
-            Assembler *gen;
-            BinaryExpressionVisitor(Assembler *gen) : gen(gen) {}
+            Assembler* gen;
+            BinaryExpressionVisitor(Assembler* gen) : gen(gen) {}
 
-            std::string operator()(const NodeExpressionBinaryAddition *add) const
+            std::string operator()(const NodeExpressionBinaryAddition* add) const
             {
                 std::string left = gen->generateExpression(add->left);
                 std::string right = gen->generateExpression(add->right);
@@ -618,18 +607,18 @@ namespace Delta
                 std::string result_temp = gen->getNextTemp();
                 if (isFloatType(resultType))
                 {
-                    gen->m_output << "  " << result_temp << " = fadd " << gen->dataTypeToLLVM(resultType)
-                                  << " " << left << ", " << right << "; Float Add\n";
+                    gen->m_output << "  " << result_temp << " = fadd " << gen->dataTypeToLLVM(resultType) << " " << left
+                                  << ", " << right << "; Float Add\n";
                 }
                 else
                 {
-                    gen->m_output << "  " << result_temp << " = add " << gen->dataTypeToLLVM(resultType)
-                                  << " " << left << ", " << right << "; Add\n";
+                    gen->m_output << "  " << result_temp << " = add " << gen->dataTypeToLLVM(resultType) << " " << left
+                                  << ", " << right << "; Add\n";
                 }
                 return result_temp;
             }
 
-            std::string operator()(const NodeExpressionBinarySubtraction *sub) const
+            std::string operator()(const NodeExpressionBinarySubtraction* sub) const
             {
                 std::string left = gen->generateExpression(sub->left);
                 std::string right = gen->generateExpression(sub->right);
@@ -651,18 +640,18 @@ namespace Delta
                 std::string result_temp = gen->getNextTemp();
                 if (isFloatType(resultType))
                 {
-                    gen->m_output << "  " << result_temp << " = fsub " << gen->dataTypeToLLVM(resultType)
-                                  << " " << left << ", " << right << "; Float Subtract\n";
+                    gen->m_output << "  " << result_temp << " = fsub " << gen->dataTypeToLLVM(resultType) << " " << left
+                                  << ", " << right << "; Float Subtract\n";
                 }
                 else
                 {
-                    gen->m_output << "  " << result_temp << " = sub " << gen->dataTypeToLLVM(resultType)
-                                  << " " << left << ", " << right << "; Subtract\n";
+                    gen->m_output << "  " << result_temp << " = sub " << gen->dataTypeToLLVM(resultType) << " " << left
+                                  << ", " << right << "; Subtract\n";
                 }
                 return result_temp;
             }
 
-            std::string operator()(const NodeExpressionBinaryMultiplication *mul) const
+            std::string operator()(const NodeExpressionBinaryMultiplication* mul) const
             {
                 std::string left = gen->generateExpression(mul->left);
                 std::string right = gen->generateExpression(mul->right);
@@ -684,18 +673,18 @@ namespace Delta
                 std::string result_temp = gen->getNextTemp();
                 if (isFloatType(resultType))
                 {
-                    gen->m_output << "  " << result_temp << " = fmul " << gen->dataTypeToLLVM(resultType)
-                                  << " " << left << ", " << right << "; Float Multiply\n";
+                    gen->m_output << "  " << result_temp << " = fmul " << gen->dataTypeToLLVM(resultType) << " " << left
+                                  << ", " << right << "; Float Multiply\n";
                 }
                 else
                 {
-                    gen->m_output << "  " << result_temp << " = mul " << gen->dataTypeToLLVM(resultType)
-                                  << " " << left << ", " << right << "; Multiply\n";
+                    gen->m_output << "  " << result_temp << " = mul " << gen->dataTypeToLLVM(resultType) << " " << left
+                                  << ", " << right << "; Multiply\n";
                 }
                 return result_temp;
             }
 
-            std::string operator()(const NodeExpressionBinaryDivision *div) const
+            std::string operator()(const NodeExpressionBinaryDivision* div) const
             {
                 std::string left = gen->generateExpression(div->left);
                 std::string right = gen->generateExpression(div->right);
@@ -717,18 +706,18 @@ namespace Delta
                 std::string result_temp = gen->getNextTemp();
                 if (isFloatType(resultType))
                 {
-                    gen->m_output << "  " << result_temp << " = fdiv " << gen->dataTypeToLLVM(resultType)
-                                  << " " << left << ", " << right << "; Float Divide\n";
+                    gen->m_output << "  " << result_temp << " = fdiv " << gen->dataTypeToLLVM(resultType) << " " << left
+                                  << ", " << right << "; Float Divide\n";
                 }
                 else
                 {
-                    gen->m_output << "  " << result_temp << " = sdiv " << gen->dataTypeToLLVM(resultType)
-                                  << " " << left << ", " << right << "; Divide\n";
+                    gen->m_output << "  " << result_temp << " = sdiv " << gen->dataTypeToLLVM(resultType) << " " << left
+                                  << ", " << right << "; Divide\n";
                 }
                 return result_temp;
             }
 
-            std::string operator()(const NodeExpressionBinaryGreater *gt) const
+            std::string operator()(const NodeExpressionBinaryGreater* gt) const
             {
                 std::string left = gen->generateExpression(gt->left);
                 std::string right = gen->generateExpression(gt->right);
@@ -750,13 +739,13 @@ namespace Delta
                 std::string result_temp = gen->getNextTemp();
                 if (isFloatType(compareType))
                 {
-                    gen->m_output << "  " << result_temp << " = fcmp ogt " << gen->dataTypeToLLVM(compareType)
-                                  << " " << left << ", " << right << "; Float Greater Than\n";
+                    gen->m_output << "  " << result_temp << " = fcmp ogt " << gen->dataTypeToLLVM(compareType) << " "
+                                  << left << ", " << right << "; Float Greater Than\n";
                 }
                 else
                 {
-                    gen->m_output << "  " << result_temp << " = icmp sgt " << gen->dataTypeToLLVM(compareType)
-                                  << " " << left << ", " << right << "; Greater Than\n";
+                    gen->m_output << "  " << result_temp << " = icmp sgt " << gen->dataTypeToLLVM(compareType) << " "
+                                  << left << ", " << right << "; Greater Than\n";
                 }
 
                 // Convert i1 to i32
@@ -765,7 +754,7 @@ namespace Delta
                 return final_temp;
             }
 
-            std::string operator()(const NodeExpressionBinaryGreaterEquals *gte) const
+            std::string operator()(const NodeExpressionBinaryGreaterEquals* gte) const
             {
                 std::string left = gen->generateExpression(gte->left);
                 std::string right = gen->generateExpression(gte->right);
@@ -787,13 +776,13 @@ namespace Delta
                 std::string result_temp = gen->getNextTemp();
                 if (isFloatType(compareType))
                 {
-                    gen->m_output << "  " << result_temp << " = fcmp oge " << gen->dataTypeToLLVM(compareType)
-                                  << " " << left << ", " << right << "; Float Greater or Equals\n";
+                    gen->m_output << "  " << result_temp << " = fcmp oge " << gen->dataTypeToLLVM(compareType) << " "
+                                  << left << ", " << right << "; Float Greater or Equals\n";
                 }
                 else
                 {
-                    gen->m_output << "  " << result_temp << " = icmp sge " << gen->dataTypeToLLVM(compareType)
-                                  << " " << left << ", " << right << "; Greater or Equals\n";
+                    gen->m_output << "  " << result_temp << " = icmp sge " << gen->dataTypeToLLVM(compareType) << " "
+                                  << left << ", " << right << "; Greater or Equals\n";
                 }
 
                 std::string final_temp = gen->getNextTemp();
@@ -801,7 +790,7 @@ namespace Delta
                 return final_temp;
             }
 
-            std::string operator()(const NodeExpressionBinaryLess *lt) const
+            std::string operator()(const NodeExpressionBinaryLess* lt) const
             {
                 std::string left = gen->generateExpression(lt->left);
                 std::string right = gen->generateExpression(lt->right);
@@ -823,13 +812,13 @@ namespace Delta
                 std::string result_temp = gen->getNextTemp();
                 if (isFloatType(compareType))
                 {
-                    gen->m_output << "  " << result_temp << " = fcmp olt " << gen->dataTypeToLLVM(compareType)
-                                  << " " << left << ", " << right << "; Float Less Than\n";
+                    gen->m_output << "  " << result_temp << " = fcmp olt " << gen->dataTypeToLLVM(compareType) << " "
+                                  << left << ", " << right << "; Float Less Than\n";
                 }
                 else
                 {
-                    gen->m_output << "  " << result_temp << " = icmp slt " << gen->dataTypeToLLVM(compareType)
-                                  << " " << left << ", " << right << "; Less Than\n";
+                    gen->m_output << "  " << result_temp << " = icmp slt " << gen->dataTypeToLLVM(compareType) << " "
+                                  << left << ", " << right << "; Less Than\n";
                 }
 
                 std::string final_temp = gen->getNextTemp();
@@ -837,7 +826,7 @@ namespace Delta
                 return final_temp;
             }
 
-            std::string operator()(const NodeExpressionBinaryLessEquals *lte) const
+            std::string operator()(const NodeExpressionBinaryLessEquals* lte) const
             {
                 std::string left = gen->generateExpression(lte->left);
                 std::string right = gen->generateExpression(lte->right);
@@ -859,13 +848,13 @@ namespace Delta
                 std::string result_temp = gen->getNextTemp();
                 if (isFloatType(compareType))
                 {
-                    gen->m_output << "  " << result_temp << " = fcmp ole " << gen->dataTypeToLLVM(compareType)
-                                  << " " << left << ", " << right << "; Float Less or Equals\n";
+                    gen->m_output << "  " << result_temp << " = fcmp ole " << gen->dataTypeToLLVM(compareType) << " "
+                                  << left << ", " << right << "; Float Less or Equals\n";
                 }
                 else
                 {
-                    gen->m_output << "  " << result_temp << " = icmp sle " << gen->dataTypeToLLVM(compareType)
-                                  << " " << left << ", " << right << "; Less or Equals\n";
+                    gen->m_output << "  " << result_temp << " = icmp sle " << gen->dataTypeToLLVM(compareType) << " "
+                                  << left << ", " << right << "; Less or Equals\n";
                 }
 
                 std::string final_temp = gen->getNextTemp();
@@ -873,7 +862,7 @@ namespace Delta
                 return final_temp;
             }
 
-            std::string operator()(const NodeExpressionBinaryEquals *eq) const
+            std::string operator()(const NodeExpressionBinaryEquals* eq) const
             {
                 std::string left = gen->generateExpression(eq->left);
                 std::string right = gen->generateExpression(eq->right);
@@ -895,13 +884,13 @@ namespace Delta
                 std::string result_temp = gen->getNextTemp();
                 if (isFloatType(compareType))
                 {
-                    gen->m_output << "  " << result_temp << " = fcmp oeq " << gen->dataTypeToLLVM(compareType)
-                                  << " " << left << ", " << right << "; Float Equals\n";
+                    gen->m_output << "  " << result_temp << " = fcmp oeq " << gen->dataTypeToLLVM(compareType) << " "
+                                  << left << ", " << right << "; Float Equals\n";
                 }
                 else
                 {
-                    gen->m_output << "  " << result_temp << " = icmp eq " << gen->dataTypeToLLVM(compareType)
-                                  << " " << left << ", " << right << "; Equals\n";
+                    gen->m_output << "  " << result_temp << " = icmp eq " << gen->dataTypeToLLVM(compareType) << " "
+                                  << left << ", " << right << "; Equals\n";
                 }
 
                 std::string final_temp = gen->getNextTemp();
@@ -914,18 +903,18 @@ namespace Delta
         return std::visit(visitor, bin_expr->var);
     }
 
-    std::string Assembler::generateExpression(const NodeExpression *expression)
+    std::string Assembler::generateExpression(const NodeExpression* expression)
     {
         struct ExpressionVisitor
         {
-            Assembler *gen;
-            ExpressionVisitor(Assembler *gen) : gen(gen) {}
+            Assembler* gen;
+            ExpressionVisitor(Assembler* gen) : gen(gen) {}
 
-            std::string operator()(const NodeExpressionTerm *expression_term) const
+            std::string operator()(const NodeExpressionTerm* expression_term) const
             {
                 return gen->generateTerm(expression_term);
             }
-            std::string operator()(const NodeExpressionBinary *expression_binary) const
+            std::string operator()(const NodeExpressionBinary* expression_binary) const
             {
                 return gen->generateBinaryExpression(expression_binary);
             }
@@ -935,25 +924,25 @@ namespace Delta
         return std::visit(visitor, expression->var);
     }
 
-    void Assembler::generateScope(const NodeScope *scope)
+    void Assembler::generateScope(const NodeScope* scope)
     {
         begin_scope();
-        for (const NodeStatement *statement : scope->statements)
+        for (const NodeStatement* statement : scope->statements)
         {
             generateStatement(statement);
         }
         end_scope();
     }
 
-    void Assembler::generateIfPred(const NodeIfPred *pred, const std::string &merge_label)
+    void Assembler::generateIfPred(const NodeIfPred* pred, const std::string& merge_label)
     {
         struct PredVisitor
         {
-            Assembler *gen;
-            const std::string &merge_label;
-            PredVisitor(Assembler *gen, const std::string &merge_label) : gen(gen), merge_label(merge_label) {}
+            Assembler* gen;
+            const std::string& merge_label;
+            PredVisitor(Assembler* gen, const std::string& merge_label) : gen(gen), merge_label(merge_label) {}
 
-            void operator()(const NodeIfPredElif *pred_elif)
+            void operator()(const NodeIfPredElif* pred_elif)
             {
                 std::string cond = gen->generateExpression(pred_elif->expr);
                 DataType condType = gen->inferExpressionType(pred_elif->expr);
@@ -962,7 +951,8 @@ namespace Delta
 
                 // Convert condition to i1
                 std::string bool_cond = gen->convertToBoolean(cond, condType);
-                gen->m_output << "  br i1 " << bool_cond << ", label %" << true_label << ", label %" << false_label << "; Elif / Else Jump\n\n";
+                gen->m_output << "  br i1 " << bool_cond << ", label %" << true_label << ", label %" << false_label
+                              << "; Elif / Else Jump\n\n";
 
                 // True branch
                 gen->m_output << true_label << ":\n";
@@ -981,7 +971,7 @@ namespace Delta
                 }
             }
 
-            void operator()(const NodeIfPredElse *pred_else)
+            void operator()(const NodeIfPredElse* pred_else)
             {
                 gen->generateScope(pred_else->scope);
                 gen->m_output << "  br label %" << merge_label << "; Break\n";
@@ -992,19 +982,16 @@ namespace Delta
         std::visit(visitor, pred->var);
     }
 
-    void Assembler::generateStatement(const NodeStatement *statement)
+    void Assembler::generateStatement(const NodeStatement* statement)
     {
         struct StatementVisitor
         {
-            Assembler *gen;
-            StatementVisitor(Assembler *gen) : gen(gen) {}
+            Assembler* gen;
+            StatementVisitor(Assembler* gen) : gen(gen) {}
 
-            void operator()(const NodeExpression *expression)
-            {
-                gen->generateExpression(expression);
-            }
+            void operator()(const NodeExpression* expression) { gen->generateExpression(expression); }
 
-            void operator()(const NodeStatementExit *statement_exit)
+            void operator()(const NodeStatementExit* statement_exit)
             {
                 std::string exit_code = gen->generateExpression(statement_exit->expression);
                 DataType exprType = gen->inferExpressionType(statement_exit->expression);
@@ -1019,10 +1006,10 @@ namespace Delta
                 gen->m_output << "  unreachable\n";
             }
 
-            void operator()(const NodeStatementLet *statement_let)
+            void operator()(const NodeStatementLet* statement_let)
             {
-                auto it = std::find_if(gen->m_vars.cbegin(), gen->m_vars.cend(), [&](const Var &var)
-                                       { return var.name == statement_let->ident.value.value(); });
+                auto it = std::find_if(gen->m_vars.cbegin(), gen->m_vars.cend(),
+                                       [&](const Var& var) { return var.name == statement_let->ident.value.value(); });
                 if (it != gen->m_vars.cend())
                 {
                     LOG_ERROR("Identifier '{}' exists already", statement_let->ident.value.value());
@@ -1032,25 +1019,26 @@ namespace Delta
                 // Allocate space for variable
                 std::string alloca_temp = gen->getNextTemp();
                 gen->m_output << "  " << alloca_temp << " = alloca " << gen->dataTypeToLLVM(statement_let->type)
-                              << ", align " << getTypeAlignment(statement_let->type) << "; Allocate variable \"" << statement_let->ident.value.value() << "\"\n";
+                              << ", align " << getTypeAlignment(statement_let->type) << "; Allocate variable \""
+                              << statement_let->ident.value.value() << "\"\n";
 
                 // Generate Expression
                 if (statement_let->expression)
                 {
                     // Check if this is a struct literal
                     bool is_struct_literal = false;
-                    const NodeTermStructLiteral *struct_lit = nullptr;
-                    
+                    const NodeTermStructLiteral* struct_lit = nullptr;
+
                     if (statement_let->type.base == BaseType::STRUCT)
                     {
                         // Check if expression is a struct literal
-                        if (std::holds_alternative<NodeExpressionTerm *>(statement_let->expression->var))
+                        if (std::holds_alternative<NodeExpressionTerm*>(statement_let->expression->var))
                         {
-                            NodeExpressionTerm *term = std::get<NodeExpressionTerm *>(statement_let->expression->var);
-                            if (std::holds_alternative<NodeTermStructLiteral *>(term->var))
+                            NodeExpressionTerm* term = std::get<NodeExpressionTerm*>(statement_let->expression->var);
+                            if (std::holds_alternative<NodeTermStructLiteral*>(term->var))
                             {
                                 is_struct_literal = true;
-                                struct_lit = std::get<NodeTermStructLiteral *>(term->var);
+                                struct_lit = std::get<NodeTermStructLiteral*>(term->var);
                             }
                         }
                     }
@@ -1065,8 +1053,8 @@ namespace Delta
                             exit(EXIT_FAILURE);
                         }
 
-                        const NodeStruct *struct_def = struct_it->second;
-                        
+                        const NodeStruct* struct_def = struct_it->second;
+
                         for (size_t i = 0; i < struct_lit->literals.size() && i < struct_def->parameters.size(); i++)
                         {
                             // Get pointer to field
@@ -1080,18 +1068,18 @@ namespace Delta
                             DataType field_type = struct_def->parameters[i]->type;
 
                             // Store field value
-                            gen->m_output << "  store " << gen->dataTypeToLLVM(field_type)
-                                          << " " << field_value << ", ptr " << gep_temp
-                                          << ", align " << getTypeAlignment(field_type)
-                                          << " ; Store field " << struct_def->parameters[i]->ident.value.value() << "\n";
+                            gen->m_output << "  store " << gen->dataTypeToLLVM(field_type) << " " << field_value
+                                          << ", ptr " << gep_temp << ", align " << getTypeAlignment(field_type)
+                                          << " ; Store field " << struct_def->parameters[i]->ident.value.value()
+                                          << "\n";
                         }
                     }
                     else
                     {
                         std::string expr_value = gen->generateExpression(statement_let->expression);
                         gen->m_output << "  store " << gen->dataTypeToLLVM(statement_let->type) << " " << expr_value
-                                      << ", ptr " << alloca_temp
-                                      << ", align " << getTypeAlignment(statement_let->type) << " ; Set variable \"" << statement_let->ident.value.value() << "\"\n";
+                                      << ", ptr " << alloca_temp << ", align " << getTypeAlignment(statement_let->type)
+                                      << " ; Set variable \"" << statement_let->ident.value.value() << "\"\n";
                     }
                 }
 
@@ -1102,10 +1090,10 @@ namespace Delta
                 gen->m_vars.push_back(var);
             }
 
-            void operator()(const NodeStatementAssign *assign)
+            void operator()(const NodeStatementAssign* assign)
             {
-                auto it = std::find_if(gen->m_vars.cbegin(), gen->m_vars.cend(), [&](const Var &var)
-                                       { return var.name == assign->ident.value.value(); });
+                auto it = std::find_if(gen->m_vars.cbegin(), gen->m_vars.cend(),
+                                       [&](const Var& var) { return var.name == assign->ident.value.value(); });
                 if (it == gen->m_vars.cend())
                 {
                     LOG_ERROR("Undeclared identifier {}", assign->ident.value.value());
@@ -1129,17 +1117,14 @@ namespace Delta
                     expr_value = gen->generateTypeConversion(expr_value, exprType, var.type);
                 }
 
-                gen->m_output << "  store " << gen->dataTypeToLLVM(var.type) << " " << expr_value
-                              << ", ptr " << var.llvm_alloca
-                              << ", align " << getTypeAlignment(var.type) << "; Set variable \"" << assign->ident.value.value() << "\"\n";
+                gen->m_output << "  store " << gen->dataTypeToLLVM(var.type) << " " << expr_value << ", ptr "
+                              << var.llvm_alloca << ", align " << getTypeAlignment(var.type) << "; Set variable \""
+                              << assign->ident.value.value() << "\"\n";
             }
 
-            void operator()(const NodeScope *scope)
-            {
-                gen->generateScope(scope);
-            }
+            void operator()(const NodeScope* scope) { gen->generateScope(scope); }
 
-            void operator()(const NodeStatementIf *statement_if)
+            void operator()(const NodeStatementIf* statement_if)
             {
                 std::string cond = gen->generateExpression(statement_if->expr);
                 DataType condType = gen->inferExpressionType(statement_if->expr);
@@ -1149,7 +1134,8 @@ namespace Delta
 
                 // Convert condition to i1
                 std::string bool_cond = gen->convertToBoolean(cond, condType);
-                gen->m_output << "  br i1 " << bool_cond << ", label %" << true_label << ", label %" << false_label << "; If / Else Jump\n\n";
+                gen->m_output << "  br i1 " << bool_cond << ", label %" << true_label << ", label %" << false_label
+                              << "; If / Else Jump\n\n";
 
                 // True branch
                 gen->m_output << true_label << ":\n";
@@ -1168,7 +1154,7 @@ namespace Delta
                 gen->m_output << merge_label << ":\n";
             }
 
-            void operator()(const NodeStatementWhile *statement_while)
+            void operator()(const NodeStatementWhile* statement_while)
             {
                 std::string cond_label = gen->getNextLabel();  // Label to evaluate condition
                 std::string loop_label = gen->getNextLabel();  // Label for the loop body
@@ -1180,7 +1166,8 @@ namespace Delta
                 std::string cond = gen->generateExpression(statement_while->expr);
                 DataType condType = gen->inferExpressionType(statement_while->expr);
                 std::string bool_cond = gen->convertToBoolean(cond, condType);
-                gen->m_output << "  br i1 " << bool_cond << ", label %" << loop_label << ", label %" << merge_label << "; While Jump\n\n";
+                gen->m_output << "  br i1 " << bool_cond << ", label %" << loop_label << ", label %" << merge_label
+                              << "; While Jump\n\n";
 
                 gen->m_output << loop_label << ":\n";
                 gen->generateScope(statement_while->scope);
@@ -1189,7 +1176,7 @@ namespace Delta
                 gen->m_output << merge_label << ":\n";
             }
 
-            void operator()(const NodeStatementReturn *statement_return)
+            void operator()(const NodeStatementReturn* statement_return)
             {
                 if (statement_return->expression)
                 {
@@ -1205,11 +1192,12 @@ namespace Delta
                     // Convert to function return type if needed
                     if (exprType != gen->m_current_function_return_type)
                     {
-                        return_value = gen->generateTypeConversion(return_value, exprType, gen->m_current_function_return_type);
+                        return_value =
+                            gen->generateTypeConversion(return_value, exprType, gen->m_current_function_return_type);
                     }
 
-                    gen->m_output << "  ret " << gen->dataTypeToLLVM(gen->m_current_function_return_type)
-                                  << " " << return_value << " ; Return\n";
+                    gen->m_output << "  ret " << gen->dataTypeToLLVM(gen->m_current_function_return_type) << " "
+                                  << return_value << " ; Return\n";
                 }
                 else
                 {
@@ -1221,7 +1209,7 @@ namespace Delta
                     gen->m_output << "  ret void ; Return\n";
                 }
             }
-            void operator()(const NodeStatementPointerAssign *ptr_assign)
+            void operator()(const NodeStatementPointerAssign* ptr_assign)
             {
                 std::string ptr_value = gen->generateExpression(ptr_assign->ptr_expr);
                 DataType pointee_type = gen->inferExpressionType(ptr_assign->ptr_expr);
@@ -1234,12 +1222,11 @@ namespace Delta
                     value = gen->generateTypeConversion(value, value_type, pointee_type);
                 }
 
-                gen->m_output << "  store " << gen->dataTypeToLLVM(pointee_type) << " " << value
-                              << ", ptr " << ptr_value
-                              << ", align " << getTypeAlignment(pointee_type)
+                gen->m_output << "  store " << gen->dataTypeToLLVM(pointee_type) << " " << value << ", ptr "
+                              << ptr_value << ", align " << getTypeAlignment(pointee_type)
                               << " ; Store through pointer\n";
             }
-            void operator()(const NodeStatementArrayAssign *array_assign)
+            void operator()(const NodeStatementArrayAssign* array_assign)
             {
                 std::string array_ptr = gen->generateExpression(array_assign->array_expr);
                 std::string index = gen->generateExpression(array_assign->index_expr);
@@ -1271,18 +1258,15 @@ namespace Delta
                 }
 
                 std::string gep_temp = gen->getNextTemp();
-                gen->m_output << "  " << gep_temp << " = getelementptr "
-                              << gen->dataTypeToLLVM(element_type) << ", "
-                              << gen->dataTypeToLLVM(array_type) << " " << array_ptr
-                              << ", i64 " << index << " ; Array index\n";
+                gen->m_output << "  " << gep_temp << " = getelementptr " << gen->dataTypeToLLVM(element_type) << ", "
+                              << gen->dataTypeToLLVM(array_type) << " " << array_ptr << ", i64 " << index
+                              << " ; Array index\n";
 
-                gen->m_output << "  store " << gen->dataTypeToLLVM(element_type)
-                              << " " << value << ", ptr " << gep_temp
-                              << ", align " << getTypeAlignment(element_type)
-                              << " ; Store array element\n";
+                gen->m_output << "  store " << gen->dataTypeToLLVM(element_type) << " " << value << ", ptr " << gep_temp
+                              << ", align " << getTypeAlignment(element_type) << " ; Store array element\n";
             }
 
-            void operator()(const NodeStatementMemberAssign *member_assign)
+            void operator()(const NodeStatementMemberAssign* member_assign)
             {
                 // Get the struct type
                 DataType struct_type = gen->inferExpressionType(member_assign->struct_expr);
@@ -1302,7 +1286,7 @@ namespace Delta
                     exit(EXIT_FAILURE);
                 }
 
-                const NodeStruct *struct_def = struct_it->second;
+                const NodeStruct* struct_def = struct_it->second;
 
                 // Find member index
                 int member_index = -1;
@@ -1324,18 +1308,18 @@ namespace Delta
                 }
 
                 // Get the struct variable's address
-                const NodeExpression *struct_expr = member_assign->struct_expr;
-                if (std::holds_alternative<NodeExpressionTerm *>(struct_expr->var))
+                const NodeExpression* struct_expr = member_assign->struct_expr;
+                if (std::holds_alternative<NodeExpressionTerm*>(struct_expr->var))
                 {
-                    NodeExpressionTerm *term = std::get<NodeExpressionTerm *>(struct_expr->var);
-                    if (std::holds_alternative<NodeTermIdentifier *>(term->var))
+                    NodeExpressionTerm* term = std::get<NodeExpressionTerm*>(struct_expr->var);
+                    if (std::holds_alternative<NodeTermIdentifier*>(term->var))
                     {
-                        NodeTermIdentifier *ident_term = std::get<NodeTermIdentifier *>(term->var);
+                        NodeTermIdentifier* ident_term = std::get<NodeTermIdentifier*>(term->var);
                         std::string var_name = ident_term->ident.value.value();
 
                         // Find the variable
                         auto var_it = std::find_if(gen->m_vars.begin(), gen->m_vars.end(),
-                                                    [&](const Var &v) { return v.name == var_name; });
+                                                   [&](const Var& v) { return v.name == var_name; });
                         if (var_it == gen->m_vars.end())
                         {
                             LOG_ERROR("Undeclared variable: {}", var_name);
@@ -1359,10 +1343,9 @@ namespace Delta
                                       << ", i32 0, i32 " << member_index << " ; Member access: " << member_name << "\n";
 
                         // Store the value to the member
-                        gen->m_output << "  store " << gen->dataTypeToLLVM(member_type)
-                                      << " " << value << ", ptr " << gep_temp
-                                      << ", align " << getTypeAlignment(member_type)
-                                      << " ; Store member " << member_name << "\n";
+                        gen->m_output << "  store " << gen->dataTypeToLLVM(member_type) << " " << value << ", ptr "
+                                      << gep_temp << ", align " << getTypeAlignment(member_type) << " ; Store member "
+                                      << member_name << "\n";
 
                         return;
                     }
@@ -1381,21 +1364,20 @@ namespace Delta
     {
         for (size_t i = 0; i < m_string_literals.size(); i++)
         {
-            const std::string &str = m_string_literals[i];
+            const std::string& str = m_string_literals[i];
 
             std::string escaped = escapeString(str);
             size_t length = str.length() + 1; // +1 for null terminator
 
-            m_output << "@str." << i << " = private unnamed_addr constant ["
-                     << length << " x i8] c\"" << escaped << "\\00\"\n";
+            m_output << "@str." << i << " = private unnamed_addr constant [" << length << " x i8] c\"" << escaped
+                     << "\\00\"\n";
         }
         m_output << "\n";
     }
 
     // Helper methods
 
-    std::string
-    Assembler::getNextTemp()
+    std::string Assembler::getNextTemp()
     {
         std::string temp = "%t" + std::to_string(m_temp_counter++);
         return temp;
@@ -1412,35 +1394,35 @@ namespace Delta
         std::string base;
         switch (type.base)
         {
-        case BaseType::INT8:
-            base = "i8";
+            case BaseType::INT8:
+                base = "i8";
+                break;
+            case BaseType::INT16:
+                base = "i16";
+                break;
+            case BaseType::INT32:
+                base = "i32";
+                break;
+            case BaseType::INT64:
+                base = "i64";
+                break;
+            case BaseType::FLOAT32:
+                base = "float";
+                break;
+            case BaseType::FLOAT64:
+                base = "double";
+                break;
+            case BaseType::VOID:
+                base = (type.pointer_level > 0) ? "i8" : "void"; // void* -> i8*
+                break;
+            case BaseType::STRUCT:
+            {
+                base = std::string("%struct.") + type.struct_name;
+            }
             break;
-        case BaseType::INT16:
-            base = "i16";
-            break;
-        case BaseType::INT32:
-            base = "i32";
-            break;
-        case BaseType::INT64:
-            base = "i64";
-            break;
-        case BaseType::FLOAT32:
-            base = "float";
-            break;
-        case BaseType::FLOAT64:
-            base = "double";
-            break;
-        case BaseType::VOID:
-            base = (type.pointer_level > 0) ? "i8" : "void"; // void* -> i8*
-            break;
-        case BaseType::STRUCT:
-        {
-            base = std::string("%struct.") + type.struct_name;
-        }
-        break;
-        default:
-            base = "i32";
-            break;
+            default:
+                base = "i32";
+                break;
         }
 
         if (type.pointer_level >= 1)
@@ -1460,22 +1442,22 @@ namespace Delta
 
         switch (type.base)
         {
-        case BaseType::INT8:
-        case BaseType::INT16:
-        case BaseType::INT32:
-        case BaseType::INT64:
-            m_output << "0";
-            break;
-        case BaseType::FLOAT32:
-        case BaseType::FLOAT64:
-            m_output << "0.0";
-            break;
-        default:
-            break;
+            case BaseType::INT8:
+            case BaseType::INT16:
+            case BaseType::INT32:
+            case BaseType::INT64:
+                m_output << "0";
+                break;
+            case BaseType::FLOAT32:
+            case BaseType::FLOAT64:
+                m_output << "0.0";
+                break;
+            default:
+                break;
         }
     }
 
-    std::string Assembler::generateTypeConversion(const std::string &value, DataType from, DataType to)
+    std::string Assembler::generateTypeConversion(const std::string& value, DataType from, DataType to)
     {
         if (from == to)
         {
@@ -1495,14 +1477,14 @@ namespace Delta
             if (from_bits < to_bits)
             {
                 // Extend float precision (float to double)
-                m_output << "  " << result_temp << " = fpext " << dataTypeToLLVM(from)
-                         << " " << value << " to " << dataTypeToLLVM(to) << " ; Float Extend\n";
+                m_output << "  " << result_temp << " = fpext " << dataTypeToLLVM(from) << " " << value << " to "
+                         << dataTypeToLLVM(to) << " ; Float Extend\n";
             }
             else if (from_bits > to_bits)
             {
                 // Truncate float precision
-                m_output << "  " << result_temp << " = fptrunc " << dataTypeToLLVM(from)
-                         << " " << value << " to " << dataTypeToLLVM(to) << " ; Float Truncate\n";
+                m_output << "  " << result_temp << " = fptrunc " << dataTypeToLLVM(from) << " " << value << " to "
+                         << dataTypeToLLVM(to) << " ; Float Truncate\n";
             }
 
             // LOG_TRACE("Generated float conversion: {}", result_temp);
@@ -1512,8 +1494,8 @@ namespace Delta
         // Pointer to pointer conversions (bitcast)
         if (isPointerType(from) && isPointerType(to))
         {
-            m_output << "  " << result_temp << " = bitcast " << dataTypeToLLVM(from)
-                     << " " << value << " to " << dataTypeToLLVM(to) << " ; Pointer cast\n";
+            m_output << "  " << result_temp << " = bitcast " << dataTypeToLLVM(from) << " " << value << " to "
+                     << dataTypeToLLVM(to) << " ; Pointer cast\n";
             return result_temp;
         }
 
@@ -1527,19 +1509,19 @@ namespace Delta
                 std::string temp = getNextTemp();
                 if (isFloatType(from))
                 {
-                    m_output << "  " << temp << " = fptosi " << dataTypeToLLVM(from)
-                             << " " << value << " to i64 ; Float to Int64\n";
+                    m_output << "  " << temp << " = fptosi " << dataTypeToLLVM(from) << " " << value
+                             << " to i64 ; Float to Int64\n";
                 }
                 else
                 {
-                    m_output << "  " << temp << " = sext " << dataTypeToLLVM(from)
-                             << " " << value << " to i64 ; Int to Int64\n";
+                    m_output << "  " << temp << " = sext " << dataTypeToLLVM(from) << " " << value
+                             << " to i64 ; Int to Int64\n";
                 }
                 int_value = temp;
             }
 
-            m_output << "  " << result_temp << " = inttoptr i64 " << int_value
-                     << " to " << dataTypeToLLVM(to) << " ; Int to Pointer\n";
+            m_output << "  " << result_temp << " = inttoptr i64 " << int_value << " to " << dataTypeToLLVM(to)
+                     << " ; Int to Pointer\n";
             return result_temp;
         }
 
@@ -1547,8 +1529,8 @@ namespace Delta
         if (isPointerType(from) && !isPointerType(to))
         {
             std::string ptr_as_int = getNextTemp();
-            m_output << "  " << ptr_as_int << " = ptrtoint " << dataTypeToLLVM(from)
-                     << " " << value << " to i64 ; Pointer to Int64\n";
+            m_output << "  " << ptr_as_int << " = ptrtoint " << dataTypeToLLVM(from) << " " << value
+                     << " to i64 ; Pointer to Int64\n";
 
             // Then convert i64 to target type if needed
             if (to == DataType::INT64)
@@ -1563,16 +1545,16 @@ namespace Delta
 
         if (isFloatType(from) && !isFloatType(to))
         {
-            m_output << "  " << result_temp << " = fptosi " << dataTypeToLLVM(from)
-                     << " " << value << " to " << dataTypeToLLVM(to) << " ; Float to Int\n";
+            m_output << "  " << result_temp << " = fptosi " << dataTypeToLLVM(from) << " " << value << " to "
+                     << dataTypeToLLVM(to) << " ; Float to Int\n";
             return result_temp;
         }
 
         // Integer to float conversions
         if (!isFloatType(from) && isFloatType(to))
         {
-            m_output << "  " << result_temp << " = sitofp " << dataTypeToLLVM(from)
-                     << " " << value << " to " << dataTypeToLLVM(to) << " ; Int to Float\n";
+            m_output << "  " << result_temp << " = sitofp " << dataTypeToLLVM(from) << " " << value << " to "
+                     << dataTypeToLLVM(to) << " ; Int to Float\n";
             return result_temp;
         }
 
@@ -1585,14 +1567,14 @@ namespace Delta
             if (from_bits < to_bits)
             {
                 // Extend float precision
-                m_output << "  " << result_temp << " = fpext " << dataTypeToLLVM(from)
-                         << " " << value << " to " << dataTypeToLLVM(to) << " ; Float Extend\n";
+                m_output << "  " << result_temp << " = fpext " << dataTypeToLLVM(from) << " " << value << " to "
+                         << dataTypeToLLVM(to) << " ; Float Extend\n";
             }
             else if (from_bits > to_bits)
             {
                 // Truncate float precision
-                m_output << "  " << result_temp << " = fptrunc " << dataTypeToLLVM(from)
-                         << " " << value << " to " << dataTypeToLLVM(to) << " ; Float Truncate\n";
+                m_output << "  " << result_temp << " = fptrunc " << dataTypeToLLVM(from) << " " << value << " to "
+                         << dataTypeToLLVM(to) << " ; Float Truncate\n";
             }
             else
             {
@@ -1609,14 +1591,14 @@ namespace Delta
         if (from_bits < to_bits)
         {
             // Sign extend
-            m_output << "  " << result_temp << " = sext " << dataTypeToLLVM(from)
-                     << " " << value << " to " << dataTypeToLLVM(to) << " ; Int Sign Extend\n";
+            m_output << "  " << result_temp << " = sext " << dataTypeToLLVM(from) << " " << value << " to "
+                     << dataTypeToLLVM(to) << " ; Int Sign Extend\n";
         }
         else if (from_bits > to_bits)
         {
             // Truncate
-            m_output << "  " << result_temp << " = trunc " << dataTypeToLLVM(from)
-                     << " " << value << " to " << dataTypeToLLVM(to) << " ; Int Truncate\n";
+            m_output << "  " << result_temp << " = trunc " << dataTypeToLLVM(from) << " " << value << " to "
+                     << dataTypeToLLVM(to) << " ; Int Truncate\n";
         }
         else
         {
@@ -1627,27 +1609,27 @@ namespace Delta
         return result_temp;
     }
 
-    std::string Assembler::convertToBoolean(const std::string &value, DataType type)
+    std::string Assembler::convertToBoolean(const std::string& value, DataType type)
     {
         std::string bool_temp = getNextTemp();
 
         if (isFloatType(type))
         {
             // Compare float with 0.0
-            m_output << "  " << bool_temp << " = fcmp one " << dataTypeToLLVM(type)
-                     << " " << value << ", 0.0 ; Float to Boolean\n";
+            m_output << "  " << bool_temp << " = fcmp one " << dataTypeToLLVM(type) << " " << value
+                     << ", 0.0 ; Float to Boolean\n";
         }
         else if (isPointerType(type))
         {
             // Compare pointer with null
-            m_output << "  " << bool_temp << " = icmp ne " << dataTypeToLLVM(type)
-                     << " " << value << ", null ; Ptr to Boolean\n";
+            m_output << "  " << bool_temp << " = icmp ne " << dataTypeToLLVM(type) << " " << value
+                     << ", null ; Ptr to Boolean\n";
         }
         else
         {
             // Compare integer with 0
-            m_output << "  " << bool_temp << " = icmp ne " << dataTypeToLLVM(type)
-                     << " " << value << ", 0 ; Int to Boolean\n";
+            m_output << "  " << bool_temp << " = icmp ne " << dataTypeToLLVM(type) << " " << value
+                     << ", 0 ; Int to Boolean\n";
         }
 
         return bool_temp;
@@ -1714,7 +1696,7 @@ namespace Delta
         m_scopes.pop_back();
     }
 
-    void Assembler::begin_function(const std::string &func_name)
+    void Assembler::begin_function(const std::string& func_name)
     {
         m_current_function = func_name;
         m_in_function = true;
@@ -1734,7 +1716,7 @@ namespace Delta
     }
 
     // Type inference methods (updated for float support)
-    DataType Assembler::inferExpressionType(const NodeExpression *expression)
+    DataType Assembler::inferExpressionType(const NodeExpression* expression)
     {
         auto it = m_expression_types.find(expression);
         if (it != m_expression_types.end())
@@ -1744,14 +1726,14 @@ namespace Delta
 
         struct ExpressionTypeVisitor
         {
-            Assembler *gen;
-            ExpressionTypeVisitor(Assembler *gen) : gen(gen) {}
+            Assembler* gen;
+            ExpressionTypeVisitor(Assembler* gen) : gen(gen) {}
 
-            DataType operator()(const NodeExpressionTerm *expression_term) const
+            DataType operator()(const NodeExpressionTerm* expression_term) const
             {
                 return gen->inferTermType(expression_term);
             }
-            DataType operator()(const NodeExpressionBinary *expression_binary) const
+            DataType operator()(const NodeExpressionBinary* expression_binary) const
             {
                 return gen->inferBinaryExpressionType(expression_binary);
             }
@@ -1763,18 +1745,18 @@ namespace Delta
         return type;
     }
 
-    DataType Assembler::inferTermType(const NodeExpressionTerm *term)
+    DataType Assembler::inferTermType(const NodeExpressionTerm* term)
     {
         struct TermTypeVisitor
         {
-            Assembler *gen;
-            TermTypeVisitor(Assembler *gen) : gen(gen) {}
+            Assembler* gen;
+            TermTypeVisitor(Assembler* gen) : gen(gen) {}
 
             // &value
-            DataType operator()(const NodeTermAddressOf *term_aof) const
+            DataType operator()(const NodeTermAddressOf* term_aof) const
             {
-                auto it = std::find_if(gen->m_vars.cbegin(), gen->m_vars.cend(), [&](const Var &var)
-                                       { return var.name == term_aof->ident.value.value(); });
+                auto it = std::find_if(gen->m_vars.cbegin(), gen->m_vars.cend(),
+                                       [&](const Var& var) { return var.name == term_aof->ident.value.value(); });
                 if (it == gen->m_vars.cend())
                 {
                     LOG_ERROR("Undeclared identifier {}", term_aof->ident.value.value());
@@ -1784,7 +1766,7 @@ namespace Delta
             }
 
             // *ptr
-            DataType operator()(const NodeTermDereference *term_deref) const
+            DataType operator()(const NodeTermDereference* term_deref) const
             {
                 auto ptrType = gen->inferExpressionType(term_deref->expr);
                 if (!isPointerType(ptrType))
@@ -1796,7 +1778,7 @@ namespace Delta
             }
 
             // ptr[expr]
-            DataType operator()(const NodeTermArrayAccess *array_access) const
+            DataType operator()(const NodeTermArrayAccess* array_access) const
             {
                 DataType array_type = gen->inferExpressionType(array_access->array_expr);
                 if (!isPointerType(array_type))
@@ -1807,30 +1789,18 @@ namespace Delta
                 return getPointeeType(array_type);
             }
 
-            DataType operator()(const NodeTermStringLiteral *term_str_lit) const
-            {
-                return DataType::INT8_PTR;
-            }
+            DataType operator()(const NodeTermStringLiteral* term_str_lit) const { return DataType::INT8_PTR; }
 
-            DataType operator()(const NodeTermIntegerLiteral *term_int_lit) const
-            {
-                return DataType::INT32;
-            }
+            DataType operator()(const NodeTermIntegerLiteral* term_int_lit) const { return DataType::INT32; }
 
-            DataType operator()(const NodeTermFloatLiteral *term_float_lit) const
-            {
-                return DataType::FLOAT32;
-            }
+            DataType operator()(const NodeTermFloatLiteral* term_float_lit) const { return DataType::FLOAT32; }
 
-            DataType operator()(const NodeTermDoubleLiteral *term_float_lit) const
-            {
-                return DataType::FLOAT64;
-            }
+            DataType operator()(const NodeTermDoubleLiteral* term_float_lit) const { return DataType::FLOAT64; }
 
-            DataType operator()(const NodeTermIdentifier *term_ident) const
+            DataType operator()(const NodeTermIdentifier* term_ident) const
             {
-                auto it = std::find_if(gen->m_vars.cbegin(), gen->m_vars.cend(), [&](const Var &var)
-                                       { return var.name == term_ident->ident.value.value(); });
+                auto it = std::find_if(gen->m_vars.cbegin(), gen->m_vars.cend(),
+                                       [&](const Var& var) { return var.name == term_ident->ident.value.value(); });
                 if (it == gen->m_vars.cend())
                 {
                     LOG_ERROR("Undeclared identifier {}", term_ident->ident.value.value());
@@ -1839,14 +1809,14 @@ namespace Delta
                 return (*it).type;
             }
 
-            DataType operator()(const NodeTermParen *term_paren) const
+            DataType operator()(const NodeTermParen* term_paren) const
             {
                 return gen->inferExpressionType(term_paren->expr);
             }
 
-            DataType operator()(const NodeTermFunctionCall *func_call) const
+            DataType operator()(const NodeTermFunctionCall* func_call) const
             {
-                Function *func = gen->findFunction(func_call->function_name.toMangledName());
+                Function* func = gen->findFunction(func_call->function_name.toMangledName());
                 if (!func)
                 {
                     LOG_ERROR("Unknown function: {}", func_call->function_name.toString());
@@ -1855,12 +1825,9 @@ namespace Delta
                 return func->return_type;
             }
 
-            DataType operator()(const NodeTermCast *term_cast) const
-            {
-                return term_cast->target_type;
-            }
+            DataType operator()(const NodeTermCast* term_cast) const { return term_cast->target_type; }
 
-            DataType operator()(const NodeTermStructLiteral *term_struct_lit) const
+            DataType operator()(const NodeTermStructLiteral* term_struct_lit) const
             {
                 // Struct literal type is determined by the context
                 // For now, return a generic struct type - the actual struct name
@@ -1871,7 +1838,7 @@ namespace Delta
                 return struct_type;
             }
 
-            DataType operator()(const NodeTermMemberAccess *member_access) const
+            DataType operator()(const NodeTermMemberAccess* member_access) const
             {
                 DataType struct_type = gen->inferExpressionType(member_access->struct_expr);
                 std::string member_name = member_access->member_name.value.value();
@@ -1890,7 +1857,7 @@ namespace Delta
                     exit(EXIT_FAILURE);
                 }
 
-                const NodeStruct *struct_def = struct_it->second;
+                const NodeStruct* struct_def = struct_it->second;
 
                 // Find member type
                 for (size_t i = 0; i < struct_def->parameters.size(); i++)
@@ -1910,99 +1877,82 @@ namespace Delta
         return std::visit(visitor, term->var);
     }
 
-    DataType Assembler::inferBinaryExpressionType(const NodeExpressionBinary *bin_expr)
+    DataType Assembler::inferBinaryExpressionType(const NodeExpressionBinary* bin_expr)
     {
         struct BinaryExpressionTypeVisitor
         {
-            Assembler *gen;
-            BinaryExpressionTypeVisitor(Assembler *gen) : gen(gen) {}
+            Assembler* gen;
+            BinaryExpressionTypeVisitor(Assembler* gen) : gen(gen) {}
 
-            DataType operator()(const NodeExpressionBinarySubtraction *sub) const
+            DataType operator()(const NodeExpressionBinarySubtraction* sub) const
             {
                 DataType leftType = gen->inferExpressionType(sub->left);
                 DataType rightType = gen->inferExpressionType(sub->right);
                 return gen->getCommonType(leftType, rightType);
             }
-            DataType operator()(const NodeExpressionBinaryAddition *add) const
+            DataType operator()(const NodeExpressionBinaryAddition* add) const
             {
                 DataType leftType = gen->inferExpressionType(add->left);
                 DataType rightType = gen->inferExpressionType(add->right);
                 return gen->getCommonType(leftType, rightType);
             }
-            DataType operator()(const NodeExpressionBinaryMultiplication *mul) const
+            DataType operator()(const NodeExpressionBinaryMultiplication* mul) const
             {
                 DataType leftType = gen->inferExpressionType(mul->left);
                 DataType rightType = gen->inferExpressionType(mul->right);
                 return gen->getCommonType(leftType, rightType);
             }
-            DataType operator()(const NodeExpressionBinaryDivision *div) const
+            DataType operator()(const NodeExpressionBinaryDivision* div) const
             {
                 DataType leftType = gen->inferExpressionType(div->left);
                 DataType rightType = gen->inferExpressionType(div->right);
                 return gen->getCommonType(leftType, rightType);
             }
-            DataType operator()(const NodeExpressionBinaryGreater *) const
+            DataType operator()(const NodeExpressionBinaryGreater*) const
             {
                 return DataType::INT32; // Comparisons always return boolean (represented as int32)
             }
-            DataType operator()(const NodeExpressionBinaryGreaterEquals *) const
-            {
-                return DataType::INT32;
-            }
-            DataType operator()(const NodeExpressionBinaryLess *) const
-            {
-                return DataType::INT32;
-            }
-            DataType operator()(const NodeExpressionBinaryLessEquals *) const
-            {
-                return DataType::INT32;
-            }
-            DataType operator()(const NodeExpressionBinaryEquals *) const
-            {
-                return DataType::INT32;
-            }
+            DataType operator()(const NodeExpressionBinaryGreaterEquals*) const { return DataType::INT32; }
+            DataType operator()(const NodeExpressionBinaryLess*) const { return DataType::INT32; }
+            DataType operator()(const NodeExpressionBinaryLessEquals*) const { return DataType::INT32; }
+            DataType operator()(const NodeExpressionBinaryEquals*) const { return DataType::INT32; }
         };
 
         BinaryExpressionTypeVisitor visitor(this);
         return std::visit(visitor, bin_expr->var);
     }
 
-    void Assembler::validateTypeCompatibility(DataType expected, DataType actual, const std::string &context)
+    void Assembler::validateTypeCompatibility(DataType expected, DataType actual, const std::string& context)
     {
         if (expected == DataType::VOID && actual != DataType::VOID)
         {
-            LOG_ERROR("Type mismatch in {}: expected void but got {}",
-                      context, typeToString(actual));
+            LOG_ERROR("Type mismatch in {}: expected void but got {}", context, typeToString(actual));
             exit(EXIT_FAILURE);
         }
         if (expected != DataType::VOID && actual == DataType::VOID)
         {
-            LOG_ERROR("Type mismatch in {}: expected {} but got void",
-                      context, typeToString(expected));
+            LOG_ERROR("Type mismatch in {}: expected {} but got void", context, typeToString(expected));
             exit(EXIT_FAILURE);
         }
     }
 
-    Function *Assembler::findFunction(const std::string &name)
+    Function* Assembler::findFunction(const std::string& name)
     {
         auto it = std::find_if(m_functions.begin(), m_functions.end(),
-                               [&name](const Function &func)
-                               { return func.name == name; });
+                               [&name](const Function& func) { return func.name == name; });
         return (it != m_functions.end()) ? &(*it) : nullptr;
     }
 
-    void Assembler::addFunction(const std::string &name,
-                                const std::vector<DataType> &param_types,
-                                DataType ret_type, bool external,
-                                bool variadic)
+    void Assembler::addFunction(const std::string& name, const std::vector<DataType>& param_types, DataType ret_type,
+                                bool external, bool variadic)
     {
         Function func(name, param_types, ret_type, name, external, variadic);
         m_functions.emplace_back(func);
     }
 
-    void Assembler::validateFunctionCall(const std::string &func_name, const std::vector<NodeExpression *> &arguments)
+    void Assembler::validateFunctionCall(const std::string& func_name, const std::vector<NodeExpression*>& arguments)
     {
-        Function *func = findFunction(func_name);
+        Function* func = findFunction(func_name);
         if (!func)
         {
             LOG_ERROR("Unknown function: {}", func_name);
@@ -2013,8 +1963,8 @@ namespace Delta
         {
             if (arguments.size() < func->parameter_types.size())
             {
-                LOG_ERROR("Variadic function {} requires at least {} arguments but got {}",
-                          func_name, func->parameter_types.size(), arguments.size());
+                LOG_ERROR("Variadic function {} requires at least {} arguments but got {}", func_name,
+                          func->parameter_types.size(), arguments.size());
                 exit(EXIT_FAILURE);
             }
         }
@@ -2022,8 +1972,8 @@ namespace Delta
         {
             if (arguments.size() != func->parameter_types.size())
             {
-                LOG_ERROR("Function {} expects {} arguments but got {}",
-                          func_name, func->parameter_types.size(), arguments.size());
+                LOG_ERROR("Function {} expects {} arguments but got {}", func_name, func->parameter_types.size(),
+                          arguments.size());
                 exit(EXIT_FAILURE);
             }
         }
@@ -2035,8 +1985,7 @@ namespace Delta
 
             if (argType == DataType::VOID || expectedType == DataType::VOID)
             {
-                LOG_ERROR("Void type not allowed in function argument {} to function {}",
-                          i + 1, func_name);
+                LOG_ERROR("Void type not allowed in function argument {} to function {}", i + 1, func_name);
                 exit(EXIT_FAILURE);
             }
         }
@@ -2048,15 +1997,14 @@ namespace Delta
                 DataType argType = inferExpressionType(arguments[i]);
                 if (argType == DataType::VOID)
                 {
-                    LOG_ERROR("Void type not allowed in variadic argument {} to function {}",
-                              i + 1, func_name);
+                    LOG_ERROR("Void type not allowed in variadic argument {} to function {}", i + 1, func_name);
                     exit(EXIT_FAILURE);
                 }
             }
         }
     }
 
-    std::string Assembler::applyDefaultPromotions(const std::string &value, DataType &type)
+    std::string Assembler::applyDefaultPromotions(const std::string& value, DataType& type)
     {
         DataType promoted_type = getPromotedType(type);
 
@@ -2077,51 +2025,51 @@ namespace Delta
 
         switch (type.base)
         {
-        case BaseType::INT8:
-        case BaseType::INT16:
-            return DataType::INT32;
-        case BaseType::FLOAT32:
-            return DataType::FLOAT64;
-        default:
-            return type;
+            case BaseType::INT8:
+            case BaseType::INT16:
+                return DataType::INT32;
+            case BaseType::FLOAT32:
+                return DataType::FLOAT64;
+            default:
+                return type;
         }
     }
 
-    std::string Assembler::escapeString(const std::string &str)
+    std::string Assembler::escapeString(const std::string& str)
     {
         std::string result;
         for (char c : str)
         {
             switch (c)
             {
-            case '\n':
-                result += "\\0A";
-                break;
-            case '\t':
-                result += "\\09";
-                break;
-            case '\r':
-                result += "\\0D";
-                break;
-            case '\\':
-                result += "\\\\";
-                break;
-            case '"':
-                result += "\\22";
-                break;
-            default:
-                if (c >= 32 && c <= 126)
-                {
-                    result += c;
-                }
-                else
-                {
-                    result += "\\";
-                    result += std::to_string((unsigned char)c / 64);
-                    result += std::to_string(((unsigned char)c / 8) % 8);
-                    result += std::to_string((unsigned char)c % 8);
-                }
-                break;
+                case '\n':
+                    result += "\\0A";
+                    break;
+                case '\t':
+                    result += "\\09";
+                    break;
+                case '\r':
+                    result += "\\0D";
+                    break;
+                case '\\':
+                    result += "\\\\";
+                    break;
+                case '"':
+                    result += "\\22";
+                    break;
+                default:
+                    if (c >= 32 && c <= 126)
+                    {
+                        result += c;
+                    }
+                    else
+                    {
+                        result += "\\";
+                        result += std::to_string((unsigned char)c / 64);
+                        result += std::to_string(((unsigned char)c / 8) % 8);
+                        result += std::to_string((unsigned char)c % 8);
+                    }
+                    break;
             }
         }
         return result;
@@ -2132,9 +2080,9 @@ namespace Delta
         std::stringstream output;
         output << "; External function declarations\n";
 
-        for (const std::string &func_name : m_used_external_functions)
+        for (const std::string& func_name : m_used_external_functions)
         {
-            Function *func = findFunction(func_name);
+            Function* func = findFunction(func_name);
             if (func && func->is_external)
             {
                 std::string return_type = dataTypeToLLVM(func->return_type);
@@ -2163,54 +2111,48 @@ namespace Delta
 
     void Assembler::collectStringLiterals()
     {
-        for (const NodeFunctionDeclaration *func : m_program.functions)
+        for (const NodeFunctionDeclaration* func : m_program.functions)
         {
             collectStringLiteralsFromScope(func->body);
         }
     }
 
-    void Assembler::collectStringLiteralsFromScope(const NodeScope *scope)
+    void Assembler::collectStringLiteralsFromScope(const NodeScope* scope)
     {
-        for (const NodeStatement *stmt : scope->statements)
+        for (const NodeStatement* stmt : scope->statements)
         {
             collectStringLiteralsFromStatement(stmt);
         }
     }
 
-    void Assembler::collectStringLiteralsFromStatement(const NodeStatement *statement)
+    void Assembler::collectStringLiteralsFromStatement(const NodeStatement* statement)
     {
         struct StringCollectionStatementVisitor
         {
-            Assembler *gen;
-            StringCollectionStatementVisitor(Assembler *gen) : gen(gen) {}
+            Assembler* gen;
+            StringCollectionStatementVisitor(Assembler* gen) : gen(gen) {}
 
-            void operator()(const NodeExpression *expression)
-            {
-                gen->collectStringLiteralsFromExpression(expression);
-            }
+            void operator()(const NodeExpression* expression) { gen->collectStringLiteralsFromExpression(expression); }
 
-            void operator()(const NodeStatementExit *statement_exit)
+            void operator()(const NodeStatementExit* statement_exit)
             {
                 gen->collectStringLiteralsFromExpression(statement_exit->expression);
             }
 
-            void operator()(const NodeStatementLet *statement_let)
+            void operator()(const NodeStatementLet* statement_let)
             {
                 if (statement_let->expression)
                     gen->collectStringLiteralsFromExpression(statement_let->expression);
             }
 
-            void operator()(const NodeStatementAssign *assign)
+            void operator()(const NodeStatementAssign* assign)
             {
                 gen->collectStringLiteralsFromExpression(assign->expression);
             }
 
-            void operator()(const NodeScope *scope)
-            {
-                gen->collectStringLiteralsFromScope(scope);
-            }
+            void operator()(const NodeScope* scope) { gen->collectStringLiteralsFromScope(scope); }
 
-            void operator()(const NodeStatementIf *statement_if)
+            void operator()(const NodeStatementIf* statement_if)
             {
                 gen->collectStringLiteralsFromExpression(statement_if->expr);
                 gen->collectStringLiteralsFromScope(statement_if->scope);
@@ -2221,13 +2163,13 @@ namespace Delta
                 }
             }
 
-            void operator()(const NodeStatementWhile *statement_while)
+            void operator()(const NodeStatementWhile* statement_while)
             {
                 gen->collectStringLiteralsFromExpression(statement_while->expr);
                 gen->collectStringLiteralsFromScope(statement_while->scope);
             }
 
-            void operator()(const NodeStatementReturn *statement_return)
+            void operator()(const NodeStatementReturn* statement_return)
             {
                 if (statement_return->expression)
                 {
@@ -2235,20 +2177,20 @@ namespace Delta
                 }
             }
 
-            void operator()(const NodeStatementPointerAssign *ptr_assign)
+            void operator()(const NodeStatementPointerAssign* ptr_assign)
             {
                 gen->collectStringLiteralsFromExpression(ptr_assign->ptr_expr);
                 gen->collectStringLiteralsFromExpression(ptr_assign->value_expr);
             }
 
-            void operator()(const NodeStatementArrayAssign *array_assign)
+            void operator()(const NodeStatementArrayAssign* array_assign)
             {
                 gen->collectStringLiteralsFromExpression(array_assign->array_expr);
                 gen->collectStringLiteralsFromExpression(array_assign->index_expr);
                 gen->collectStringLiteralsFromExpression(array_assign->value_expr);
             }
 
-            void operator()(const NodeStatementMemberAssign *member_assign)
+            void operator()(const NodeStatementMemberAssign* member_assign)
             {
                 gen->collectStringLiteralsFromExpression(member_assign->struct_expr);
                 gen->collectStringLiteralsFromExpression(member_assign->value_expr);
@@ -2259,19 +2201,19 @@ namespace Delta
         std::visit(visitor, statement->var);
     }
 
-    void Assembler::collectStringLiteralsFromExpression(const NodeExpression *expression)
+    void Assembler::collectStringLiteralsFromExpression(const NodeExpression* expression)
     {
         struct StringCollectionExpressionVisitor
         {
-            Assembler *gen;
-            StringCollectionExpressionVisitor(Assembler *gen) : gen(gen) {}
+            Assembler* gen;
+            StringCollectionExpressionVisitor(Assembler* gen) : gen(gen) {}
 
-            void operator()(const NodeExpressionTerm *expression_term)
+            void operator()(const NodeExpressionTerm* expression_term)
             {
                 gen->collectStringLiteralsFromTerm(expression_term);
             }
 
-            void operator()(const NodeExpressionBinary *expression_binary)
+            void operator()(const NodeExpressionBinary* expression_binary)
             {
                 gen->collectStringLiteralsFromBinaryExpression(expression_binary);
             }
@@ -2281,68 +2223,69 @@ namespace Delta
         std::visit(visitor, expression->var);
     }
 
-    void Assembler::collectStringLiteralsFromTerm(const NodeExpressionTerm *term)
+    void Assembler::collectStringLiteralsFromTerm(const NodeExpressionTerm* term)
     {
         struct StringCollectionTermVisitor
         {
-            Assembler *gen;
-            StringCollectionTermVisitor(Assembler *gen) : gen(gen) {}
+            Assembler* gen;
+            StringCollectionTermVisitor(Assembler* gen) : gen(gen) {}
 
-            void operator()(const NodeTermStringLiteral *term_str_lit)
+            void operator()(const NodeTermStringLiteral* term_str_lit)
             {
                 std::string str_value = term_str_lit->string_literal.value.value();
 
                 // Add to collection if not already present
-                auto it = std::find(gen->m_string_literals.begin(),
-                                    gen->m_string_literals.end(), str_value);
+                auto it = std::find(gen->m_string_literals.begin(), gen->m_string_literals.end(), str_value);
                 if (it == gen->m_string_literals.end())
                 {
                     gen->m_string_literals.push_back(str_value);
                 }
             }
 
-            void operator()(const NodeTermStructLiteral *term_struct_lit) { 
-                for(auto lit : term_struct_lit->literals){
+            void operator()(const NodeTermStructLiteral* term_struct_lit)
+            {
+                for (auto lit : term_struct_lit->literals)
+                {
                     gen->collectStringLiteralsFromTerm(lit);
                 }
-             }
-            void operator()(const NodeTermIntegerLiteral *) { /* No strings here */ }
-            void operator()(const NodeTermFloatLiteral *) { /* No strings here */ }
-            void operator()(const NodeTermDoubleLiteral *) { /* No strings here */ }
-            void operator()(const NodeTermIdentifier *) { /* No strings here */ }
+            }
+            void operator()(const NodeTermIntegerLiteral*) { /* No strings here */ }
+            void operator()(const NodeTermFloatLiteral*) { /* No strings here */ }
+            void operator()(const NodeTermDoubleLiteral*) { /* No strings here */ }
+            void operator()(const NodeTermIdentifier*) { /* No strings here */ }
 
-            void operator()(const NodeTermParen *term_paren)
+            void operator()(const NodeTermParen* term_paren)
             {
                 gen->collectStringLiteralsFromExpression(term_paren->expr);
             }
 
-            void operator()(const NodeTermFunctionCall *func_call)
+            void operator()(const NodeTermFunctionCall* func_call)
             {
-                for (const NodeExpression *arg : func_call->arguments)
+                for (const NodeExpression* arg : func_call->arguments)
                 {
                     gen->collectStringLiteralsFromExpression(arg);
                 }
             }
 
-            void operator()(const NodeTermCast *term_cast)
+            void operator()(const NodeTermCast* term_cast)
             {
                 gen->collectStringLiteralsFromExpression(term_cast->expr);
             }
 
-            void operator()(const NodeTermAddressOf *) { /* No strings here */ }
+            void operator()(const NodeTermAddressOf*) { /* No strings here */ }
 
-            void operator()(const NodeTermDereference *term_deref)
+            void operator()(const NodeTermDereference* term_deref)
             {
                 gen->collectStringLiteralsFromExpression(term_deref->expr);
             }
 
-            void operator()(const NodeTermArrayAccess *array_access)
+            void operator()(const NodeTermArrayAccess* array_access)
             {
                 gen->collectStringLiteralsFromExpression(array_access->array_expr);
                 gen->collectStringLiteralsFromExpression(array_access->index_expr);
             }
 
-            void operator()(const NodeTermMemberAccess *member_access)
+            void operator()(const NodeTermMemberAccess* member_access)
             {
                 gen->collectStringLiteralsFromExpression(member_access->struct_expr);
             }
@@ -2352,62 +2295,62 @@ namespace Delta
         std::visit(visitor, term->var);
     }
 
-    void Assembler::collectStringLiteralsFromBinaryExpression(const NodeExpressionBinary *bin_expr)
+    void Assembler::collectStringLiteralsFromBinaryExpression(const NodeExpressionBinary* bin_expr)
     {
         struct StringCollectionBinaryVisitor
         {
-            Assembler *gen;
-            StringCollectionBinaryVisitor(Assembler *gen) : gen(gen) {}
+            Assembler* gen;
+            StringCollectionBinaryVisitor(Assembler* gen) : gen(gen) {}
 
-            void operator()(const NodeExpressionBinaryAddition *add)
+            void operator()(const NodeExpressionBinaryAddition* add)
             {
                 gen->collectStringLiteralsFromExpression(add->left);
                 gen->collectStringLiteralsFromExpression(add->right);
             }
 
-            void operator()(const NodeExpressionBinarySubtraction *sub)
+            void operator()(const NodeExpressionBinarySubtraction* sub)
             {
                 gen->collectStringLiteralsFromExpression(sub->left);
                 gen->collectStringLiteralsFromExpression(sub->right);
             }
 
-            void operator()(const NodeExpressionBinaryMultiplication *mul)
+            void operator()(const NodeExpressionBinaryMultiplication* mul)
             {
                 gen->collectStringLiteralsFromExpression(mul->left);
                 gen->collectStringLiteralsFromExpression(mul->right);
             }
 
-            void operator()(const NodeExpressionBinaryDivision *div)
+            void operator()(const NodeExpressionBinaryDivision* div)
             {
                 gen->collectStringLiteralsFromExpression(div->left);
                 gen->collectStringLiteralsFromExpression(div->right);
             }
 
-            void operator()(const NodeExpressionBinaryGreater *gt)
+            void operator()(const NodeExpressionBinaryGreater* gt)
             {
                 gen->collectStringLiteralsFromExpression(gt->left);
                 gen->collectStringLiteralsFromExpression(gt->right);
             }
 
-            void operator()(const NodeExpressionBinaryGreaterEquals *gte)
+            void operator()(const NodeExpressionBinaryGreaterEquals* gte)
             {
                 gen->collectStringLiteralsFromExpression(gte->left);
                 gen->collectStringLiteralsFromExpression(gte->right);
             }
 
-            void operator()(const NodeExpressionBinaryLess *lt)
+            void operator()(const NodeExpressionBinaryLess* lt)
             {
                 gen->collectStringLiteralsFromExpression(lt->left);
                 gen->collectStringLiteralsFromExpression(lt->right);
             }
 
-            void operator()(const NodeExpressionBinaryLessEquals *lte)
+            void operator()(const NodeExpressionBinaryLessEquals* lte)
             {
                 gen->collectStringLiteralsFromExpression(lte->left);
                 gen->collectStringLiteralsFromExpression(lte->right);
             }
 
-            void operator()(const NodeExpressionBinaryEquals *eq)
+            void operator()(const NodeExpressionBinaryEquals* eq)
             {
                 gen->collectStringLiteralsFromExpression(eq->left);
                 gen->collectStringLiteralsFromExpression(eq->right);
@@ -2418,14 +2361,14 @@ namespace Delta
         std::visit(visitor, bin_expr->var);
     }
 
-    void Assembler::collectStringLiteralsFromIfPred(const NodeIfPred *pred)
+    void Assembler::collectStringLiteralsFromIfPred(const NodeIfPred* pred)
     {
         struct StringCollectionPredVisitor
         {
-            Assembler *gen;
-            StringCollectionPredVisitor(Assembler *gen) : gen(gen) {}
+            Assembler* gen;
+            StringCollectionPredVisitor(Assembler* gen) : gen(gen) {}
 
-            void operator()(const NodeIfPredElif *pred_elif)
+            void operator()(const NodeIfPredElif* pred_elif)
             {
                 gen->collectStringLiteralsFromExpression(pred_elif->expr);
                 gen->collectStringLiteralsFromScope(pred_elif->scope);
@@ -2436,10 +2379,7 @@ namespace Delta
                 }
             }
 
-            void operator()(const NodeIfPredElse *pred_else)
-            {
-                gen->collectStringLiteralsFromScope(pred_else->scope);
-            }
+            void operator()(const NodeIfPredElse* pred_else) { gen->collectStringLiteralsFromScope(pred_else->scope); }
         };
 
         StringCollectionPredVisitor visitor(this);

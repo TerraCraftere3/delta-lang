@@ -1,9 +1,9 @@
 #pragma once
 
 #include <vector>
-#include "Tokens.h"
-#include "Nodes.h"
 #include "Arena.h"
+#include "Nodes.h"
+#include "Tokens.h"
 
 namespace Delta
 {
@@ -20,11 +20,11 @@ namespace Delta
         PreprocessorResult process(std::vector<std::string> includeDirs);
 
     private:
-        bool evaluateCondition(const std::vector<Token> &tokens);
+        bool evaluateCondition(const std::vector<Token>& tokens);
 
         std::optional<Token> peek(int count) const;
         Token consume();
-        Token try_consume(TokenType type, const std::string &c, int line, int row = 0);
+        Token try_consume(TokenType type, const std::string& c, int line, int row = 0);
         std::optional<Token> try_consume(TokenType type);
 
     private:
@@ -33,4 +33,4 @@ namespace Delta
         std::vector<Token> m_output;
         size_t m_position = 0;
     };
-}
+} // namespace Delta

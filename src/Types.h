@@ -28,12 +28,18 @@ namespace Delta
 
         constexpr DataType(BaseType b = BaseType::ERRORTYPE, std::uint16_t level = 0) : base(b), pointer_level(level) {}
 
-        bool operator==(const DataType &other) const { return base == other.base && pointer_level == other.pointer_level; }
-        bool operator!=(const DataType &other) const { return !(*this == other); }
+        bool operator==(const DataType& other) const
+        {
+            return base == other.base && pointer_level == other.pointer_level;
+        }
+        bool operator!=(const DataType& other) const { return !(*this == other); }
 
         bool isPointer() const { return pointer_level > 0; }
 
-        static DataType pointerTo(const DataType &type) { return DataType(type.base, static_cast<std::uint16_t>(type.pointer_level + 1)); }
+        static DataType pointerTo(const DataType& type)
+        {
+            return DataType(type.base, static_cast<std::uint16_t>(type.pointer_level + 1));
+        }
 
         // Convenience singletons for existing call sites
         static const DataType ERRORTYPE;
@@ -62,6 +68,6 @@ namespace Delta
     DataType getPointeeType(DataType ptrType);
     bool isTypeCompatible(DataType declared, DataType actual);
     std::string typeToString(DataType type);
-    DataType stringToType(const std::string &s);
-    bool isValidDataType(const std::string &s);
-}
+    DataType stringToType(const std::string& s);
+    bool isValidDataType(const std::string& s);
+} // namespace Delta

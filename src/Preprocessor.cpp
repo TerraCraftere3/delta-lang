@@ -1,14 +1,13 @@
 #include "Preprocessor.h"
 #include "Files.h"
-#include "Tokenizer.h"
 #include "Globals.h"
+#include "Tokenizer.h"
 
 namespace Delta
 {
 #define SPECIAL_TOKEN(type, value) {type, 0, value}
 
-    Preprocessor::Preprocessor(std::vector<Token> tokens, bool isWasm)
-        : m_tokens(tokens)
+    Preprocessor::Preprocessor(std::vector<Token> tokens, bool isWasm) : m_tokens(tokens)
     {
         if (!isWasm)
         {
@@ -46,11 +45,11 @@ namespace Delta
     {
         while (peek(1).has_value())
         {
-            if (peek(1).value().type == TokenType::hashtag &&
-                peek(2).has_value() && peek(2).value().type == TokenType::include &&
-                peek(3).has_value() && peek(3).value().type == TokenType::less &&
-                peek(4).has_value() && peek(4).value().type == TokenType::identifier &&
-                peek(5).has_value() && peek(5).value().type == TokenType::greater)
+            if (peek(1).value().type == TokenType::hashtag && peek(2).has_value() &&
+                peek(2).value().type == TokenType::include && peek(3).has_value() &&
+                peek(3).value().type == TokenType::less && peek(4).has_value() &&
+                peek(4).value().type == TokenType::identifier && peek(5).has_value() &&
+                peek(5).value().type == TokenType::greater)
             {
                 consume();                    // #
                 consume();                    // include
@@ -61,7 +60,7 @@ namespace Delta
                 std::string filename = filenameTok.value.value();
 
                 std::string filepath;
-                for (auto &dir : includeDirs)
+                for (auto& dir : includeDirs)
                 {
                     std::string candidate = dir + FILE_SEPARATOR + filename + ".dlt";
                     if (Files::fileExists(candidate))
@@ -88,14 +87,14 @@ namespace Delta
                 m_output.insert(m_output.end(), subResult.tokens.begin(), subResult.tokens.end());
 
                 // merge macros
-                for (auto &[name, repl] : subResult.macros)
+                for (auto& [name, repl] : subResult.macros)
                 {
                     m_definitions[name] = repl;
                 }
             }
-            else if (peek(1).value().type == TokenType::hashtag &&
-                     peek(2).has_value() && peek(2).value().type == TokenType::define &&
-                     peek(3).has_value() && peek(3).value().type == TokenType::identifier)
+            else if (peek(1).value().type == TokenType::hashtag && peek(2).has_value() &&
+                     peek(2).value().type == TokenType::define && peek(3).has_value() &&
+                     peek(3).value().type == TokenType::identifier)
             {
                 consume();                // #
                 consume();                // define
@@ -112,12 +111,9 @@ namespace Delta
                 m_definitions[name] = replacement;
                 continue; // don't push anything to m_output
             }
-            else if (peek(1).value().type == TokenType::hashtag &&
-                     peek(2).has_value() &&
-                     (peek(2).value().type == TokenType::if_ ||
-                      peek(2).value().type == TokenType::elif ||
-                      peek(2).value().type == TokenType::else_ ||
-                      peek(2).value().type == TokenType::endif))
+            else if (peek(1).value().type == TokenType::hashtag && peek(2).has_value() &&
+                     (peek(2).value().type == TokenType::if_ || peek(2).value().type == TokenType::elif ||
+                      peek(2).value().type == TokenType::else_ || peek(2).value().type == TokenType::endif))
             {
                 consume();                     // #
                 auto directiveTok = consume(); // if/elif/else/endif
@@ -154,7 +150,8 @@ namespace Delta
                                         break;
                                     nestedIfs--;
                                 }
-                                else if ((nextDirective == TokenType::elif || nextDirective == TokenType::else_) && nestedIfs == 0)
+                                else if ((nextDirective == TokenType::elif || nextDirective == TokenType::else_) &&
+                                         nestedIfs == 0)
                                 {
                                     break;
                                 }
@@ -196,7 +193,7 @@ namespace Delta
     //                  PRIVATE FUNCTIONS
     // -----------------------------------------------------
 
-    bool Preprocessor::evaluateCondition(const std::vector<Token> &tokens)
+    bool Preprocessor::evaluateCondition(const std::vector<Token>& tokens)
     {
         if (tokens.empty())
             return false;
@@ -247,7 +244,7 @@ namespace Delta
         return m_tokens.at(m_position++);
     }
 
-    Token Preprocessor::try_consume(TokenType type, const std::string &c, int line, int row)
+    Token Preprocessor::try_consume(TokenType type, const std::string& c, int line, int row)
     {
         if (peek(1).has_value() && peek(1).value().type == type)
         {
@@ -271,4 +268,4 @@ namespace Delta
             return std::nullopt;
         }
     }
-}
+} // namespace Delta

@@ -1,12 +1,11 @@
 #include "Parser.h"
-#include "Tokenizer.h"
-#include "Log.h"
 #include "Error.h"
+#include "Log.h"
+#include "Tokenizer.h"
 
 namespace Delta
 {
-    Parser::Parser(std::vector<Token> tokens) : m_tokens(tokens),
-                                                m_allocator(1024 * 1024 * 4) // 4 MB
+    Parser::Parser(std::vector<Token> tokens) : m_tokens(tokens), m_allocator(1024 * 1024 * 4) // 4 MB
     {
     }
 
@@ -60,23 +59,24 @@ namespace Delta
         return dt;
     }
 
-    std::optional<NodeStatement *> Parser::parseStatement()
+    std::optional<NodeStatement*> Parser::parseStatement()
     {
-        std::optional<NodeStatement *> statement = std::nullopt;
+        std::optional<NodeStatement*> statement = std::nullopt;
         if (!peek().has_value())
         {
             exit(EXIT_FAILURE);
         }
         // Exit statement: exit(expr);
-        if (peek().value().type == TokenType::exit && peek(2).has_value() && peek(2).value().type == TokenType::open_paren)
+        if (peek().value().type == TokenType::exit && peek(2).has_value() &&
+            peek(2).value().type == TokenType::open_paren)
         {
             consume();
             auto open_paren = consume();
             if (auto node_expr = parseExpression())
             {
-                auto *statement_exit = m_allocator.alloc<NodeStatementExit>();
+                auto* statement_exit = m_allocator.alloc<NodeStatementExit>();
                 statement_exit->expression = node_expr.value();
-                auto *stmt = m_allocator.alloc<NodeStatement>();
+                auto* stmt = m_allocator.alloc<NodeStatement>();
                 stmt->var = statement_exit;
                 statement = stmt;
             }
@@ -117,7 +117,7 @@ namespace Delta
         else if (peek().value().type == TokenType::return_)
         {
             auto return_token = consume();
-            auto *statement_return = m_allocator.alloc<NodeStatementReturn>();
+            auto* statement_return = m_allocator.alloc<NodeStatementReturn>();
 
             // Check if there's an expression (optional for void functions)
             if (peek().has_value() && peek().value().type != TokenType::semicolon)
@@ -137,7 +137,7 @@ namespace Delta
                 statement_return->expression = nullptr; // No return value
             }
 
-            auto *stmt = m_allocator.alloc<NodeStatement>();
+            auto* stmt = m_allocator.alloc<NodeStatement>();
             stmt->var = statement_return;
             statement = stmt;
             try_consume(TokenType::semicolon, "';'", return_token.line);
@@ -160,7 +160,7 @@ namespace Delta
                 exit(EXIT_FAILURE);
             }
 
-            auto *statement_let = m_allocator.alloc<NodeStatementLet>();
+            auto* statement_let = m_allocator.alloc<NodeStatementLet>();
             statement_let->ident = consume(); // name
             statement_let->isConst = isConst;
 
@@ -176,13 +176,12 @@ namespace Delta
 
             if (peek().has_value() && peek().value().type == TokenType::equals)
             {
-
                 auto eq = try_consume(TokenType::equals, "'='", peek(0).value().line);
 
                 if (auto node_expr = parseExpression())
                 {
                     statement_let->expression = node_expr.value();
-                    auto *stmt = m_allocator.alloc<NodeStatement>();
+                    auto* stmt = m_allocator.alloc<NodeStatement>();
                     stmt->var = statement_let;
                     statement = stmt;
                 }
@@ -195,15 +194,15 @@ namespace Delta
             else
             {
                 statement_let->expression = nullptr;
-                auto *stmt = m_allocator.alloc<NodeStatement>();
+                auto* stmt = m_allocator.alloc<NodeStatement>();
                 stmt->var = statement_let;
                 statement = stmt;
             }
             try_consume(TokenType::semicolon, "';'", peek().value().line);
         }
         // Array Assign: arr[index] = value (check before simple assignment)
-        else if (peek().has_value() && peek().value().type == TokenType::identifier &&
-                 peek(2).has_value() && peek(2).value().type == TokenType::open_square)
+        else if (peek().has_value() && peek().value().type == TokenType::identifier && peek(2).has_value() &&
+                 peek(2).value().type == TokenType::open_square)
         {
             // This is array assignment: id[index] = value
             auto id_token = consume(); // consume identifier
@@ -223,7 +222,7 @@ namespace Delta
                 exit(EXIT_FAILURE);
             }
             try_consume(TokenType::semicolon, "';'", peek(0).value().line);
-            
+
             // Create the array expression from identifier
             auto term_id = m_allocator.alloc<NodeTermIdentifier>();
             term_id->ident = id_token;
@@ -231,21 +230,22 @@ namespace Delta
             expr_term->var = term_id;
             auto array_expr = m_allocator.alloc<NodeExpression>();
             array_expr->var = expr_term;
-            
-            auto *stmt_assign = m_allocator.alloc<NodeStatementArrayAssign>();
+
+            auto* stmt_assign = m_allocator.alloc<NodeStatementArrayAssign>();
             stmt_assign->array_expr = array_expr;
             stmt_assign->index_expr = index_expr.value();
             stmt_assign->value_expr = value_expr.value();
-            auto *stmt = m_allocator.alloc<NodeStatement>();
+            auto* stmt = m_allocator.alloc<NodeStatement>();
             stmt->var = stmt_assign;
             statement = stmt;
         }
         // Member Assignment: identifier.member = expr (check before simple assignment)
         // (This is handled separately to avoid conflict with simple assignment)
-        else if (peek().value().type == TokenType::identifier && peek(2).has_value() && peek(2).value().type == TokenType::dot)
+        else if (peek().value().type == TokenType::identifier && peek(2).has_value() &&
+                 peek(2).value().type == TokenType::dot)
         {
             auto ident_tok = consume(); // identifier
-            consume(); // consume '.'
+            consume();                  // consume '.'
             if (!peek().has_value() || peek().value().type != TokenType::identifier)
             {
                 LOG_ERROR("Expected member name after '.'");
@@ -260,7 +260,7 @@ namespace Delta
                 exit(EXIT_FAILURE);
             }
             try_consume(TokenType::semicolon, "';'", peek(0).value().line);
-            
+
             // Create the base expression from identifier
             auto base_term = m_allocator.alloc<NodeTermIdentifier>();
             base_term->ident = ident_tok;
@@ -268,21 +268,22 @@ namespace Delta
             base_term_expr->var = base_term;
             auto base_expr = m_allocator.alloc<NodeExpression>();
             base_expr->var = base_term_expr;
-            
-            auto *stmt_assign = m_allocator.alloc<NodeStatementMemberAssign>();
+
+            auto* stmt_assign = m_allocator.alloc<NodeStatementMemberAssign>();
             stmt_assign->struct_expr = base_expr;
             stmt_assign->member_name = member_name;
             stmt_assign->value_expr = value_expr.value();
-            auto *stmt = m_allocator.alloc<NodeStatement>();
+            auto* stmt = m_allocator.alloc<NodeStatement>();
             stmt->var = stmt_assign;
             statement = stmt;
         }
         // Assignment: identifier = expr
-        else if (peek().value().type == TokenType::identifier && peek(2).has_value() && peek(2).value().type == TokenType::equals)
+        else if (peek().value().type == TokenType::identifier && peek(2).has_value() &&
+                 peek(2).value().type == TokenType::equals)
         {
             auto assign = m_allocator.alloc<NodeStatementAssign>();
             assign->ident = consume(); // identifier
-            auto eq = consume(); // =
+            auto eq = consume();       // =
             if (auto expr = parseExpression())
             {
                 assign->expression = expr.value();
@@ -298,7 +299,9 @@ namespace Delta
             statement = stmt;
         }
         // Decrement: identifier--
-        else if (peek().value().type == TokenType::identifier && peek(2).has_value() && peek(2).value().type == TokenType::minus && peek(3).has_value() && peek(3).value().type == TokenType::minus)
+        else if (peek().value().type == TokenType::identifier && peek(2).has_value() &&
+                 peek(2).value().type == TokenType::minus && peek(3).has_value() &&
+                 peek(3).value().type == TokenType::minus)
         {
             auto assign = m_allocator.alloc<NodeStatementAssign>();
             assign->ident = consume(); // identifier
@@ -340,7 +343,9 @@ namespace Delta
             statement = stmt;
         }
         // Increment: identifier++
-        else if (peek().value().type == TokenType::identifier && peek(2).has_value() && peek(2).value().type == TokenType::plus && peek(3).has_value() && peek(3).value().type == TokenType::plus)
+        else if (peek().value().type == TokenType::identifier && peek(2).has_value() &&
+                 peek(2).value().type == TokenType::plus && peek(3).has_value() &&
+                 peek(3).value().type == TokenType::plus)
         {
             auto assign = m_allocator.alloc<NodeStatementAssign>();
             assign->ident = consume(); // identifier
@@ -432,7 +437,7 @@ namespace Delta
             // Expression: a + b, func(), etc
             if (auto semi = try_consume(TokenType::semicolon))
             {
-                auto *stmt = m_allocator.alloc<NodeStatement>();
+                auto* stmt = m_allocator.alloc<NodeStatement>();
                 stmt->var = expr.value();
                 statement = stmt;
             }
@@ -441,10 +446,10 @@ namespace Delta
             {
                 if (auto value_expr = parseExpression())
                 {
-                    auto *stmt_assign = m_allocator.alloc<NodeStatementPointerAssign>();
+                    auto* stmt_assign = m_allocator.alloc<NodeStatementPointerAssign>();
                     stmt_assign->ptr_expr = expr.value();
                     stmt_assign->value_expr = value_expr.value();
-                    auto *stmt = m_allocator.alloc<NodeStatement>();
+                    auto* stmt = m_allocator.alloc<NodeStatement>();
                     stmt->var = stmt_assign;
                     statement = stmt;
                     try_consume(TokenType::semicolon, "';'", peek(0).value().line);
@@ -474,13 +479,13 @@ namespace Delta
             if (peek().has_value() && peek().value().type == TokenType::function)
             {
                 auto function_token = consume();
-                
+
                 // Parse qualified function name (e.g., std::io::println or just println)
                 QualifiedName function_name = parseQualifiedName();
-                
+
                 auto open_paren = try_consume(TokenType::open_paren, "'('", function_token.line);
 
-                std::vector<NodeParameter *> parameters;
+                std::vector<NodeParameter*> parameters;
                 bool is_variadic = false;
 
                 // Parse parameter list
@@ -523,7 +528,7 @@ namespace Delta
                 {
                     // External declaration
                     consume(); // semicolon
-                    auto *external_decl = m_allocator.alloc<NodeExternalDeclaration>();
+                    auto* external_decl = m_allocator.alloc<NodeExternalDeclaration>();
                     external_decl->function_name = function_name;
                     external_decl->parameters = parameters;
                     external_decl->is_variadic = is_variadic;
@@ -535,7 +540,7 @@ namespace Delta
                     // Function definition
                     if (auto body = parseScope())
                     {
-                        auto *func_decl = m_allocator.alloc<NodeFunctionDeclaration>();
+                        auto* func_decl = m_allocator.alloc<NodeFunctionDeclaration>();
                         func_decl->function_name = function_name;
                         func_decl->parameters = parameters;
                         func_decl->return_type = return_type;
@@ -571,9 +576,9 @@ namespace Delta
         return program;
     }
 
-    std::optional<std::vector<NodeParameter *>> Parser::parseParameterList()
+    std::optional<std::vector<NodeParameter*>> Parser::parseParameterList()
     {
-        std::vector<NodeParameter *> parameters;
+        std::vector<NodeParameter*> parameters;
 
         // Parse first parameter
         if (auto param = parseParameter())
@@ -602,10 +607,10 @@ namespace Delta
         return parameters;
     }
 
-    std::optional<NodeParameter *> Parser::parseParameter()
+    std::optional<NodeParameter*> Parser::parseParameter()
     {
-        if (peek().has_value() && peek().value().type == TokenType::identifier &&
-            peek(2).has_value() && peek(2).value().type == TokenType::colon)
+        if (peek().has_value() && peek().value().type == TokenType::identifier && peek(2).has_value() &&
+            peek(2).value().type == TokenType::colon)
         {
             auto name_token = consume();      // name
             consume();                        // :
@@ -616,7 +621,7 @@ namespace Delta
                 exit(EXIT_FAILURE);
             }
 
-            auto *param = m_allocator.alloc<NodeParameter>();
+            auto* param = m_allocator.alloc<NodeParameter>();
             param->type = type_spec.value();
             param->ident = name_token;
 
@@ -626,7 +631,7 @@ namespace Delta
         return std::nullopt;
     }
 
-    std::optional<NodeStruct *> Parser::parseStruct()
+    std::optional<NodeStruct*> Parser::parseStruct()
     {
         if (peek().has_value() && peek().value().type == TokenType::struct_)
         {
@@ -656,7 +661,7 @@ namespace Delta
         return std::nullopt;
     }
 
-    std::optional<NodeScope *> Parser::parseScope()
+    std::optional<NodeScope*> Parser::parseScope()
     {
         if (auto open_curly = try_consume(TokenType::open_curly))
         {
@@ -674,7 +679,7 @@ namespace Delta
         }
     }
 
-    std::optional<NodeIfPred *> Parser::parseIfPred()
+    std::optional<NodeIfPred*> Parser::parseIfPred()
     {
         if (auto _ = try_consume(TokenType::elif))
         {
@@ -717,9 +722,9 @@ namespace Delta
         return std::nullopt;
     }
 
-    std::optional<NodeExpression *> Parser::parseExpression(int min_prec)
+    std::optional<NodeExpression*> Parser::parseExpression(int min_prec)
     {
-        std::optional<NodeExpressionTerm *> term_lhs = parseTerm();
+        std::optional<NodeExpressionTerm*> term_lhs = parseTerm();
         if (!term_lhs.has_value())
         {
             return std::nullopt;
@@ -743,14 +748,14 @@ namespace Delta
                 exit(EXIT_FAILURE);
             }
             consume(); // consume ']'
-            
+
             // Create array access term
             auto node_term_access = m_allocator.alloc<NodeTermArrayAccess>();
             auto current_expr = m_allocator.alloc<NodeExpression>();
             current_expr->var = term_lhs.value();
             node_term_access->array_expr = current_expr;
             node_term_access->index_expr = index_expr.value();
-            
+
             // Update term_lhs for potential chained access
             term_lhs = m_allocator.alloc<NodeExpressionTerm>();
             term_lhs.value()->var = node_term_access;
@@ -868,7 +873,7 @@ namespace Delta
         return expr_lhs;
     }
 
-    std::optional<NodeExpressionTerm *> Parser::parseTermLiterals()
+    std::optional<NodeExpressionTerm*> Parser::parseTermLiterals()
     {
         // Integer literal: 42
         if (auto int_lit = try_consume(TokenType::int_literal))
@@ -907,9 +912,9 @@ namespace Delta
             return node_term;
         }
         // Char literal: 'A'
-        else if (peek().has_value() && peek().value().type == TokenType::apostrophe &&
-                 peek(2).has_value() && peek(2).value().type == TokenType::identifier &&
-                 peek(3).has_value() && peek(3).value().type == TokenType::apostrophe)
+        else if (peek().has_value() && peek().value().type == TokenType::apostrophe && peek(2).has_value() &&
+                 peek(2).value().type == TokenType::identifier && peek(3).has_value() &&
+                 peek(3).value().type == TokenType::apostrophe)
         {
             consume();                           // '
             auto char_literal_token = consume(); // Char
@@ -930,12 +935,14 @@ namespace Delta
         }
     }
 
-    std::optional<NodeExpressionTerm *> Parser::parseTerm()
+    std::optional<NodeExpressionTerm*> Parser::parseTerm()
     {
-        if(try_consume(TokenType::open_curly)){
+        if (try_consume(TokenType::open_curly))
+        {
             auto term_struct_lit = m_allocator.alloc<NodeTermStructLiteral>();
-            
-            while(peek().has_value() && peek().value().type != TokenType::close_curly){
+
+            while (peek().has_value() && peek().value().type != TokenType::close_curly)
+            {
                 auto field_term = parseTerm();
                 if (!field_term.has_value())
                 {
@@ -943,7 +950,7 @@ namespace Delta
                     exit(EXIT_FAILURE);
                 }
                 term_struct_lit->literals.push_back(field_term.value());
-                
+
                 // Consume comma if present (optional for last field)
                 if (peek().has_value() && peek().value().type == TokenType::comma)
                 {
@@ -994,9 +1001,9 @@ namespace Delta
             return node_term;
         }
         // Char literal: 'A'
-        else if (peek().has_value() && peek().value().type == TokenType::apostrophe &&
-                 peek(2).has_value() && peek(2).value().type == TokenType::identifier &&
-                 peek(3).has_value() && peek(3).value().type == TokenType::apostrophe)
+        else if (peek().has_value() && peek().value().type == TokenType::apostrophe && peek(2).has_value() &&
+                 peek(2).value().type == TokenType::identifier && peek(3).has_value() &&
+                 peek(3).value().type == TokenType::apostrophe)
         {
             consume();                           // '
             auto char_literal_token = consume(); // Char
@@ -1066,7 +1073,7 @@ namespace Delta
             // Look ahead to see if this is a function call or namespace-qualified call
             int lookahead = 2;
             bool is_function_call = false;
-            
+
             // Check for pattern: id ( or id::id ( or id::id::id ( etc
             if (peek(lookahead).has_value() && peek(lookahead).value().type == TokenType::open_paren)
             {
@@ -1093,13 +1100,13 @@ namespace Delta
                     }
                 }
             }
-            
+
             if (is_function_call)
             {
                 QualifiedName function_name = parseQualifiedName();
                 auto open_paren = consume();
 
-                auto *func_call = m_allocator.alloc<NodeTermFunctionCall>();
+                auto* func_call = m_allocator.alloc<NodeTermFunctionCall>();
                 func_call->function_name = function_name;
 
                 // Parse argument list
@@ -1132,11 +1139,11 @@ namespace Delta
                 consume(); // consume '.'
                 if (!peek().has_value() || peek().value().type != TokenType::identifier)
                 {
-                    LOG_ERROR("Expected member name after '.'" );
+                    LOG_ERROR("Expected member name after '.'");
                     exit(EXIT_FAILURE);
                 }
                 auto member_name = consume();
-                
+
                 // Create base expression from the identifier
                 auto base_term = m_allocator.alloc<NodeTermIdentifier>();
                 base_term->ident = id.value();
@@ -1144,7 +1151,7 @@ namespace Delta
                 base_term_expr->var = base_term;
                 auto base_expr = m_allocator.alloc<NodeExpression>();
                 base_expr->var = base_term_expr;
-                
+
                 // Create member access node
                 auto term_member_access = m_allocator.alloc<NodeTermMemberAccess>();
                 term_member_access->struct_expr = base_expr;
@@ -1179,8 +1186,8 @@ namespace Delta
             return node_term;
         }
         // Address of: &ident;
-        else if (peek().has_value() && peek().value().type == TokenType::and_ &&
-                 peek(2).has_value() && peek(2).value().type == TokenType::identifier)
+        else if (peek().has_value() && peek().value().type == TokenType::and_ && peek(2).has_value() &&
+                 peek(2).value().type == TokenType::identifier)
         {
             consume();
             auto ident = consume();
@@ -1225,15 +1232,15 @@ namespace Delta
         return std::nullopt;
     }
 
-    std::optional<std::vector<NodeExpression *>> Parser::parseArgumentList()
+    std::optional<std::vector<NodeExpression*>> Parser::parseArgumentList()
     {
-        std::vector<NodeExpression *> arguments;
+        std::vector<NodeExpression*> arguments;
 
         // Parse first argument (optional - functions can have zero arguments)
         if (auto expr = parseExpression())
         {
             arguments.push_back(expr.value());
-            
+
             // Parse remaining arguments (comma-separated)
             while (peek().has_value() && peek().value().type == TokenType::comma)
             {
@@ -1265,7 +1272,7 @@ namespace Delta
         return m_tokens.at(m_position++);
     }
 
-    Token Parser::try_consume(TokenType type, const std::string &c, int line, int row)
+    Token Parser::try_consume(TokenType type, const std::string& c, int line, int row)
     {
         if (peek().has_value() && peek().value().type == type)
         {
@@ -1293,36 +1300,36 @@ namespace Delta
     QualifiedName Parser::parseQualifiedName()
     {
         QualifiedName qname;
-        
+
         if (!peek().has_value() || peek().value().type != TokenType::identifier)
         {
             LOG_ERROR("Expected identifier in qualified name");
             exit(EXIT_FAILURE);
         }
-        
+
         // Parse first identifier
         auto first_ident = consume();
-        
+
         // Check if there are namespace qualifiers (::)
         while (peek().has_value() && peek().value().type == TokenType::double_colon)
         {
             consume(); // consume ::
-            
+
             // Add current identifier to namespaces list
             qname.namespaces.push_back(first_ident.value.value());
-            
+
             if (!peek().has_value() || peek().value().type != TokenType::identifier)
             {
                 LOG_ERROR("Expected identifier after '::'");
                 exit(EXIT_FAILURE);
             }
-            
+
             first_ident = consume();
         }
-        
+
         // The last identifier is the actual name
         qname.name = first_ident.value.value();
-        
+
         return qname;
     }
-}
+} // namespace Delta

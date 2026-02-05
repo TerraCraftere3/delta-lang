@@ -1,14 +1,16 @@
 #ifdef _WIN32
 #pragma message("Compiling stdgraphics for Windows")
 #include <windows.h>
-#include <stdbool.h>
-#include <string.h>
-#include <stdio.h>
+
 #include <GL/gl.h>
+#include <stdbool.h>
+#include <stdio.h>
+#include <string.h>
 
 #define MAX_WINDOWS 16
 
-typedef struct {
+typedef struct
+{
     HWND hwnd;
     HINSTANCE hInstance;
     HDC hdc;
@@ -19,35 +21,41 @@ typedef struct {
 
 static StdWindow g_windows[MAX_WINDOWS] = {0};
 
-static LRESULT CALLBACK StdWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
-    switch (msg) {
-    case WM_CLOSE:
-        DestroyWindow(hwnd);
-        return 0;
-    case WM_DESTROY:
-        // Clean up OpenGL context and mark closed
-        for (int i = 0; i < MAX_WINDOWS; i++) {
-            if (g_windows[i].hwnd == hwnd) {
-                if (g_windows[i].has_context) {
-                    wglMakeCurrent(NULL, NULL);
-                    wglDeleteContext(g_windows[i].hglrc);
-                    ReleaseDC(hwnd, g_windows[i].hdc);
+static LRESULT CALLBACK StdWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
+{
+    switch (msg)
+    {
+        case WM_CLOSE:
+            DestroyWindow(hwnd);
+            return 0;
+        case WM_DESTROY:
+            // Clean up OpenGL context and mark closed
+            for (int i = 0; i < MAX_WINDOWS; i++)
+            {
+                if (g_windows[i].hwnd == hwnd)
+                {
+                    if (g_windows[i].has_context)
+                    {
+                        wglMakeCurrent(NULL, NULL);
+                        wglDeleteContext(g_windows[i].hglrc);
+                        ReleaseDC(hwnd, g_windows[i].hdc);
+                    }
+                    g_windows[i].open = false;
+                    g_windows[i].has_context = false;
+                    g_windows[i].hwnd = NULL;
+                    g_windows[i].hdc = NULL;
+                    g_windows[i].hglrc = NULL;
+                    break;
                 }
-                g_windows[i].open = false;
-                g_windows[i].has_context = false;
-                g_windows[i].hwnd = NULL;
-                g_windows[i].hdc = NULL;
-                g_windows[i].hglrc = NULL;
-                break;
             }
-        }
-        return 0;
-    default:
-        return DefWindowProc(hwnd, msg, wParam, lParam);
+            return 0;
+        default:
+            return DefWindowProc(hwnd, msg, wParam, lParam);
     }
 }
 
-int std_gfx_openWindow(char *title, int width, int height) {
+int std_gfx_openWindow(char* title, int width, int height)
+{
     HINSTANCE hInstance = GetModuleHandle(NULL);
 
     WNDCLASS wc = {0};
@@ -57,23 +65,21 @@ int std_gfx_openWindow(char *title, int width, int height) {
     wc.hCursor = LoadCursor(NULL, IDC_ARROW);
 
     static bool class_registered = false;
-    if (!class_registered) {
-        if (!RegisterClass(&wc)) {
+    if (!class_registered)
+    {
+        if (!RegisterClass(&wc))
+        {
             MessageBox(NULL, "Failed to register window class!", "Error", MB_ICONERROR);
             return -1;
         }
         class_registered = true;
     }
 
-    HWND hwnd = CreateWindow(
-        wc.lpszClassName,
-        title,
-        WS_OVERLAPPEDWINDOW,
-        CW_USEDEFAULT, CW_USEDEFAULT,
-        width, height,
-        NULL, NULL, hInstance, NULL);
+    HWND hwnd = CreateWindow(wc.lpszClassName, title, WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT, width, height,
+                             NULL, NULL, hInstance, NULL);
 
-    if (!hwnd) {
+    if (!hwnd)
+    {
         MessageBox(NULL, "Failed to create window!", "Error", MB_ICONERROR);
         return -1;
     }
@@ -82,8 +88,10 @@ int std_gfx_openWindow(char *title, int width, int height) {
     UpdateWindow(hwnd);
 
     // Store in first free slot
-    for (int i = 0; i < MAX_WINDOWS; i++) {
-        if (!g_windows[i].open) {
+    for (int i = 0; i < MAX_WINDOWS; i++)
+    {
+        if (!g_windows[i].open)
+        {
             g_windows[i].hwnd = hwnd;
             g_windows[i].hInstance = hInstance;
             g_windows[i].open = true;
@@ -98,15 +106,20 @@ int std_gfx_openWindow(char *title, int width, int height) {
     return -1;
 }
 
-bool std_gfx_createOpenGLContext(int window) {
-    if (window < 0 || window >= MAX_WINDOWS) return false;
-    if (!g_windows[window].open) return false;
-    if (g_windows[window].has_context) return true; // Already has context
+bool std_gfx_createOpenGLContext(int window)
+{
+    if (window < 0 || window >= MAX_WINDOWS)
+        return false;
+    if (!g_windows[window].open)
+        return false;
+    if (g_windows[window].has_context)
+        return true; // Already has context
 
     HWND hwnd = g_windows[window].hwnd;
     HDC hdc = GetDC(hwnd);
-    
-    if (!hdc) {
+
+    if (!hdc)
+    {
         return false;
     }
 
@@ -115,38 +128,52 @@ bool std_gfx_createOpenGLContext(int window) {
         1,
         PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL | PFD_DOUBLEBUFFER,
         PFD_TYPE_RGBA,
-        32,                // Color depth
-        0, 0, 0, 0, 0, 0,  // Color bits ignored
-        0,                 // No alpha buffer
-        0,                 // Shift bit ignored
-        0,                 // No accumulation buffer
-        0, 0, 0, 0,        // Accumulation bits ignored
-        24,                // 24-bit z-buffer
-        8,                 // 8-bit stencil buffer
-        0,                 // No auxiliary buffer
-        PFD_MAIN_PLANE,    // Main layer
-        0,                 // Reserved
-        0, 0, 0            // Layer masks ignored
+        32, // Color depth
+        0,
+        0,
+        0,
+        0,
+        0,
+        0, // Color bits ignored
+        0, // No alpha buffer
+        0, // Shift bit ignored
+        0, // No accumulation buffer
+        0,
+        0,
+        0,
+        0,              // Accumulation bits ignored
+        24,             // 24-bit z-buffer
+        8,              // 8-bit stencil buffer
+        0,              // No auxiliary buffer
+        PFD_MAIN_PLANE, // Main layer
+        0,              // Reserved
+        0,
+        0,
+        0 // Layer masks ignored
     };
 
     int pixelFormat = ChoosePixelFormat(hdc, &pfd);
-    if (!pixelFormat) {
+    if (!pixelFormat)
+    {
         ReleaseDC(hwnd, hdc);
         return false;
     }
 
-    if (!SetPixelFormat(hdc, pixelFormat, &pfd)) {
+    if (!SetPixelFormat(hdc, pixelFormat, &pfd))
+    {
         ReleaseDC(hwnd, hdc);
         return false;
     }
 
     HGLRC hglrc = wglCreateContext(hdc);
-    if (!hglrc) {
+    if (!hglrc)
+    {
         ReleaseDC(hwnd, hdc);
         return false;
     }
 
-    if (!wglMakeCurrent(hdc, hglrc)) {
+    if (!wglMakeCurrent(hdc, hglrc))
+    {
         wglDeleteContext(hglrc);
         ReleaseDC(hwnd, hdc);
         return false;
@@ -159,55 +186,76 @@ bool std_gfx_createOpenGLContext(int window) {
     return true;
 }
 
-bool std_gfx_makeContextCurrent(int window) {
-    if (window < 0 || window >= MAX_WINDOWS) return false;
-    if (!g_windows[window].open) return false;
-    if (!g_windows[window].has_context) return false;
+bool std_gfx_makeContextCurrent(int window)
+{
+    if (window < 0 || window >= MAX_WINDOWS)
+        return false;
+    if (!g_windows[window].open)
+        return false;
+    if (!g_windows[window].has_context)
+        return false;
 
     return wglMakeCurrent(g_windows[window].hdc, g_windows[window].hglrc);
 }
 
-void std_gfx_swapBuffers(int window) {
-    if (window < 0 || window >= MAX_WINDOWS) return;
-    if (!g_windows[window].open) return;
-    if (!g_windows[window].has_context) return;
+void std_gfx_swapBuffers(int window)
+{
+    if (window < 0 || window >= MAX_WINDOWS)
+        return;
+    if (!g_windows[window].open)
+        return;
+    if (!g_windows[window].has_context)
+        return;
 
     SwapBuffers(g_windows[window].hdc);
 }
 
 bool std_gfx_isWindowOpen(int window)
 {
-    if (window < 0 || window >= MAX_WINDOWS) return false;
+    if (window < 0 || window >= MAX_WINDOWS)
+        return false;
     return g_windows[window].open;
 }
 
-void std_gfx_updateWindow(int window) {
-    if (window < 0 || window >= MAX_WINDOWS) return;
-    if (!g_windows[window].open) return;
+void std_gfx_updateWindow(int window)
+{
+    if (window < 0 || window >= MAX_WINDOWS)
+        return;
+    if (!g_windows[window].open)
+        return;
 
     MSG msg;
-    while (PeekMessage(&msg, g_windows[window].hwnd, 0, 0, PM_REMOVE)) {
+    while (PeekMessage(&msg, g_windows[window].hwnd, 0, 0, PM_REMOVE))
+    {
         TranslateMessage(&msg);
         DispatchMessage(&msg);
     }
 }
 
-void std_gfx_keepWindowOpen(int window) {
-    while(std_gfx_isWindowOpen(window)){
+void std_gfx_keepWindowOpen(int window)
+{
+    while (std_gfx_isWindowOpen(window))
+    {
         std_gfx_updateWindow(window);
     }
 }
 
-void std_gfx_setWindowTitle(int window, char *title) {
-    if (window < 0 || window >= MAX_WINDOWS) return;
-    if (!g_windows[window].open) return;
+void std_gfx_setWindowTitle(int window, char* title)
+{
+    if (window < 0 || window >= MAX_WINDOWS)
+        return;
+    if (!g_windows[window].open)
+        return;
 
     SetWindowText(g_windows[window].hwnd, title);
 }
 
-void std_gfx_setWindowSize(int window, int width, int height) {
-    if (window < 0 || window >= MAX_WINDOWS) return;
-    if (!g_windows[window].open) return;
+void std_gfx_setWindowSize(int window, int width, int height)
+{
+    if (window < 0 || window >= MAX_WINDOWS)
+        return;
+    if (!g_windows[window].open)
+        return;
 
     RECT rect;
     HWND hwnd = g_windows[window].hwnd;
@@ -219,9 +267,12 @@ void std_gfx_setWindowSize(int window, int width, int height) {
     SetWindowPos(hwnd, NULL, 0, 0, wr.right - wr.left, wr.bottom - wr.top, SWP_NOMOVE | SWP_NOZORDER);
 }
 
-void std_gfx_getWindowSize(int window, int* width, int* height) {
-    if (window < 0 || window >= MAX_WINDOWS) return;
-    if (!g_windows[window].open) {
+void std_gfx_getWindowSize(int window, int* width, int* height)
+{
+    if (window < 0 || window >= MAX_WINDOWS)
+        return;
+    if (!g_windows[window].open)
+    {
         *width = 0;
         *height = 0;
         return;
@@ -235,11 +286,15 @@ void std_gfx_getWindowSize(int window, int* width, int* height) {
     *height = rect.bottom - rect.top;
 }
 
-void std_gfx_destroyWindow(int window) {
-    if (window < 0 || window >= MAX_WINDOWS) return;
-    if (!g_windows[window].open) return;
+void std_gfx_destroyWindow(int window)
+{
+    if (window < 0 || window >= MAX_WINDOWS)
+        return;
+    if (!g_windows[window].open)
+        return;
 
-    if (g_windows[window].has_context) {
+    if (g_windows[window].has_context)
+    {
         wglMakeCurrent(NULL, NULL);
         wglDeleteContext(g_windows[window].hglrc);
         ReleaseDC(g_windows[window].hwnd, g_windows[window].hdc);
@@ -251,30 +306,42 @@ void std_gfx_destroyWindow(int window) {
     g_windows[window].open = false;
 }
 
-void std_gfx_closeWindow(int window) {
-    if (window < 0 || window >= MAX_WINDOWS) return;
-    if (!g_windows[window].open) return;
+void std_gfx_closeWindow(int window)
+{
+    if (window < 0 || window >= MAX_WINDOWS)
+        return;
+    if (!g_windows[window].open)
+        return;
 
     PostMessage(g_windows[window].hwnd, WM_CLOSE, 0, 0);
 }
 
-void std_gfx_maximizeWindow(int window) {
-    if (window < 0 || window >= MAX_WINDOWS) return;
-    if (!g_windows[window].open) return;
+void std_gfx_maximizeWindow(int window)
+{
+    if (window < 0 || window >= MAX_WINDOWS)
+        return;
+    if (!g_windows[window].open)
+        return;
 
     ShowWindow(g_windows[window].hwnd, SW_MAXIMIZE);
 }
 
-void std_gfx_minimizeWindow(int window) {
-    if (window < 0 || window >= MAX_WINDOWS) return;
-    if (!g_windows[window].open) return;
+void std_gfx_minimizeWindow(int window)
+{
+    if (window < 0 || window >= MAX_WINDOWS)
+        return;
+    if (!g_windows[window].open)
+        return;
 
     ShowWindow(g_windows[window].hwnd, SW_MINIMIZE);
 }
 
-bool std_gfx_isKeyPressed(int window, char ascii_code) {
-    if (window < 0 || window >= MAX_WINDOWS) return false;
-    if (!g_windows[window].open) return false;
+bool std_gfx_isKeyPressed(int window, char ascii_code)
+{
+    if (window < 0 || window >= MAX_WINDOWS)
+        return false;
+    if (!g_windows[window].open)
+        return false;
 
     SHORT state = GetAsyncKeyState((int)ascii_code);
     return (state & 0x8000) != 0;

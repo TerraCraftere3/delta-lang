@@ -64,4 +64,4 @@ namespace Delta
         int line;
         std::optional<std::string> value; // For literals
     };
-}
+} // namespace Delta

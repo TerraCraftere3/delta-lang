@@ -1,9 +1,9 @@
 #pragma once
 
-#include "Tokens.h"
-#include "Types.h"
 #include <variant>
 #include <vector>
+#include "Tokens.h"
+#include "Types.h"
 
 namespace Delta
 {
@@ -11,31 +11,35 @@ namespace Delta
     struct QualifiedName
     {
         std::vector<std::string> namespaces; // e.g., ["std", "io"]
-        std::string name;                     // e.g., "println"
-        
+        std::string name;                    // e.g., "println"
+
         std::string toString() const
         {
             std::string result;
             for (const auto& ns : namespaces)
             {
-                if (!result.empty()) result += "::";
+                if (!result.empty())
+                    result += "::";
                 result += ns;
             }
-            if (!result.empty() && !name.empty()) result += "::";
+            if (!result.empty() && !name.empty())
+                result += "::";
             result += name;
             return result;
         }
-        
+
         // Get the mangled name for LLVM (e.g., "std_io_println")
         std::string toMangledName() const
         {
             std::string result;
             for (const auto& ns : namespaces)
             {
-                if (!result.empty()) result += "_";
+                if (!result.empty())
+                    result += "_";
                 result += ns;
             }
-            if (!result.empty() && !name.empty()) result += "_";
+            if (!result.empty() && !name.empty())
+                result += "_";
             result += name;
             return result;
         }
@@ -46,19 +50,18 @@ namespace Delta
         Token ident;
         DataType type;
 #ifdef DELTA_NODE_ID
-        const char *id = "Parameter";
+        const char* id = "Parameter";
 #endif
     };
 
-
     struct NodeExpression;
     struct NodeExpressionTerm;
-    
+
     struct NodeTermDoubleLiteral
     {
         Token double_literal;
 #ifdef DELTA_NODE_ID
-        const char *id = "Double Literal";
+        const char* id = "Double Literal";
 #endif
     };
 
@@ -66,7 +69,7 @@ namespace Delta
     {
         Token float_literal;
 #ifdef DELTA_NODE_ID
-        const char *id = "Float Literal";
+        const char* id = "Float Literal";
 #endif
     };
 
@@ -74,7 +77,7 @@ namespace Delta
     {
         Token int_literal;
 #ifdef DELTA_NODE_ID
-        const char *id = "Integer Literal";
+        const char* id = "Integer Literal";
 #endif
     };
 
@@ -82,7 +85,7 @@ namespace Delta
     {
         Token string_literal;
 #ifdef DELTA_NODE_ID
-        const char *id = "String Literal";
+        const char* id = "String Literal";
 #endif
     };
 
@@ -90,7 +93,7 @@ namespace Delta
     {
         std::vector<NodeExpressionTerm*> literals;
 #ifdef DELTA_NODE_ID
-        const char *id = "Struct Literal";
+        const char* id = "Struct Literal";
 #endif
     };
 
@@ -98,24 +101,24 @@ namespace Delta
     {
         Token ident;
 #ifdef DELTA_NODE_ID
-        const char *id = "Expression Identifier";
+        const char* id = "Expression Identifier";
 #endif
     };
 
     struct NodeTermParen
     {
-        NodeExpression *expr;
+        NodeExpression* expr;
 #ifdef DELTA_NODE_ID
-        const char *id = "()";
+        const char* id = "()";
 #endif
     };
 
     struct NodeTermCast
     {
-        NodeExpression *expr;
+        NodeExpression* expr;
         DataType target_type;
 #ifdef DELTA_NODE_ID
-        const char *id = "Cast";
+        const char* id = "Cast";
 #endif
     };
 
@@ -123,180 +126,163 @@ namespace Delta
     {
         Token ident;
 #ifdef DELTA_NODE_ID
-        const char *id = "Address Of";
+        const char* id = "Address Of";
 #endif
     };
 
     struct NodeTermDereference
     {
-        NodeExpression *expr;
+        NodeExpression* expr;
 #ifdef DELTA_NODE_ID
-        const char *id = "Dereference";
+        const char* id = "Dereference";
 #endif
     };
 
     struct NodeTermArrayAccess
     {
-        NodeExpression *array_expr;
-        NodeExpression *index_expr;
+        NodeExpression* array_expr;
+        NodeExpression* index_expr;
 #ifdef DELTA_NODE_ID
-        const char *id = "Array Access";
+        const char* id = "Array Access";
 #endif
     };
 
     struct NodeTermMemberAccess
     {
-        NodeExpression *struct_expr;
+        NodeExpression* struct_expr;
         Token member_name;
 #ifdef DELTA_NODE_ID
-        const char *id = "Member Access";
+        const char* id = "Member Access";
 #endif
     };
 
     struct NodeTermFunctionCall
     {
         QualifiedName function_name;
-        std::vector<NodeExpression *> arguments;
+        std::vector<NodeExpression*> arguments;
 #ifdef DELTA_NODE_ID
-        const char *id = "Function Call";
+        const char* id = "Function Call";
 #endif
     };
 
     struct NodeExpressionBinaryGreaterEquals
     {
-        NodeExpression *left;
-        NodeExpression *right;
+        NodeExpression* left;
+        NodeExpression* right;
 #ifdef DELTA_NODE_ID
-        const char *id = "Binary Expression Greater Equals";
+        const char* id = "Binary Expression Greater Equals";
 #endif
-        const char *binaryName = "Greater or Equals";
+        const char* binaryName = "Greater or Equals";
     };
 
     struct NodeExpressionBinaryGreater
     {
-        NodeExpression *left;
-        NodeExpression *right;
+        NodeExpression* left;
+        NodeExpression* right;
 #ifdef DELTA_NODE_ID
-        const char *id = "Binary Expression Greater ";
+        const char* id = "Binary Expression Greater ";
 #endif
-        const char *binaryName = "Greater than";
+        const char* binaryName = "Greater than";
     };
 
     struct NodeExpressionBinaryLessEquals
     {
-        NodeExpression *left;
-        NodeExpression *right;
+        NodeExpression* left;
+        NodeExpression* right;
 #ifdef DELTA_NODE_ID
-        const char *id = "Binary Expression Less Equals";
+        const char* id = "Binary Expression Less Equals";
 #endif
-        const char *binaryName = "Less or Equals";
+        const char* binaryName = "Less or Equals";
     };
 
     struct NodeExpressionBinaryLess
     {
-        NodeExpression *left;
-        NodeExpression *right;
+        NodeExpression* left;
+        NodeExpression* right;
 #ifdef DELTA_NODE_ID
-        const char *id = "Binary Expression Less";
+        const char* id = "Binary Expression Less";
 #endif
-        const char *binaryName = "Less than";
+        const char* binaryName = "Less than";
     };
 
     struct NodeExpressionBinaryEquals
     {
-        NodeExpression *left;
-        NodeExpression *right;
+        NodeExpression* left;
+        NodeExpression* right;
 #ifdef DELTA_NODE_ID
-        const char *id = "Binary Expression Equals";
+        const char* id = "Binary Expression Equals";
 #endif
-        const char *binaryName = "Equals";
+        const char* binaryName = "Equals";
     };
 
     struct NodeExpressionBinaryAddition
     {
-        NodeExpression *left;
-        NodeExpression *right;
+        NodeExpression* left;
+        NodeExpression* right;
 #ifdef DELTA_NODE_ID
-        const char *id = "Binary Expression Addition";
+        const char* id = "Binary Expression Addition";
 #endif
-        const char *binaryName = "Addition";
+        const char* binaryName = "Addition";
     };
 
     struct NodeExpressionBinarySubtraction
     {
-        NodeExpression *left;
-        NodeExpression *right;
+        NodeExpression* left;
+        NodeExpression* right;
 #ifdef DELTA_NODE_ID
-        const char *id = "Binary Expression Subtraction";
+        const char* id = "Binary Expression Subtraction";
 #endif
-        const char *binaryName = "Subtraction";
+        const char* binaryName = "Subtraction";
     };
 
     struct NodeExpressionBinaryDivision
     {
-        NodeExpression *left;
-        NodeExpression *right;
+        NodeExpression* left;
+        NodeExpression* right;
 #ifdef DELTA_NODE_ID
-        const char *id = "Binary Expression Division";
+        const char* id = "Binary Expression Division";
 #endif
-        const char *binaryName = "Division";
+        const char* binaryName = "Division";
     };
 
     struct NodeExpressionBinaryMultiplication
     {
-        NodeExpression *left;
-        NodeExpression *right;
+        NodeExpression* left;
+        NodeExpression* right;
 #ifdef DELTA_NODE_ID
-        const char *id = "Binary Expression Multiplication";
+        const char* id = "Binary Expression Multiplication";
 #endif
-        const char *binaryName = "Multiplication";
+        const char* binaryName = "Multiplication";
     };
 
     struct NodeExpressionBinary
     {
-        std::variant<
-            NodeExpressionBinaryAddition *,
-            NodeExpressionBinarySubtraction *,
-            NodeExpressionBinaryMultiplication *,
-            NodeExpressionBinaryDivision *,
-            NodeExpressionBinaryGreaterEquals *,
-            NodeExpressionBinaryGreater *,
-            NodeExpressionBinaryLessEquals *,
-            NodeExpressionBinaryLess *,
-            NodeExpressionBinaryEquals *>
+        std::variant<NodeExpressionBinaryAddition*, NodeExpressionBinarySubtraction*,
+                     NodeExpressionBinaryMultiplication*, NodeExpressionBinaryDivision*,
+                     NodeExpressionBinaryGreaterEquals*, NodeExpressionBinaryGreater*, NodeExpressionBinaryLessEquals*,
+                     NodeExpressionBinaryLess*, NodeExpressionBinaryEquals*>
             var;
 #ifdef DELTA_NODE_ID
-        const char *id = "Binary Expression";
+        const char* id = "Binary Expression";
 #endif
     };
 
     struct NodeExpressionTerm
     {
-        std::variant<
-            NodeTermIntegerLiteral *,
-            NodeTermFloatLiteral *,
-            NodeTermDoubleLiteral *,
-            NodeTermStringLiteral *,
-            NodeTermStructLiteral *,
-            NodeTermIdentifier *,
-            NodeTermParen *,
-            NodeTermFunctionCall *,
-            NodeTermCast *,
-            NodeTermAddressOf *,
-            NodeTermDereference *,
-            NodeTermArrayAccess *,
-            NodeTermMemberAccess *>
+        std::variant<NodeTermIntegerLiteral*, NodeTermFloatLiteral*, NodeTermDoubleLiteral*, NodeTermStringLiteral*,
+                     NodeTermStructLiteral*, NodeTermIdentifier*, NodeTermParen*, NodeTermFunctionCall*, NodeTermCast*,
+                     NodeTermAddressOf*, NodeTermDereference*, NodeTermArrayAccess*, NodeTermMemberAccess*>
             var;
 #ifdef DELTA_NODE_ID
-        const char *id = "Term Expression";
+        const char* id = "Term Expression";
 #endif
     };
 
     struct NodeExpression
     {
-        std::variant<NodeExpressionTerm *, NodeExpressionBinary *> var;
+        std::variant<NodeExpressionTerm*, NodeExpressionBinary*> var;
 #ifdef DELTA_NODE_ID
-        const char *id = "Expression";
+        const char* id = "Expression";
 #endif
     };
 
@@ -304,9 +290,9 @@ namespace Delta
 
     struct NodeScope
     {
-        std::vector<NodeStatement *> statements;
+        std::vector<NodeStatement*> statements;
 #ifdef DELTA_NODE_ID
-        const char *id = "Scope";
+        const char* id = "Scope";
 #endif
     };
 
@@ -314,169 +300,161 @@ namespace Delta
 
     struct NodeIfPredElif
     {
-        NodeExpression *expr;
-        NodeScope *scope;
-        std::optional<NodeIfPred *> pred;
+        NodeExpression* expr;
+        NodeScope* scope;
+        std::optional<NodeIfPred*> pred;
 #ifdef DELTA_NODE_ID
-        const char *id = "If Pred Elif";
+        const char* id = "If Pred Elif";
 #endif
     };
 
     struct NodeIfPredElse
     {
-        NodeScope *scope;
+        NodeScope* scope;
 #ifdef DELTA_NODE_ID
-        const char *id = "If Pred Else";
+        const char* id = "If Pred Else";
 #endif
     };
 
     struct NodeIfPred
     {
-        std::variant<NodeIfPredElif *, NodeIfPredElse *> var;
+        std::variant<NodeIfPredElif*, NodeIfPredElse*> var;
 #ifdef DELTA_NODE_ID
-        const char *id = "If Pred";
+        const char* id = "If Pred";
 #endif
     };
 
     struct NodeStatementIf
     {
-        NodeExpression *expr;
-        NodeScope *scope;
-        std::optional<NodeIfPred *> pred;
+        NodeExpression* expr;
+        NodeScope* scope;
+        std::optional<NodeIfPred*> pred;
 #ifdef DELTA_NODE_ID
-        const char *id = "Statement If";
+        const char* id = "Statement If";
 #endif
     };
 
     struct NodeStatementExit
     {
-        NodeExpression *expression;
+        NodeExpression* expression;
 #ifdef DELTA_NODE_ID
-        const char *id = "Statement Exit";
+        const char* id = "Statement Exit";
 #endif
     };
 
     struct NodeStatementAssign
     {
         Token ident;
-        NodeExpression *expression;
+        NodeExpression* expression;
 #ifdef DELTA_NODE_ID
-        const char *id = "Statement Assign";
+        const char* id = "Statement Assign";
 #endif
     };
 
     struct NodeStatementLet
     {
         Token ident;
-        NodeExpression *expression;
+        NodeExpression* expression;
         DataType type;
         bool isConst = false;
 #ifdef DELTA_NODE_ID
-        const char *id = "Statement Let";
+        const char* id = "Statement Let";
 #endif
     };
 
     struct NodeStatementReturn
     {
-        NodeExpression *expression; // Optional - can be nullptr for void returns
+        NodeExpression* expression; // Optional - can be nullptr for void returns
 #ifdef DELTA_NODE_ID
-        const char *id = "Statement Return";
+        const char* id = "Statement Return";
 #endif
     };
 
     struct NodeStatementPointerAssign
     {
-        NodeExpression *ptr_expr;
-        NodeExpression *value_expr;
+        NodeExpression* ptr_expr;
+        NodeExpression* value_expr;
 #ifdef DELTA_NODE_ID
-        const char *id = "Pointer Assign";
+        const char* id = "Pointer Assign";
 #endif
     };
 
     struct NodeStatementArrayAssign
     {
-        NodeExpression *array_expr;
-        NodeExpression *index_expr;
-        NodeExpression *value_expr;
+        NodeExpression* array_expr;
+        NodeExpression* index_expr;
+        NodeExpression* value_expr;
 #ifdef DELTA_NODE_ID
-        const char *id = "Array Assign";
+        const char* id = "Array Assign";
 #endif
     };
 
     struct NodeStatementMemberAssign
     {
-        NodeExpression *struct_expr;
+        NodeExpression* struct_expr;
         Token member_name;
-        NodeExpression *value_expr;
+        NodeExpression* value_expr;
 #ifdef DELTA_NODE_ID
-        const char *id = "Member Assign";
+        const char* id = "Member Assign";
 #endif
     };
 
     struct NodeStatementWhile
     {
-        NodeExpression *expr;
-        NodeScope *scope;
+        NodeExpression* expr;
+        NodeScope* scope;
 #ifdef DELTA_NODE_ID
-        const char *id = "While Loop";
+        const char* id = "While Loop";
 #endif
     };
 
     struct NodeFunctionDeclaration
     {
         QualifiedName function_name;
-        std::vector<NodeParameter *> parameters;
+        std::vector<NodeParameter*> parameters;
         DataType return_type;
-        NodeScope *body;
+        NodeScope* body;
 #ifdef DELTA_NODE_ID
-        const char *id = "Function Declaration";
+        const char* id = "Function Declaration";
 #endif
     };
 
     struct NodeExternalDeclaration
     {
         QualifiedName function_name;
-        std::vector<NodeParameter *> parameters;
+        std::vector<NodeParameter*> parameters;
         DataType return_type;
         bool is_variadic; // any amount of variables, like printf(str, ...)
 #ifdef DELTA_NODE_ID
-        const char *id = "External Declaration";
+        const char* id = "External Declaration";
 #endif
     };
 
-    struct NodeStruct{
+    struct NodeStruct
+    {
         Token struct_name;
-        std::vector<NodeParameter *> parameters;
+        std::vector<NodeParameter*> parameters;
     };
 
     struct NodeStatement
     {
-        std::variant<
-            NodeStatementExit *,
-            NodeStatementLet *,
-            NodeStatementAssign *,
-            NodeStatementIf *,
-            NodeStatementWhile *,
-            NodeScope *,
-            NodeStatementReturn *,
-            NodeExpression *,
-            NodeStatementPointerAssign *,
-            NodeStatementArrayAssign *,
-            NodeStatementMemberAssign *>
+        std::variant<NodeStatementExit*, NodeStatementLet*, NodeStatementAssign*, NodeStatementIf*, NodeStatementWhile*,
+                     NodeScope*, NodeStatementReturn*, NodeExpression*, NodeStatementPointerAssign*,
+                     NodeStatementArrayAssign*, NodeStatementMemberAssign*>
             var;
 #ifdef DELTA_NODE_ID
-        const char *id = "Statement";
+        const char* id = "Statement";
 #endif
     };
 
     struct NodeProgram
     {
-        std::vector<NodeExternalDeclaration *> externals;
-        std::vector<NodeFunctionDeclaration *> functions;
-        std::vector<NodeStruct *> structs;
-        std::vector<NodeStatement *> statements;
+        std::vector<NodeExternalDeclaration*> externals;
+        std::vector<NodeFunctionDeclaration*> functions;
+        std::vector<NodeStruct*> structs;
+        std::vector<NodeStatement*> statements;
 #ifdef DELTA_NODE_ID
-        const char *id = "Program";
+        const char* id = "Program";
 #endif
     };
 
@@ -486,4 +464,4 @@ namespace Delta
         std::string name = std::string(node.id);
         return name;
     }
-}
+} // namespace Delta

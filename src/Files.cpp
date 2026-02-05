@@ -15,8 +15,8 @@ std::string GetExecutablePath()
 }
 
 #elif defined(__linux__)
-#include <unistd.h>
 #include <limits.h>
+#include <unistd.h>
 std::string GetExecutablePath()
 {
     char buffer[PATH_MAX];
@@ -28,8 +28,8 @@ std::string GetExecutablePath()
 }
 
 #elif defined(__APPLE__)
-#include <mach-o/dyld.h>
 #include <limits.h>
+#include <mach-o/dyld.h>
 std::string GetExecutablePath()
 {
     char buffer[PATH_MAX];
@@ -43,9 +43,12 @@ std::string GetExecutablePath()
 #error "Unsupported platform"
 #endif
 
-bool Delta::Files::fileExists(const std::string &path) { return std::filesystem::exists(path); }
+bool Delta::Files::fileExists(const std::string& path)
+{
+    return std::filesystem::exists(path);
+}
 
-std::string Delta::Files::readFile(const std::string &path)
+std::string Delta::Files::readFile(const std::string& path)
 {
     if (!fileExists(path))
         return std::string();
@@ -54,7 +57,7 @@ std::string Delta::Files::readFile(const std::string &path)
     return std::string((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
 }
 
-bool Delta::Files::writeFile(const std::string &path, const std::string &content)
+bool Delta::Files::writeFile(const std::string& path, const std::string& content)
 {
     std::ofstream file(path);
     if (!file)
@@ -66,7 +69,7 @@ bool Delta::Files::writeFile(const std::string &path, const std::string &content
     return true;
 }
 
-bool Delta::Files::deleteFile(const std::string &path)
+bool Delta::Files::deleteFile(const std::string& path)
 {
     try
     {
@@ -77,67 +80,72 @@ bool Delta::Files::deleteFile(const std::string &path)
         }
         return true;
     }
-    catch (const std::filesystem::filesystem_error &e)
+    catch (const std::filesystem::filesystem_error& e)
     {
         LOG_ERROR("Could not delete {}", path);
         return false;
     }
 }
 
-std::string Delta::Files::getFileExtension(const std::string &filename)
+std::string Delta::Files::getFileExtension(const std::string& filename)
 {
     std::filesystem::path path(filename);
     return path.extension().string();
 }
 
-std::string Delta::Files::replaceExtension(const std::string &filename, const std::string &newExtension)
+std::string Delta::Files::replaceExtension(const std::string& filename, const std::string& newExtension)
 {
     std::filesystem::path path(filename);
     path.replace_extension(newExtension);
     return path.string();
 }
 
-std::string Delta::Files::getFileName(const std::string &path)
+std::string Delta::Files::getFileName(const std::string& path)
 {
     std::filesystem::path p(path);
     return p.filename().string();
 }
 
-std::string Delta::Files::getFileNameWithoutExtension(const std::string &path)
+std::string Delta::Files::getFileNameWithoutExtension(const std::string& path)
 {
     std::filesystem::path p(path);
     return p.stem().string();
 }
 
-std::string Delta::Files::getDirectory(const std::string &path)
+std::string Delta::Files::getDirectory(const std::string& path)
 {
     std::filesystem::path p(path);
     return p.parent_path().string();
 }
 
-bool Delta::Files::createDirectory(const std::string &path)
+bool Delta::Files::createDirectory(const std::string& path)
 {
     std::filesystem::path p(path);
     return std::filesystem::create_directory(p);
 }
 
-std::string Delta::Files::getProgramPath() { return GetExecutablePath(); }
+std::string Delta::Files::getProgramPath()
+{
+    return GetExecutablePath();
+}
 
-std::string Delta::Files::getWorkingDirectory() { return std::filesystem::current_path().string(); }
+std::string Delta::Files::getWorkingDirectory()
+{
+    return std::filesystem::current_path().string();
+}
 
-std::string Delta::Files::joinPaths(const std::string &path1,
-                                    const std::string &path2)
+std::string Delta::Files::joinPaths(const std::string& path1, const std::string& path2)
 {
     return (std::filesystem::path(path1) / path2).string();
 }
 
-std::string Delta::Files::getAbsolutePath(const std::string &path)
+std::string Delta::Files::getAbsolutePath(const std::string& path)
 {
     try
     {
         return std::filesystem::weakly_canonical(std::filesystem::path(path)).string();
     }
-    catch (const std::filesystem::filesystem_error &e)
+    catch (const std::filesystem::filesystem_error& e)
     {
         return path;
     }

@@ -3,7 +3,7 @@
 
 namespace Delta
 {
-    std::string unescape(const std::string &input);
+    std::string unescape(const std::string& input);
 
-    std::string escape(const std::string &input);
-}
+    std::string escape(const std::string& input);
+} // namespace Delta

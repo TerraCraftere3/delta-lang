@@ -1,0 +1,24 @@
+#include <stdio>
+#include <stdgraphics>
+#include <stdtime>
+
+fn fibonacci(n: int) -> int64;
+fn sumToN(n: int) -> int64;
+fn factorial(n: int) -> int64;
+fn deadBranchExample(n: int) -> int64;
+
+fn printFibonacci(n: int) -> void {
+    let i: int = 0;
+    while (i < n) {
+        std::io::printf("Fibonacci #%d: %lld\n", i+1, fibonacci(i+1));
+        i++;
+    }
+}
+
+fn main() -> int {
+    printFibonacci(30);
+    std::io::printf("SumToN(200): %lld\n", sumToN(200));
+    std::io::printf("Factorial(12): %lld\n", factorial(12));
+    std::io::printf("DeadBranchExample(7): %lld\n", deadBranchExample(7));
+    return 0;
+}
