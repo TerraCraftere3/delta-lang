@@ -1,0 +1,40 @@
+#include <stdio>
+
+fn gcd(a: int, b: int) -> int {
+    while (b > 0) {
+        let temp: int = b;
+        let remainder: int = a - (b * (a / b));
+        b = remainder;
+        a = temp;
+    }
+    return a;
+}
+
+fn lcm(a: int, b: int) -> int {
+    return (a * b) / gcd(a, b);
+}
+
+fn main() -> int {
+    std::io::printf("=== GCD and LCM Calculator ===\n\n");
+    
+    let num1: int = 48;
+    let num2: int = 18;
+    std::io::printf("GCD(%d, %d) = %d\n", num1, num2, gcd(num1, num2));
+    std::io::printf("LCM(%d, %d) = %d\n", num1, num2, lcm(num1, num2));
+    
+    std::io::printf("\n");
+    
+    num1 = 100;
+    num2 = 50;
+    std::io::printf("GCD(%d, %d) = %d\n", num1, num2, gcd(num1, num2));
+    std::io::printf("LCM(%d, %d) = %d\n", num1, num2, lcm(num1, num2));
+    
+    std::io::printf("\n");
+    
+    num1 = 17;
+    num2 = 19;
+    std::io::printf("GCD(%d, %d) = %d\n", num1, num2, gcd(num1, num2));
+    std::io::printf("LCM(%d, %d) = %d\n", num1, num2, lcm(num1, num2));
+    
+    return 0;
+}

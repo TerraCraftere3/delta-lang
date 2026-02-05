@@ -1,11 +1,11 @@
 #pragma once
 
-#include "Nodes.h"
-#include <string>
-#include <sstream>
-#include <typeinfo>
-#include <cassert>
 #include <any>
+#include <cassert>
+#include <sstream>
+#include <string>
+#include <typeinfo>
+#include "Nodes.h"
 
 #define DEBUG_NODE_PREFIX "- "
 
@@ -14,44 +14,47 @@ namespace Delta
     std::string Indent(int level);
 
     // If
-    std::string nodeDebugPrint(NodeIfPred *node, int indention);
-    std::string nodeDebugPrint(NodeIfPredElif *node, int indention);
-    std::string nodeDebugPrint(NodeIfPredElse *node, int indention);
+    std::string nodeDebugPrint(NodeIfPred* node, int indention);
+    std::string nodeDebugPrint(NodeIfPredElif* node, int indention);
+    std::string nodeDebugPrint(NodeIfPredElse* node, int indention);
     // Terms
-    std::string nodeDebugPrint(NodeTermDereference *node, int indention);
-    std::string nodeDebugPrint(NodeTermAddressOf *node, int indention);
-    std::string nodeDebugPrint(NodeTermParen *node, int indention);
-    std::string nodeDebugPrint(NodeTermFunctionCall *node, int indention);
-    std::string nodeDebugPrint(NodeTermCast *node, int indention);
-    std::string nodeDebugPrint(NodeTermIntegerLiteral *node, int indention);
-    std::string nodeDebugPrint(NodeTermStringLiteral *node, int indention);
-    std::string nodeDebugPrint(NodeTermFloatLiteral *node, int indention);
-    std::string nodeDebugPrint(NodeTermDoubleLiteral *node, int indention);
-    std::string nodeDebugPrint(NodeTermIdentifier *node, int indention);
+    std::string nodeDebugPrint(NodeTermDereference* node, int indention);
+    std::string nodeDebugPrint(NodeTermAddressOf* node, int indention);
+    std::string nodeDebugPrint(NodeTermParen* node, int indention);
+    std::string nodeDebugPrint(NodeTermFunctionCall* node, int indention);
+    std::string nodeDebugPrint(NodeTermCast* node, int indention);
+    std::string nodeDebugPrint(NodeTermIntegerLiteral* node, int indention);
+    std::string nodeDebugPrint(NodeTermStringLiteral* node, int indention);
+    std::string nodeDebugPrint(NodeTermFloatLiteral* node, int indention);
+    std::string nodeDebugPrint(NodeTermDoubleLiteral* node, int indention);
+    std::string nodeDebugPrint(NodeTermIdentifier* node, int indention);
     // Expressions
-    std::string nodeDebugPrint(NodeExpressionBinary *node, int indention);
-    std::string nodeDebugPrint(NodeExpressionTerm *node, int indention);
-    std::string nodeDebugPrint(NodeExpression *node, int indention);
+    std::string nodeDebugPrint(NodeExpressionBinary* node, int indention);
+    std::string nodeDebugPrint(NodeExpressionTerm* node, int indention);
+    std::string nodeDebugPrint(NodeExpression* node, int indention);
     // Statements
-    std::string nodeDebugPrint(NodeStatementArrayAssign *node, int indention);
-    std::string nodeDebugPrint(NodeStatementPointerAssign *node, int indention);
-    std::string nodeDebugPrint(NodeStatementExit *node, int indention);
-    std::string nodeDebugPrint(NodeStatementLet *node, int indention);
-    std::string nodeDebugPrint(NodeStatementAssign *node, int indention);
-    std::string nodeDebugPrint(NodeStatementReturn *node, int indention);
-    std::string nodeDebugPrint(NodeStatementIf *node, int indention);
-    std::string nodeDebugPrint(NodeStatementWhile *node, int indention);
-    std::string nodeDebugPrint(NodeStatement *node, int indention);
+    std::string nodeDebugPrint(NodeStatementArrayAssign* node, int indention);
+    std::string nodeDebugPrint(NodeStatementPointerAssign* node, int indention);
+    std::string nodeDebugPrint(NodeStatementExit* node, int indention);
+    std::string nodeDebugPrint(NodeStatementLet* node, int indention);
+    std::string nodeDebugPrint(NodeStatementAssign* node, int indention);
+    std::string nodeDebugPrint(NodeStatementReturn* node, int indention);
+    std::string nodeDebugPrint(NodeStatementIf* node, int indention);
+    std::string nodeDebugPrint(NodeStatementWhile* node, int indention);
+    std::string nodeDebugPrint(NodeStatement* node, int indention);
     // General
-    std::string nodeDebugPrint(NodeScope *node, int indention);
-    std::string nodeDebugPrint(NodeFunctionDeclaration *node, int indention);
-    std::string nodeDebugPrint(NodeExternalDeclaration *node, int indention);
+    std::string nodeDebugPrint(NodeScope* node, int indention);
+    std::string nodeDebugPrint(NodeFunctionDeclaration* node, int indention);
+    std::string nodeDebugPrint(NodeExternalDeclaration* node, int indention);
     std::string nodeDebugPrint(NodeStruct* node, int indention);
     std::string nodeDebugPrint(NodeProgram node, int indention = 0);
 
     template <typename T>
-        requires(!std::is_pointer_v<T> || (!std::is_same_v<T, NodeStatementIf *> && !std::is_same_v<T, NodeStatement *> && !std::is_same_v<T, NodeScope *> && !std::is_same_v<T, NodeFunctionDeclaration *> && !std::is_same_v<T, NodeProgram>))
-    std::string nodeDebugPrint(const T &node, int indention = 0)
+        requires(!std::is_pointer_v<T> ||
+                 (!std::is_same_v<T, NodeStatementIf*> && !std::is_same_v<T, NodeStatement*> &&
+                  !std::is_same_v<T, NodeScope*> && !std::is_same_v<T, NodeFunctionDeclaration*> &&
+                  !std::is_same_v<T, NodeProgram>))
+    std::string nodeDebugPrint(const T& node, int indention = 0)
     {
         std::stringstream output;
         output << Indent(indention) << DEBUG_NODE_PREFIX << "[" << typeid(T).name() << "] NODE NOT IMPLEMENTED\n";
@@ -104,8 +107,7 @@ namespace Delta
     };
 
     template <typename T>
-    std::enable_if_t<is_allowed_binary<T>::value, std::string>
-    nodeDebugPrint(T *node, int indention)
+    std::enable_if_t<is_allowed_binary<T>::value, std::string> nodeDebugPrint(T* node, int indention)
     {
         std::stringstream output;
         output << Indent(indention) << DEBUG_NODE_PREFIX << node->binaryName << "\n";

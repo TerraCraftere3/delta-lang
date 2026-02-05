@@ -2,7 +2,7 @@
   "name": "deltalang",
   "displayName": "DeltaLang",
   "description": "Language support for the Delta Compiler",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "engines": {
     "vscode": "^1.104.0"
   },
@@ -19,6 +19,7 @@
         ],
         "extensions": [
           ".dlt",
+          ".dltu",
           ".delta"
         ],
         "configuration": "./language-configuration.json"

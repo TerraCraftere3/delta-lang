@@ -33,6 +33,7 @@ Here are the possible arguments for the compiler:
 - `-L [library_file]`: Adds a linker library to the Compiler
 - `--verbose`: Activates Verbose Logging
 - `--run`: Runs the program after compilation
+- `-O0` to `-O3`: Optimizes the program (0: none, 1: light, 2: default, 3: aggresive)
 
 You usually use .dltu files for delta compile units and .dlt for headers (headers need to be .dlt files) 
 
@@ -171,7 +172,7 @@ The return value of main() is used as the exit code of the program
 #include <stdgraphics>
 
 fn main() -> int{
-    printf("Hello World");
+    std::io::printf("Hello World");
 }
 ```
 

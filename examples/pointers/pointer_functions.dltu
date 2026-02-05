@@ -1,0 +1,55 @@
+#include <stdio>
+#include <stdmemory>
+
+fn swapValues(a: int*, b: int*) -> void {
+    let temp: int = a[0];
+    a[0] = b[0];
+    b[0] = temp;
+}
+
+fn main() -> int {
+    std::io::printf("=== Pointer Parameters ===");
+    std::io::printf("\n");
+    std::io::printf("\n");
+    
+    let num1: int = 100;
+    let num2: int = 200;
+    
+    std::io::printf("Before swap:");
+    std::io::printf("\n");
+    std::io::printf("num1 = ");
+    std::io::printf("%d", num1);
+    std::io::printf("\n");
+    std::io::printf("num2 = ");
+    std::io::printf("%d", num2);
+    std::io::printf("\n");
+    
+    swapValues(&num1, &num2);
+    
+    std::io::printf("\n");
+    std::io::printf("After swap:");
+    std::io::printf("\n");
+    std::io::printf("num1 = ");
+    std::io::printf("%d", num1);
+    std::io::printf("\n");
+    std::io::printf("num2 = ");
+    std::io::printf("%d", num2);
+    std::io::printf("\n");
+    
+    std::io::printf("\n");
+    std::io::printf("=== Pointer Dereferencing ===");
+    std::io::printf("\n");
+    std::io::printf("\n");
+    
+    let val: int = 42;
+    let ptr: int* = &val;
+    
+    std::io::printf("Original value: ");
+    std::io::printf("%d", val);
+    std::io::printf("\n");
+    std::io::printf("Via pointer: ");
+    std::io::printf("%d", ptr[0]);
+    std::io::printf("\n");
+    
+    return 0;
+}

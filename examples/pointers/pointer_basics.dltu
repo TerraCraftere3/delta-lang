@@ -1,0 +1,38 @@
+#include <stdio>
+#include <stdmemory>
+
+fn main() -> int {
+    std::io::printf("=== Pointer Basics ===");
+    std::io::printf("\n");
+    std::io::printf("\n");
+    
+    let x: int = 42;
+    let ptr: int* = &x;
+    
+    std::io::printf("Variable x: ");
+    std::io::printf("%d", x);
+    std::io::printf("\n");
+    std::io::printf("Value of x via pointer: ");
+    std::io::printf("%d", ptr[0]);
+    std::io::printf("\n");
+    
+    std::io::printf("\n");
+    std::io::printf("=== Array Pointer Operations ===");
+    std::io::printf("\n");
+    std::io::printf("\n");
+    
+    // Use manual array allocation instead of array declaration
+    let arr: int*;
+    
+    std::io::printf("Array via pointer:");
+    std::io::printf("\n");
+    let j: int = 0;
+    while (j < 5) {
+        std::io::printf("Array element ");
+        std::io::printf("%d", j);
+        std::io::printf("\n");
+        j++;
+    }
+    
+    return 0;
+}

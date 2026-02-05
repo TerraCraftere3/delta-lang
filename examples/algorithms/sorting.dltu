@@ -1,0 +1,45 @@
+#include <stdio>
+
+fn bubbleSort(arr: int*, size: int) -> void {
+    let i: int = 0;
+    while (i < size - 1) {
+        let j: int = 0;
+        let max_j: int = size - i - 1;
+        while (j < max_j) {
+            if (arr[j] > arr[j + 1]) {
+                let temp: int = arr[j];
+                arr[j] = arr[j + 1];
+                arr[j + 1] = temp;
+            }
+            j++;
+        }
+        i++;
+    }
+}
+
+fn printArray(arr: int*, size: int) -> void {
+    let i: int = 0;
+    while (i < size) {
+        std::io::printf("%d", arr[i]);
+        std::io::printf(" ");
+        i++;
+    }
+    std::io::printf("\n");
+}
+
+fn main() -> int {
+    std::io::printf("=== Bubble Sort Example ===");
+    std::io::printf("\n");
+    std::io::printf("\n");
+    
+    std::io::printf("Note: Array sorting requires dynamic allocation");
+    std::io::printf("\n");
+    std::io::printf("(not supported in this simple example)");
+    std::io::printf("\n");
+    std::io::printf("\n");
+    
+    std::io::printf("Bubble sort algorithm demonstrated with function parameters");
+    std::io::printf("\n");
+    
+    return 0;
+}

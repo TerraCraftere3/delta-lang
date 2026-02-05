@@ -1,0 +1,40 @@
+#include <stdio>
+
+fn factorial(n: int) -> int64 {
+    if (n <= 1) {
+        return 1;
+    }
+    return n * factorial(n - 1);
+}
+
+fn factorialIterative(n: int) -> int64 {
+    let result: int64 = 1;
+    let i: int = 2;
+    while (i <= n) {
+        result = result * i;
+        i++;
+    }
+    return result;
+}
+
+fn main() -> int {
+    std::io::printf("=== Factorial Calculator ===\n");
+    std::io::printf("\n");
+    
+    std::io::printf("Recursive Factorial:\n");
+    let i: int = 0;
+    while (i <= 15) {
+        std::io::printf("factorial(%d) = %lld\n", i, factorial(i));
+        i++;
+    }
+    
+    std::io::printf("\n");
+    std::io::printf("Iterative Factorial:\n");
+    let j: int = 0;
+    while (j <= 15) {
+        std::io::printf("factorial(%d) = %lld\n", j, factorialIterative(j));
+        j++;
+    }
+    
+    return 0;
+}

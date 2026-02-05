@@ -1,0 +1,70 @@
+#include <stdio>
+#include <stdgraphics>
+#include <stdtime>
+#include <glew>
+
+fn fibonacci(n: int) -> int64;
+
+fn printFibonacci(n: int) -> void {
+    let i: int = 0;
+    while (i < n) {
+        std::io::printf("Fibonacci #%d: %lld\n", i+1, fibonacci(i+1));
+        i++;
+    }
+}
+
+fn main() -> int {
+    if(_WIN32){
+        std::io::printf("Running on Windows\n");
+    }else{
+        std::io::printf("Not running on Windows\n");
+    }
+    std::io::printf("Compiler Name: %s\nCompiler Version: %s\nStandard Version: %s\n", _DLT_CC_NAME, _DLT_CC_VERSION, _DLT_VERSION);
+
+    printFibonacci(30);
+
+    let win: int = std::gfx::openWindow("Delta Demo", 800, 600);
+    if (win < 0) {
+        std::io::printf("Failed to create window\n");
+        return 1;
+    }
+
+    if (std::gfx::createOpenGLContext(win) == 0) {
+        std::io::printf("Failed to create OpenGL context\n");
+        std::gfx::destroyWindow(win);
+        return 1;
+    }
+
+    // Make the context current
+    if (std::gfx::makeContextCurrent(win) == 0) {
+        std::io::printf("Failed to make context current\n");
+        std::gfx::destroyWindow(win);
+        return 1;
+    }
+
+    if (glewInit() > 0) {
+        std::io::printf("Failed to initialize glew!\n");
+        return 1;
+    }
+
+    while (std::gfx::isWindowOpen(win)) {
+        std::gfx::updateWindow(win);
+        if (std::gfx::isKeyPressed(win, 'Z')) {
+            std::gfx::closeWindow(win); // Close window when Z is pressed
+        }
+
+        let width: int = 0;
+        let height: int = 0;
+        std::gfx::getWindowSize(win, &width, &height);
+
+        glViewport(0, 0, width, height);
+        glClearColor(1.0f, 0.8f, 0.2f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT);
+
+        std::gfx::swapBuffers(win);
+        std::sleep(16); // sleep 16ms (~60fps)
+    }
+
+    std::gfx::destroyWindow(win);
+    return 0;
+}

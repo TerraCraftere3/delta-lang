@@ -101,6 +101,4 @@ target_link_libraries(${PROJECT_NAME} PRIVATE spdlog::spdlog)
 
 
 enable_testing()
-add_test(NAME NativeTest COMMAND $<TARGET_FILE:${PROJECT_NAME}> -i ${CMAKE_CURRENT_SOURCE_DIR}/examples/native_test/example.dltu -i ${CMAKE_CURRENT_SOURCE_DIR}/examples/native_test/fibonacci.dltu -o ${CMAKE_CURRENT_SOURCE_DIR}/examples/native_test/example.exe -L ${CMAKE_CURRENT_SOURCE_DIR}/examples/native_test/glew32.lib --verbose)
-add_test(NAME RotatingCubeTest COMMAND $<TARGET_FILE:${PROJECT_NAME}> -i ${CMAKE_CURRENT_SOURCE_DIR}/examples/native_test/rotating_cube.dltu -o ${CMAKE_CURRENT_SOURCE_DIR}/examples/native_test/rotating_cube.exe -L ${CMAKE_CURRENT_SOURCE_DIR}/examples/native_test/glew32.lib --verbose)
-add_test(NAME WasmTest COMMAND $<TARGET_FILE:${PROJECT_NAME}> -i ${CMAKE_CURRENT_SOURCE_DIR}/examples/wasm_test/example.dlt -o ${CMAKE_CURRENT_SOURCE_DIR}/examples/wasm_test/example.wasm --verbose -T wasm)
+add_subdirectory(examples)

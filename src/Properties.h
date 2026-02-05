@@ -1,7 +1,7 @@
 #pragma once
 
-#include <vector>
 #include <string>
+#include <vector>
 
 namespace Delta
 {
@@ -18,18 +18,26 @@ namespace Delta
         TARGET_WASM
     };
 
-    inline const char *getCompileTypeName(CompileType type)
+    enum OptimizationLevel
+    {
+        OPTIMIZATION_O0,
+        OPTIMIZATION_O1,
+        OPTIMIZATION_O2,
+        OPTIMIZATION_O3
+    };
+
+    inline const char* getCompileTypeName(CompileType type)
     {
         switch (type)
         {
-        case COMPILE_ONLY:
-            return "Compile Only";
-        case COMPILE_AND_LINK:
-            return "Compile and Link";
-        case COMPILE_LINK_AND_RUN:
-            return "Compile, Link and Run";
-        default:
-            return "Unknown";
+            case COMPILE_ONLY:
+                return "Compile Only";
+            case COMPILE_AND_LINK:
+                return "Compile and Link";
+            case COMPILE_LINK_AND_RUN:
+                return "Compile, Link and Run";
+            default:
+                return "Unknown";
         }
     }
 
@@ -39,8 +47,9 @@ namespace Delta
         CompileType compileType = COMPILE_ONLY;
         CompileTarget compileTarget = TARGET_NATIVE;
         std::vector<std::string> inputFiles; // support multiple input files
-        const char *outputFile = nullptr;
+        const char* outputFile = nullptr;
         std::vector<std::string> additionalLinks;
         std::vector<std::string> includeDirs;
+        OptimizationLevel optimizationLevel = OPTIMIZATION_O0;
     };
-}
+} // namespace Delta

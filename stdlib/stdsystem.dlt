@@ -1,4 +1,4 @@
-fn exit(status: int) -> void;
-fn system(command: char*) -> int;
-fn getenv(name: char*) -> char*;
-fn putenv(string: char*) -> int;
+fn std::exit(status: int) -> void;
+fn std::system(command: char*) -> int;
+fn std::getenv(name: char*) -> char*;
+fn std::putenv(string: char*) -> int;

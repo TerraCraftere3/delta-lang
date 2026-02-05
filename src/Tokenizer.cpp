@@ -59,6 +59,11 @@ namespace Delta
                     tokens.push_back({TokenType::struct_, line_count});
                     buf.clear();
                 }
+                else if (buf == "namespace")
+                {
+                    tokens.push_back({TokenType::namespace_, line_count});
+                    buf.clear();
+                }
                 /*else if (buf == "exit") // DEPRECATED
                 {
                     tokens.push_back({TokenType::exit, line_count});
@@ -154,7 +159,7 @@ namespace Delta
                     // Check if integer has 'f' suffix -> treat as float
                     else if (peek().has_value() && (peek().value() == 'f' || peek().value() == 'F'))
                     {
-                        consume(); // eat the 'f'
+                        consume();          // eat the 'f'
                         buf.push_back('.'); // add decimal point for LLVM
                         buf.push_back('0'); // make it x.0
                         tokens.push_back({TokenType::float_literal, line_count, buf});
@@ -168,7 +173,8 @@ namespace Delta
                 }
             }
             // ...
-            else if (peek().value() == '.' && peek(2).has_value() && peek(2).value() == '.' && peek(3).has_value() && peek(3).value() == '.')
+            else if (peek().value() == '.' && peek(2).has_value() && peek(2).value() == '.' && peek(3).has_value() &&
+                     peek(3).value() == '.')
             {
                 consume(); // '.'
                 consume(); // '.'
@@ -388,6 +394,14 @@ namespace Delta
                 consume();
                 tokens.push_back({TokenType::hashtag, line_count});
             }
+            // ::
+            else if (peek().value() == ':' && peek(2).has_value() && peek(2).value() == ':')
+            {
+                consume(); // ':'
+                consume(); // ':'
+                tokens.push_back({TokenType::double_colon, line_count});
+            }
+            // :
             else if (peek().value() == ':')
             {
                 consume();
@@ -417,17 +431,17 @@ namespace Delta
     {
         switch (type)
         {
-        case TokenType::greater:
-        case TokenType::greater_equals:
-        case TokenType::less:
-        case TokenType::less_equals:
-        case TokenType::plus:
-        case TokenType::star:
-        case TokenType::minus:
-        case TokenType::slash:
-            return true;
-        default:
-            return false;
+            case TokenType::greater:
+            case TokenType::greater_equals:
+            case TokenType::less:
+            case TokenType::less_equals:
+            case TokenType::plus:
+            case TokenType::star:
+            case TokenType::minus:
+            case TokenType::slash:
+                return true;
+            default:
+                return false;
         }
     }
 
@@ -435,20 +449,20 @@ namespace Delta
     {
         switch (type)
         {
-        case TokenType::star:  // *
-        case TokenType::slash: // /
-            return 2;
-        case TokenType::plus:  // +
-        case TokenType::minus: // -
-            return 1;
-        case TokenType::greater:        // >
-        case TokenType::greater_equals: // >=
-        case TokenType::less:           // <
-        case TokenType::less_equals:    // <=
-        case TokenType::double_equals:  // ==
-            return 0;
-        default:
-            return std::nullopt;
+            case TokenType::star:  // *
+            case TokenType::slash: // /
+                return 2;
+            case TokenType::plus:  // +
+            case TokenType::minus: // -
+                return 1;
+            case TokenType::greater:        // >
+            case TokenType::greater_equals: // >=
+            case TokenType::less:           // <
+            case TokenType::less_equals:    // <=
+            case TokenType::double_equals:  // ==
+                return 0;
+            default:
+                return std::nullopt;
         }
     }
 

@@ -1,0 +1,41 @@
+#include <stdio>
+#include <stdstring>
+
+fn main() -> int {
+    std::io::printf("=== String Operations ===");
+    std::io::printf("\n");
+    std::io::printf("\n");
+    
+    let str1: char* = "Hello";
+    let str2: char* = "World";
+    
+    std::io::printf("String 1: ");
+    std::io::printf("%s", str1);
+    std::io::printf("\n");
+    std::io::printf("String 2: ");
+    std::io::printf("%s", str2);
+    std::io::printf("\n");
+    
+    std::io::printf("\n");
+    std::io::printf("String length of Hello: ");
+    std::io::printf("%d", std::strlen(str1));
+    std::io::printf("\n");
+    std::io::printf("String length of World: ");
+    std::io::printf("%d", std::strlen(str2));
+    std::io::printf("\n");
+    
+    let cmp_result: int = std::strcmp(str1, str2);
+    std::io::printf("\n");
+    std::io::printf("Compare Hello and World: ");
+    std::io::printf("%d", cmp_result);
+    std::io::printf("\n");
+    
+    let same1: char* = "Delta";
+    let same2: char* = "Delta";
+    let cmp_same: int = std::strcmp(same1, same2);
+    std::io::printf("Compare Delta and Delta: ");
+    std::io::printf("%d", cmp_same);
+    std::io::printf("\n");
+    
+    return 0;
+}

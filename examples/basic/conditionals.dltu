@@ -1,0 +1,44 @@
+#include <stdio>
+
+fn checkNumber(n: int) -> void {
+    if (n > 0) {
+        std::io::printf("%d is positive", n);
+        std::io::printf("\n");
+    } else {
+        if (n < 0) {
+            std::io::printf("%d is negative", n);
+            std::io::printf("\n");
+        } else {
+            std::io::printf("%d is zero", n);
+            std::io::printf("\n");
+        }
+    }
+}
+
+fn checkEvenOdd(n: int) -> void {
+    let remainder: int = n - (2 * (n / 2));
+    if (remainder == 0) {
+        std::io::printf("%d is even", n);
+        std::io::printf("\n");
+    } else {
+        std::io::printf("%d is odd", n);
+        std::io::printf("\n");
+    }
+}
+
+fn main() -> int {
+    std::io::printf("=== Number Classification ===");
+    std::io::printf("\n");
+    checkNumber(10);
+    checkNumber(0-5);
+    checkNumber(0);
+    
+    std::io::printf("\n=== Even/Odd Check ===\n");
+    let i: int = 0;
+    while (i < 10) {
+        checkEvenOdd(i);
+        i++;
+    }
+    
+    return 0;
+}

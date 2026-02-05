@@ -1,4 +1,4 @@
-fn malloc(size: int64) -> void*;
-fn calloc(nmemb: int64, size: int64) -> void*;
-fn realloc(ptr: void*, size: int64) -> void*;
-fn free(ptr: void*) -> void;
+fn std::malloc(size: int64) -> void*;
+fn std::calloc(nmemb: int64, size: int64) -> void*;
+fn std::realloc(ptr: void*, size: int64) -> void*;
+fn std::free(ptr: void*) -> void;

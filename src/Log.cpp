@@ -27,4 +27,4 @@ namespace Delta
         else
             s_Logger->set_level(spdlog::level::info); // default
     }
-}
+} // namespace Delta

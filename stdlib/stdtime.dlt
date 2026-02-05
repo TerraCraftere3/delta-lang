@@ -1,2 +1,2 @@
-fn stdSleep(milliseconds: int) -> void;
-fn stdGetTimeMS() -> int64;
+fn std::sleep(milliseconds: int) -> void;
+fn std::getTimeMS() -> int64;

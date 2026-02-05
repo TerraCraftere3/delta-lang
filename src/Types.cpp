@@ -1,6 +1,6 @@
 #include "Types.h"
-#include "Log.h"
 #include "Error.h"
+#include "Log.h"
 
 namespace Delta
 {
@@ -27,28 +27,28 @@ namespace Delta
         {
             switch (base)
             {
-            case BaseType::VOID:
-                return "void";
-            case BaseType::INT8:
-                return "int8";
-            case BaseType::INT16:
-                return "int16";
-            case BaseType::INT32:
-                return "int32";
-            case BaseType::INT64:
-                return "int64";
-            case BaseType::FLOAT32:
-                return "float32";
-            case BaseType::FLOAT64:
-                return "float64";
-            case BaseType::STRUCT:
-                return "struct";
-            default:
-                return "<errortype>";
+                case BaseType::VOID:
+                    return "void";
+                case BaseType::INT8:
+                    return "int8";
+                case BaseType::INT16:
+                    return "int16";
+                case BaseType::INT32:
+                    return "int32";
+                case BaseType::INT64:
+                    return "int64";
+                case BaseType::FLOAT32:
+                    return "float32";
+                case BaseType::FLOAT64:
+                    return "float64";
+                case BaseType::STRUCT:
+                    return "struct";
+                default:
+                    return "<errortype>";
             }
         }
 
-        BaseType stringToBase(const std::string &base)
+        BaseType stringToBase(const std::string& base)
         {
             if (base == "void")
                 return BaseType::VOID;
@@ -77,22 +77,22 @@ namespace Delta
 
         switch (type.base)
         {
-        case BaseType::INT8:
-            return 1;
-        case BaseType::INT16:
-            return 2;
-        case BaseType::INT32:
-            return 4;
-        case BaseType::INT64:
-            return 8;
-        case BaseType::FLOAT32:
-            return 4;
-        case BaseType::FLOAT64:
-            return 8;
-        case BaseType::VOID:
-            return 0;
-        default:
-            return 0;
+            case BaseType::INT8:
+                return 1;
+            case BaseType::INT16:
+                return 2;
+            case BaseType::INT32:
+                return 4;
+            case BaseType::INT64:
+                return 8;
+            case BaseType::FLOAT32:
+                return 4;
+            case BaseType::FLOAT64:
+                return 8;
+            case BaseType::VOID:
+                return 0;
+            default:
+                return 0;
         }
     }
 
@@ -103,22 +103,22 @@ namespace Delta
 
         switch (type.base)
         {
-        case BaseType::INT8:
-            return 1;
-        case BaseType::INT16:
-            return 2;
-        case BaseType::INT32:
-            return 4;
-        case BaseType::INT64:
-            return 8;
-        case BaseType::FLOAT32:
-            return 4;
-        case BaseType::FLOAT64:
-            return 8;
-        case BaseType::VOID:
-            return 1;
-        default:
-            return 1;
+            case BaseType::INT8:
+                return 1;
+            case BaseType::INT16:
+                return 2;
+            case BaseType::INT32:
+                return 4;
+            case BaseType::INT64:
+                return 8;
+            case BaseType::FLOAT32:
+                return 4;
+            case BaseType::FLOAT64:
+                return 8;
+            case BaseType::VOID:
+                return 1;
+            default:
+                return 1;
         }
     }
 
@@ -176,10 +176,10 @@ namespace Delta
         if (declared.base == BaseType::VOID || actual.base == BaseType::VOID)
             return false;
 
-        if ((declared.base == BaseType::INT8 || declared.base == BaseType::INT16 ||
-             declared.base == BaseType::INT32 || declared.base == BaseType::INT64) &&
-            (actual.base == BaseType::INT8 || actual.base == BaseType::INT16 ||
-             actual.base == BaseType::INT32 || actual.base == BaseType::INT64))
+        if ((declared.base == BaseType::INT8 || declared.base == BaseType::INT16 || declared.base == BaseType::INT32 ||
+             declared.base == BaseType::INT64) &&
+            (actual.base == BaseType::INT8 || actual.base == BaseType::INT16 || actual.base == BaseType::INT32 ||
+             actual.base == BaseType::INT64))
         {
             return true;
         }
@@ -194,7 +194,7 @@ namespace Delta
         return base;
     }
 
-    DataType stringToType(const std::string &s)
+    DataType stringToType(const std::string& s)
     {
         if (s.empty())
             return DataType::ERRORTYPE;
@@ -219,7 +219,7 @@ namespace Delta
         return DataType(base, pointer_level);
     }
 
-    bool isValidDataType(const std::string &s)
+    bool isValidDataType(const std::string& s)
     {
         DataType type = stringToType(s);
         return type != DataType::ERRORTYPE;

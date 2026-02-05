@@ -1,14 +1,14 @@
 #include <stdtypes>
 
-fn printf(format: char*, ...) -> int;
-fn fprintf(stream: void*, format: char*, ...) -> int;
-fn sprintf(str: char*, format: char*, ...) -> int;
-fn scanf(format: char*, ...) -> int;
-fn fopen(filename: char*, mode: char*) -> void*;
-fn fclose(stream: void*) -> int;
-fn fread(ptr: void*, size: size_t, nmemb: size_t, stream: void*) -> size_t;
-fn fwrite(ptr: void*, size: size_t, nmemb: size_t, stream: void*) -> size_t;
-fn fseek(stream: void*, offset: size_t, whence: int) -> int;
-fn ftell(stream: void*) -> int64;
+fn std::io::printf(format: char*, ...) -> int;
+fn std::io::fprintf(stream: void*, format: char*, ...) -> int;
+fn std::io::sprintf(str: char*, format: char*, ...) -> int;
+fn std::io::scanf(format: char*, ...) -> int;
+fn std::io::fopen(filename: char*, mode: char*) -> void*;
+fn std::io::fclose(stream: void*) -> int;
+fn std::io::fread(ptr: void*, size: size_t, nmemb: size_t, stream: void*) -> size_t;
+fn std::io::fwrite(ptr: void*, size: size_t, nmemb: size_t, stream: void*) -> size_t;
+fn std::io::fseek(stream: void*, offset: size_t, whence: int) -> int;
+fn std::io::ftell(stream: void*) -> int64;
 
-fn stdExecute(cmd: char*) -> int;
+fn std::io::execute(cmd: char*) -> int;

@@ -1,12 +1,12 @@
 #pragma once
 
+#include <map>
+#include <set>
+#include <sstream>
+#include <string>
+#include <vector>
 #include "Nodes.h"
 #include "Types.h"
-#include <sstream>
-#include <map>
-#include <vector>
-#include <string>
-#include <set>
 
 // Updated Var struct for LLVM IR
 struct Var
@@ -18,13 +18,12 @@ struct Var
     bool isConstant = false;
     std::string llvm_alloca; // LLVM alloca instruction result (e.g., "%var1")
 
-    Var(const std::string &n, size_t loc, Delta::DataType t)
-        : name(n), stack_loc(loc), type(t), type_size(Delta::getTypeSize(t)) {}
-
-    void setConstant(bool c)
+    Var(const std::string& n, size_t loc, Delta::DataType t)
+        : name(n), stack_loc(loc), type(t), type_size(Delta::getTypeSize(t))
     {
-        isConstant = c;
     }
+
+    void setConstant(bool c) { isConstant = c; }
 };
 
 struct Function
@@ -36,10 +35,16 @@ struct Function
     bool is_external;
     bool is_variadic; // any amount of variables, like printf(str, ...)
 
-    Function(const std::string &name, const std::vector<Delta::DataType> &param_types,
-             Delta::DataType ret_type, const std::string &llvm_name, bool external = false, bool variadic = false)
-        : name(name), parameter_types(param_types), return_type(ret_type),
-          llvm_name(llvm_name), is_external(external), is_variadic(variadic) {}
+    Function(const std::string& name, const std::vector<Delta::DataType>& param_types, Delta::DataType ret_type,
+             const std::string& llvm_name, bool external = false, bool variadic = false)
+        : name(name),
+          parameter_types(param_types),
+          return_type(ret_type),
+          llvm_name(llvm_name),
+          is_external(external),
+          is_variadic(variadic)
+    {
+    }
 };
 
 // Keep for potential future use or compatibility
@@ -61,16 +66,16 @@ namespace Delta
         std::string generate();
 
         // Updated method signatures - now return values instead of using stack
-        std::string generateTerm(const NodeExpressionTerm *term);
-        std::string generateBinaryExpression(const NodeExpressionBinary *bin_expr);
-        std::string generateExpression(const NodeExpression *expression);
-        void generateScope(const NodeScope *scope);
-        void generateIfPred(const NodeIfPred *pred, const std::string &merge_label);
-        void generateStatement(const NodeStatement *statement);
+        std::string generateTerm(const NodeExpressionTerm* term);
+        std::string generateBinaryExpression(const NodeExpressionBinary* bin_expr);
+        std::string generateExpression(const NodeExpression* expression);
+        void generateScope(const NodeScope* scope);
+        void generateIfPred(const NodeIfPred* pred, const std::string& merge_label);
+        void generateStatement(const NodeStatement* statement);
         void generateStringLiterals();
-        std::string generateFunctionCall(const NodeTermFunctionCall *func_call);
-        void generateFunctionDeclaration(const NodeFunctionDeclaration *func_decl);
-        void generateStructDeclaration(const NodeStruct *struct_decl);
+        std::string generateFunctionCall(const NodeTermFunctionCall* func_call);
+        void generateFunctionDeclaration(const NodeFunctionDeclaration* func_decl);
+        void generateStructDeclaration(const NodeStruct* struct_decl);
 
     private:
         // LLVM IR specific helpers
@@ -80,43 +85,44 @@ namespace Delta
         void generateDefaultValue(DataType type);  // Generate default value for type
 
         // Type conversion methods
-        std::string generateTypeConversion(const std::string &value, DataType from, DataType to);
-        std::string convertToBoolean(const std::string &value, DataType type);
+        std::string generateTypeConversion(const std::string& value, DataType from, DataType to);
+        std::string convertToBoolean(const std::string& value, DataType type);
         DataType getCommonType(DataType left, DataType right);
 
         // Module structure
-        void addFunction(const std::string &name, const std::vector<DataType> &param_types, DataType ret_type, bool external = false, bool variadic = false);
+        void addFunction(const std::string& name, const std::vector<DataType>& param_types, DataType ret_type,
+                         bool external = false, bool variadic = false);
         void declareFunctions();
         std::string generateExternDeclarations();
 
         // Strings
         void collectStringLiterals();
-        void collectStringLiteralsFromScope(const NodeScope *scope);
-        void collectStringLiteralsFromStatement(const NodeStatement *statement);
-        void collectStringLiteralsFromExpression(const NodeExpression *expression);
-        void collectStringLiteralsFromTerm(const NodeExpressionTerm *term);
-        void collectStringLiteralsFromBinaryExpression(const NodeExpressionBinary *bin_expr);
-        void collectStringLiteralsFromIfPred(const NodeIfPred *pred);
+        void collectStringLiteralsFromScope(const NodeScope* scope);
+        void collectStringLiteralsFromStatement(const NodeStatement* statement);
+        void collectStringLiteralsFromExpression(const NodeExpression* expression);
+        void collectStringLiteralsFromTerm(const NodeExpressionTerm* term);
+        void collectStringLiteralsFromBinaryExpression(const NodeExpressionBinary* bin_expr);
+        void collectStringLiteralsFromIfPred(const NodeIfPred* pred);
 
         // Scope and function management (simplified for LLVM)
         void begin_scope();
         void end_scope();
-        void begin_function(const std::string &func_name);
+        void begin_function(const std::string& func_name);
         void end_function();
 
         // Type inference and validation (reused from original)
-        DataType inferExpressionType(const NodeExpression *expression);
-        DataType inferTermType(const NodeExpressionTerm *term);
-        DataType inferBinaryExpressionType(const NodeExpressionBinary *bin_expr);
-        void validateTypeCompatibility(DataType expected, DataType actual, const std::string &context);
+        DataType inferExpressionType(const NodeExpression* expression);
+        DataType inferTermType(const NodeExpressionTerm* term);
+        DataType inferBinaryExpressionType(const NodeExpressionBinary* bin_expr);
+        void validateTypeCompatibility(DataType expected, DataType actual, const std::string& context);
 
         // Function management
-        Function *findFunction(const std::string &name);
-        void validateFunctionCall(const std::string &func_name, const std::vector<NodeExpression *> &arguments);
-        std::string applyDefaultPromotions(const std::string &value, DataType &type);
+        Function* findFunction(const std::string& name);
+        void validateFunctionCall(const std::string& func_name, const std::vector<NodeExpression*>& arguments);
+        std::string applyDefaultPromotions(const std::string& value, DataType& type);
         DataType getPromotedType(DataType type);
 
-        std::string escapeString(const std::string &str);
+        std::string escapeString(const std::string& str);
 
     private:
         const NodeProgram m_program;
@@ -131,7 +137,7 @@ namespace Delta
         std::vector<Function> m_functions{};
         std::set<std::string> m_used_external_functions{}; // Track which external functions are used
         std::vector<std::string> m_string_literals;
-        std::map<std::string, const NodeStruct *> m_struct_definitions{}; // Track struct definitions by name
+        std::map<std::string, const NodeStruct*> m_struct_definitions{}; // Track struct definitions by name
 
         // Function context
         std::string m_current_function = "";
@@ -140,6 +146,6 @@ namespace Delta
         bool m_in_function = false;
 
         // Type tracking for expressions
-        std::map<const NodeExpression *, DataType> m_expression_types{};
+        std::map<const NodeExpression*, DataType> m_expression_types{};
     };
-};
+}; // namespace Delta

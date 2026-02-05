@@ -1,0 +1,9 @@
+#include <stdio>
+
+fn main() -> int {
+    std::io::printf("Hello, World!");
+    std::io::printf("\n");
+    std::io::printf("Welcome to Delta Programming Language");
+    std::io::printf("\n");
+    return 0;
+}

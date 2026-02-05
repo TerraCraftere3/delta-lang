@@ -5,9 +5,9 @@
 namespace Delta
 {
 
-    void Error::throwExpected(const std::string &c, int line, int col)
+    void Error::throwExpected(const std::string& c, int line, int col)
     {
         LOG_ERROR("Expected {} on line {}", c, line);
         exit(EXIT_FAILURE);
     }
-}
+} // namespace Delta

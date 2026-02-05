@@ -1,0 +1,22 @@
+#include <stdio>
+#include <stdtypes>
+
+fn main() -> int {
+    let a: int = 42;
+    let b: int64 = 100;
+    let ch: char = 'D';
+    
+    std::io::printf("Integer: ");
+    std::io::printf("%d", a);
+    std::io::printf("\n");
+    
+    std::io::printf("Int64: ");
+    std::io::printf("%lld", b);
+    std::io::printf("\n");
+    
+    std::io::printf("Character: ");
+    std::io::printf("%c", ch);
+    std::io::printf("\n");
+    
+    return 0;
+}

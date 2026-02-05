@@ -1,0 +1,53 @@
+#include <stdio>
+
+fn main() -> int {
+    std::io::printf("=== Character Analysis ===");
+    std::io::printf("\n");
+    std::io::printf("\n");
+    
+    std::io::printf("Analyzing individual characters:");
+    std::io::printf("\n");
+    std::io::printf("\n");
+    
+    let ch_a: char = 65;
+    let ch_z: char = 122;
+    let ch_space: char = 32;
+    
+    std::io::printf("Character 'A' (ASCII ");
+    std::io::printf("%d", ch_a);
+    std::io::printf(")");
+    std::io::printf("\n");
+    
+    if (ch_a >= 65) {
+        if (ch_a <= 90) {
+            std::io::printf("  This is an uppercase letter");
+            std::io::printf("\n");
+        }
+    }
+    
+    std::io::printf("\n");
+    std::io::printf("Character 'z' (ASCII ");
+    std::io::printf("%d", ch_z);
+    std::io::printf(")");
+    std::io::printf("\n");
+    
+    if (ch_z >= 97) {
+        if (ch_z <= 122) {
+            std::io::printf("  This is a lowercase letter");
+            std::io::printf("\n");
+        }
+    }
+    
+    std::io::printf("\n");
+    std::io::printf("Character ' ' (ASCII ");
+    std::io::printf("%d", ch_space);
+    std::io::printf(")");
+    std::io::printf("\n");
+    
+    if (ch_space == 32) {
+        std::io::printf("  This is a space character");
+        std::io::printf("\n");
+    }
+    
+    return 0;
+}

@@ -1,7 +1,7 @@
 #pragma once
 
-#include <string>
 #include <filesystem>
+#include <string>
 
 namespace Delta
 {
@@ -10,20 +10,20 @@ namespace Delta
     class Files
     {
     public:
-        static bool fileExists(const std::string &path);
-        static std::string readFile(const std::string &path);
-        static bool writeFile(const std::string &path, const std::string &content);
-        static bool deleteFile(const std::string &path);
-        static std::string getFileExtension(const std::string &filename);
-        static std::string replaceExtension(const std::string &filename, const std::string &newExtension);
-        static std::string getFileName(const std::string &path);
-        static std::string getFileNameWithoutExtension(const std::string &path);
-        static std::string getDirectory(const std::string &path);
-        static bool createDirectory(const std::string &path);
+        static bool fileExists(const std::string& path);
+        static std::string readFile(const std::string& path);
+        static bool writeFile(const std::string& path, const std::string& content);
+        static bool deleteFile(const std::string& path);
+        static std::string getFileExtension(const std::string& filename);
+        static std::string replaceExtension(const std::string& filename, const std::string& newExtension);
+        static std::string getFileName(const std::string& path);
+        static std::string getFileNameWithoutExtension(const std::string& path);
+        static std::string getDirectory(const std::string& path);
+        static bool createDirectory(const std::string& path);
         static std::string getProgramPath();
         static std::string getWorkingDirectory();
-        static std::string joinPaths(const std::string &path1, const std::string &path2);
-        static std::string getAbsolutePath(const std::string &path);
+        static std::string joinPaths(const std::string& path1, const std::string& path2);
+        static std::string getAbsolutePath(const std::string& path);
         static std::string getSeparator();
     };
-}
+} // namespace Delta
